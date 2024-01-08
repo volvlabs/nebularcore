@@ -1,0 +1,6 @@
+p, admin, /*, *
+p, admin, /admin/create, *
+p, developer, /dev/*, *
+p, user, /login, *
+p, user, /logout, *
+p, user, /api/*, *
