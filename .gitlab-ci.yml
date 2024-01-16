@@ -1,0 +1,3 @@
+include:
+  - project: tunu/gitlab
+    file: /ci/templates/go-package.yml
