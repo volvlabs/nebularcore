@@ -52,7 +52,6 @@ func (b *NebularCore) Execute() error {
 
 	done := make(chan bool, 1)
 
-	// listen for signal interrupt.
 	go func() {
 		sigch := make(chan os.Signal, 1)
 		signal.Notify(sigch, os.Interrupt, syscall.SIGTERM)
