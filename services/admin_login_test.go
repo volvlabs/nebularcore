@@ -53,6 +53,10 @@ func TestAdminLogin(t *testing.T) {
 			defer tearDownMigration(t)
 			if scenario.admin != nil {
 				app.Dao().CreateAdmin(scenario.admin)
+				app.Dao().CreateAuth(&models.Auth{
+					Identity:     scenario.admin.Email,
+					PasswordHash: hashedPassword,
+				})
 			}
 
 			adminLogin := services.NewAdminLogin(app.Dao(), app.Validator())

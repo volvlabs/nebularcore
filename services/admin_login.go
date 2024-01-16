@@ -3,7 +3,6 @@ package services
 import (
 	"gitlab.com/volvlabs/nebularcore/daos"
 	"gitlab.com/volvlabs/nebularcore/models"
-	"gitlab.com/volvlabs/nebularcore/tools/security"
 	"gitlab.com/volvlabs/nebularcore/tools/types"
 	"gitlab.com/volvlabs/nebularcore/tools/validation"
 
@@ -51,14 +50,14 @@ func (a *AdminLogin) Submit(adminLoginRequest AdminLoginRequest) (*models.Admin,
 		return nil, err
 	}
 
-	admin, err := a.dao.FindAdminByEmail(adminLoginRequest.Identity)
-	if err != nil && !types.ErrIsUserError(err) {
+	auth := Auth{a.dao}
+	if err := auth.PasswordLogin(adminLoginRequest.Identity, adminLoginRequest.Password); err != nil {
 		return nil, err
 	}
 
-	if admin == nil || !security.ValidatePassword(
-		admin.PasswordHash, adminLoginRequest.Password) {
-		return nil, &types.UserError{Message: "invalid login credentials"}
+	admin, err := a.dao.FindAdminByEmail(adminLoginRequest.Identity)
+	if err != nil && !types.ErrIsUserError(err) {
+		return nil, err
 	}
 
 	return admin, nil

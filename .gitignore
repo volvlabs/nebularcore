@@ -47,3 +47,5 @@ go.work
 
 .variables.env
 docker/postgres/data
+
+dist/

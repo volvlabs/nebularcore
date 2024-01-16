@@ -44,7 +44,7 @@ func (d *Dao) FindAdminByEmail(email string) (*models.Admin, error) {
 func (d *Dao) FindAdminById(id uuid.UUID) (*models.Admin, error) {
 	admin := &models.Admin{}
 	where := &models.Admin{}
-	admin.Id = id
+	where.Id = id
 	err := d.FindBy(admin, where)
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, &types.UserError{Message: "admin not found"}

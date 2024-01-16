@@ -3,7 +3,6 @@ package services
 import (
 	"gitlab.com/volvlabs/nebularcore/daos"
 	"gitlab.com/volvlabs/nebularcore/models"
-	"gitlab.com/volvlabs/nebularcore/tools/security"
 	"gitlab.com/volvlabs/nebularcore/tools/types"
 	"gitlab.com/volvlabs/nebularcore/tools/validation"
 
@@ -54,21 +53,22 @@ func (a *AdminCreate) Create(adminCreateRequest AdminCreateRequest) (*models.Adm
 		return nil, err
 	}
 
-	hashedPassword, err := security.HashPassword(adminCreateRequest.Password)
+	admin := &models.Admin{
+		FirstName: adminCreateRequest.FirstName,
+		LastName:  adminCreateRequest.LastName,
+		Email:     adminCreateRequest.Email,
+		Role:      adminCreateRequest.Role,
+	}
+
+	err := a.dao.CreateAdmin(admin)
 	if err != nil {
-		log.Err(err).Msgf("AdminCreate: could not hash password")
 		return nil, err
 	}
-
-	admin := &models.Admin{
-		FirstName:    adminCreateRequest.FirstName,
-		LastName:     adminCreateRequest.LastName,
-		Email:        adminCreateRequest.Email,
-		Role:         adminCreateRequest.Role,
-		PasswordHash: hashedPassword,
-	}
-
-	err = a.dao.CreateAdmin(admin)
+	auth := Auth{a.dao}
+	err = auth.Create(
+		adminCreateRequest.Email,
+		adminCreateRequest.Password,
+	)
 	if err != nil {
 		return nil, err
 	}

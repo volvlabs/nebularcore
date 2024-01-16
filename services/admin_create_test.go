@@ -37,7 +37,7 @@ func TestCreateAdmin(t *testing.T) {
 				Role:      "operator",
 				Password:  "password123",
 			},
-			wantErr: &types.UserError{Message: "Mail server does not exist : lookup turgish.com on 192.168.0.1:53: no such host"},
+			wantErr: &types.UserError{Message: "email entered is invalid"},
 		},
 		{
 			name: "should fail to create admin with already existing email",
@@ -74,9 +74,6 @@ func TestCreateAdmin(t *testing.T) {
 				}
 				if admin.LastName != scenario.req.LastName {
 					t.Errorf("got admin.LastName %s, want %s", admin.LastName, scenario.req.LastName)
-				}
-				if admin.PasswordHash == "" {
-					t.Errorf("got an empty admin.PasswordHash")
 				}
 			}
 		})

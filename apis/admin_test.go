@@ -132,12 +132,17 @@ func TestLoginAdmin(t *testing.T) {
 				`"updated"`,
 			},
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
-				app.Dao().CreateAdmin(&models.Admin{
+				admin := &models.Admin{
 					FirstName:    "John",
 					LastName:     "Doe",
 					Email:        "john.doe23@gmail.com",
 					Role:         "operator",
 					PasswordHash: "$2a$12$oJSuU25enGzScfVVZDtj9O4roWt1Z4OH3XId4Y109ZE7BsZhmOcGO",
+				}
+				app.Dao().CreateAdmin(admin)
+				app.Dao().CreateAuth(&models.Auth{
+					Identity:     admin.Email,
+					PasswordHash: admin.PasswordHash,
 				})
 				BindAdminApi(app, router.Group(""))
 			},
@@ -256,6 +261,10 @@ func TestChangePasswordAdmin(t *testing.T) {
 				}
 				admin.SetId(uuid.MustParse("579387fc-d8cd-4803-8b6e-52742d1460a8"))
 				app.Dao().CreateAdmin(admin)
+				app.Dao().CreateAuth(&models.Auth{
+					Identity:     admin.Email,
+					PasswordHash: admin.PasswordHash,
+				})
 				BindAdminApi(app, router.Group(""))
 			},
 		},
@@ -287,6 +296,10 @@ func TestChangePasswordAdmin(t *testing.T) {
 				}
 				admin.SetId(uuid.MustParse("579387fc-d8cd-4803-8b6e-52742d1460a8"))
 				app.Dao().CreateAdmin(admin)
+				app.Dao().CreateAuth(&models.Auth{
+					Identity:     admin.Email,
+					PasswordHash: admin.PasswordHash,
+				})
 				BindAdminApi(app, router.Group(""))
 			},
 		},
@@ -314,6 +327,10 @@ func TestChangePasswordAdmin(t *testing.T) {
 				}
 				admin.SetId(uuid.MustParse("579387fc-d8cd-4803-8b6e-52742d1460a8"))
 				app.Dao().CreateAdmin(admin)
+				app.Dao().CreateAuth(&models.Auth{
+					Identity:     admin.Email,
+					PasswordHash: admin.PasswordHash,
+				})
 				BindAdminApi(app, router.Group(""))
 			},
 		},
@@ -345,6 +362,10 @@ func TestChangePasswordAdmin(t *testing.T) {
 				}
 				admin.SetId(uuid.MustParse("579387fc-d8cd-4803-8b6e-52742d1460a8"))
 				app.Dao().CreateAdmin(admin)
+				app.Dao().CreateAuth(&models.Auth{
+					Identity:     admin.Email,
+					PasswordHash: admin.PasswordHash,
+				})
 				BindAdminApi(app, router.Group(""))
 			},
 		},

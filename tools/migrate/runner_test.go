@@ -54,7 +54,7 @@ func TestNewRunner(t *testing.T) {
 func TestUpAndDown(t *testing.T) {
 	// Arrange:
 	rootDir := filesystem.GetRootDir("../../")
-	dbPath := filepath.Join(rootDir, "test/data/data.db")
+	dbPath := filepath.Join(os.TempDir(), "/data.db")
 	runner, _ := migrate.NewRunner(
 		fmt.Sprintf("file://%s", filepath.Join(rootDir, "test/data/migrations")),
 		fmt.Sprintf("sqlite://%s", dbPath))
@@ -86,7 +86,7 @@ func TestUpAndDown(t *testing.T) {
 	if !tableExists(db, "admins") {
 		t.Fatalf("expected admins table to not exist")
 	}
-	if tableExists(db, "users") {
+	if !tableExists(db, "users") {
 		t.Fatalf("expected users table to exist")
 	}
 
@@ -97,6 +97,8 @@ func TestUpAndDown(t *testing.T) {
 	if tableExists(db, "admins") {
 		t.Fatal("expected admins table to not exist")
 	}
+
+	os.Remove(dbPath)
 }
 
 func tableExists(db *sql.DB, tableName string) bool {

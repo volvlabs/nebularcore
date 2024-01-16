@@ -69,6 +69,10 @@ func TestAdminPasswordChange(t *testing.T) {
 			defer tearDownMigration(t)
 
 			app.Dao().CreateAdmin(scenario.admin)
+			app.Dao().CreateAuth(&models.Auth{
+				Identity:     scenario.admin.Email,
+				PasswordHash: hashedPassword,
+			})
 			adminId := scenario.adminId
 			if adminId == uuid.Nil {
 				adminId = scenario.admin.Id

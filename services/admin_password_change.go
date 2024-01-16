@@ -2,7 +2,6 @@ package services
 
 import (
 	"gitlab.com/volvlabs/nebularcore/daos"
-	"gitlab.com/volvlabs/nebularcore/tools/security"
 	"gitlab.com/volvlabs/nebularcore/tools/types"
 	"gitlab.com/volvlabs/nebularcore/tools/validation"
 
@@ -52,15 +51,10 @@ func (a *AdminPasswordChange) ChangePassword(adminId uuid.UUID, adminPasswordCha
 		return err
 	}
 
-	if !security.ValidatePassword(
-		admin.PasswordHash, adminPasswordChangeRequest.OldPassword) {
-		return &types.UserError{Message: "current password is incorrect"}
-	}
-
-	admin.PasswordHash, err = security.HashPassword(adminPasswordChangeRequest.Password)
-	if err != nil {
-		return err
-	}
-
-	return a.dao.SaveAdmin(admin)
+	auth := Auth{a.dao}
+	return auth.ChangePassword(
+		admin.Email,
+		adminPasswordChangeRequest.OldPassword,
+		adminPasswordChangeRequest.ConfirmPassword,
+	)
 }

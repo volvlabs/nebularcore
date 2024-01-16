@@ -34,3 +34,9 @@ func (d *Dao) FindBy(model models.Model, where any) error {
 		return tx.Where(where).First(model).Error
 	})
 }
+
+func (d *Dao) Update(model models.Model, where any, column string, value any) error {
+	return d.dbConn.Transaction(func(tx *gorm.DB) error {
+		return tx.Model(model).Where(where).Update(column, value).Error
+	})
+}
