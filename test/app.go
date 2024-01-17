@@ -1,18 +1,35 @@
 package test
 
 import (
+	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
+	"time"
 
-	"gitlab.com/volvlabs/nebularcore/core"
-	"gitlab.com/volvlabs/nebularcore/models/config"
-	"gitlab.com/volvlabs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/core"
+	"gitlab.com/jideobs/nebularcore/models/config"
+	"gitlab.com/jideobs/nebularcore/tools/auth"
 )
+
+func getTempDataDirName(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	var output []byte
+	for i := 0; i < length; i++ {
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		randomIndex := r.Intn(len(charset))
+		output = append(output, charset[randomIndex])
+	}
+	return string(output)
+}
 
 type TestApp struct {
 	*core.BaseApp
+}
+
+func (t *TestApp) CleanUp() {
+	os.RemoveAll(t.DataDir())
 }
 
 func NewTestApp() (*TestApp, error) {
@@ -23,10 +40,17 @@ func NewTestApp() (*TestApp, error) {
 	_, currentFile, _, _ := runtime.Caller(0)
 	cfg.BaseDir = filepath.Join(path.Dir(currentFile), "../")
 	cfg.TestDir = filepath.Join(cfg.BaseDir, "test/data")
+
+	dataDir := filepath.Join(os.TempDir(), getTempDataDirName(12))
+
+	// Create data directory for each app created, this is to prevent multiple unit tests
+	// trying to perform operations on the same data.
+	os.Mkdir(dataDir, 0755)
+
 	app.BaseApp = core.NewBaseApp(
 		core.BaseAppConfig{
 			Env:        "test",
-			DataDir:    os.TempDir(),
+			DataDir:    dataDir,
 			IsDev:      true,
 			EnforceAcl: true,
 		})

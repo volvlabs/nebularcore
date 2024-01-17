@@ -4,11 +4,12 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
-	"gitlab.com/volvlabs/nebularcore/daos"
-	"gitlab.com/volvlabs/nebularcore/models"
-	"gitlab.com/volvlabs/nebularcore/models/config"
-	"gitlab.com/volvlabs/nebularcore/tools/auth"
-	"gitlab.com/volvlabs/nebularcore/tools/validation"
+	"gitlab.com/jideobs/nebularcore/daos"
+	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/models/config"
+	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/security"
+	"gitlab.com/jideobs/nebularcore/tools/validation"
 
 	"gorm.io/gorm"
 )
@@ -29,6 +30,8 @@ type BaseApp struct {
 
 	settings *models.Settings
 	router   *gin.Engine
+
+	otp *security.Otp
 }
 
 type BaseAppConfig struct {
@@ -132,4 +135,14 @@ func (b *BaseApp) Validator() *validation.Validator {
 
 func (b *BaseApp) Router() *gin.Engine {
 	return b.router
+}
+
+func (b *BaseApp) Otp() *security.Otp {
+	if b.otp == nil {
+		b.otp = security.NewOtp(security.OtpOptions{
+			Secret: b.Settings().OtpGenerationSecret,
+			Period: b.Settings().OtpPeriod,
+		})
+	}
+	return b.otp
 }

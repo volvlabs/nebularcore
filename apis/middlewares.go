@@ -3,8 +3,8 @@ package apis
 import (
 	"strings"
 
-	"gitlab.com/volvlabs/nebularcore/core"
-	"gitlab.com/volvlabs/nebularcore/tools/security"
+	"gitlab.com/jideobs/nebularcore/core"
+	"gitlab.com/jideobs/nebularcore/tools/security"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"

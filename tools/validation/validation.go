@@ -5,7 +5,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
-	"gitlab.com/volvlabs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 )
 
 type Validator struct {
@@ -38,6 +38,10 @@ func (v *Validator) Validate(i any) ([]types.FieldError, error) {
 	if err != nil {
 		errs := make([]types.FieldError, len(err.(validator.ValidationErrors)))
 		for _, err := range err.(validator.ValidationErrors) {
+			if err.Field() == "" {
+				continue
+			}
+
 			errs = append(errs, types.FieldError{
 				Field:   err.Field(),
 				Message: err.Translate(v.translator),

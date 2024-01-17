@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 )
 
 type ApiError struct {
@@ -48,4 +49,16 @@ func NewUnauthorizedError(c *gin.Context) {
 func NewForbiddenError(c *gin.Context) {
 	apiError := NewApiError(http.StatusForbidden, "forbidden", nil)
 	c.AbortWithStatusJSON(http.StatusForbidden, apiError)
+}
+
+func HandleError(c *gin.Context, err error) {
+	if types.ErrIsUserError(err) {
+		var errs any = nil
+		if err, ok := err.(*types.RequestBodyError); ok {
+			errs = err.Errors
+		}
+		NewBadRequestError(c, err.Error(), errs)
+	} else {
+		NewInternalServerError(c)
+	}
 }

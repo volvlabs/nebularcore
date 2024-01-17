@@ -3,11 +3,10 @@ package apis
 import (
 	"net/http"
 
-	"gitlab.com/volvlabs/nebularcore/core"
-	"gitlab.com/volvlabs/nebularcore/models"
-	"gitlab.com/volvlabs/nebularcore/services"
-	"gitlab.com/volvlabs/nebularcore/tools/security"
-	"gitlab.com/volvlabs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/core"
+	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/services"
+	"gitlab.com/jideobs/nebularcore/tools/security"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -58,15 +57,7 @@ func (api *adminApi) create(c *gin.Context) {
 	adminCreateSrv := services.NewAdminCreate(api.app.Dao(), api.app.Validator())
 	admin, err := adminCreateSrv.Create(adminCreateRequest)
 	if err != nil {
-		if types.ErrIsUserError(err) {
-			var errs any = nil
-			if err, ok := err.(*types.RequestBodyError); ok {
-				errs = err.Errors
-			}
-			NewBadRequestError(c, err.Error(), errs)
-		} else {
-			NewInternalServerError(c)
-		}
+		HandleError(c, err)
 		return
 	}
 
@@ -83,15 +74,7 @@ func (api *adminApi) login(c *gin.Context) {
 	adminLoginSrv := services.NewAdminLogin(api.app.Dao(), api.app.Validator())
 	admin, err := adminLoginSrv.Submit(adminLoginRequest)
 	if err != nil {
-		if types.ErrIsUserError(err) {
-			var errs any = nil
-			if err, ok := err.(*types.RequestBodyError); ok {
-				errs = err.Errors
-			}
-			NewBadRequestError(c, err.Error(), errs)
-		} else {
-			NewInternalServerError(c)
-		}
+		HandleError(c, err)
 		return
 	}
 
@@ -114,15 +97,7 @@ func (api *adminApi) changePassword(c *gin.Context) {
 
 	err := adminChangePassword.ChangePassword(uuid.MustParse(id.(string)), adminChangePasswordRequest)
 	if err != nil {
-		if types.ErrIsUserError(err) {
-			var errs any = nil
-			if err, ok := err.(*types.RequestBodyError); ok {
-				errs = err.Errors
-			}
-			NewBadRequestError(c, err.Error(), errs)
-		} else {
-			NewInternalServerError(c)
-		}
+		HandleError(c, err)
 
 		return
 	}

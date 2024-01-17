@@ -3,10 +3,10 @@ package services_test
 import (
 	"testing"
 
-	"gitlab.com/volvlabs/nebularcore/services"
-	"gitlab.com/volvlabs/nebularcore/test"
-	"gitlab.com/volvlabs/nebularcore/tools/filesystem"
-	"gitlab.com/volvlabs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/services"
+	"gitlab.com/jideobs/nebularcore/test"
+	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 )
 
 func TestCreate(t *testing.T) {

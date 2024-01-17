@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/kelseyhightower/envconfig"
-	"gitlab.com/volvlabs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gopkg.in/yaml.v3"
 )
 

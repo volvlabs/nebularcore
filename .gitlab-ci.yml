@@ -1,3 +1,7 @@
+variables:
+  ACCOUNT_NAME: "jideobs"
+  PROJECT_NAME: "nebularcore"
+
 include:
-  - project: volvlabs1/gitlab
+  - project: jideobs/gitlab
     file: /ci/templates/go-package.yml
