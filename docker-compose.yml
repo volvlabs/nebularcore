@@ -12,9 +12,10 @@ services:
     ports:
       - "5432:5432"
   backend:
-    image: golang:1.21.3-alpine
+    image: volvlabs/volvlabs-ci-image:latest
     restart: always
-    command: "sh bin/run.sh"
+    # command: "sh bin/run.sh"
+    command: tail -f /dev/null
     build:
       context: .
     volumes:

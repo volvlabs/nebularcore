@@ -115,7 +115,7 @@ func TestFindAuthByIdentity(t *testing.T) {
 		if scenario.authToCreate != nil {
 			err := d.CreateAuth(scenario.authToCreate)
 			if err != nil {
-				t.Fatalf("got %v, want %v", err, scenario.want)
+				t.Fatalf("FindAuthByIdentity: got %v, want %v", err, scenario.want)
 			}
 		}
 

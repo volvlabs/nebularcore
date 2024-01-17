@@ -11,7 +11,6 @@ import (
 )
 
 func TestCreateAdmin(t *testing.T) {
-	app, _ := test.NewTestApp()
 	scenarios := []struct {
 		name    string
 		req     services.AdminCreateRequest
@@ -53,6 +52,7 @@ func TestCreateAdmin(t *testing.T) {
 	}
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
+			app, _ := test.NewTestApp()
 			tearDownMigration := test.RunMigration(
 				t, filesystem.GetRootDir("../../"), app.DataDir())
 			defer tearDownMigration(t)

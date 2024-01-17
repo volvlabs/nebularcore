@@ -23,6 +23,7 @@ func NewTestApp() (*TestApp, error) {
 	_, currentFile, _, _ := runtime.Caller(0)
 	cfg.BaseDir = filepath.Join(path.Dir(currentFile), "../")
 	cfg.TestDir = filepath.Join(cfg.BaseDir, "test/data")
+
 	app.BaseApp = core.NewBaseApp(
 		core.BaseAppConfig{
 			Env:        "test",

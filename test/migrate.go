@@ -27,5 +27,6 @@ func RunMigration(t *testing.T, baseDir, dataDir string) func(*testing.T) {
 		if err != nil {
 			t.Fatalf("Error running 'down' migration: %v", err)
 		}
+		runner.Close()
 	}
 }

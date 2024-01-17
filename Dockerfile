@@ -1,4 +1,4 @@
-FROM golang:1.21.3-alpine
+FROM volvlabs/volvlabs-ci-base:latest
 
 WORKDIR /home/app
 
