@@ -1,4 +1,3 @@
 include:
   - project: volvlabs1/gitlab
     file: /ci/templates/go-package.yml
-

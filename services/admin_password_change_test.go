@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"gitlab.com/volvlabs/nebularcore/models"
 	"gitlab.com/volvlabs/nebularcore/services"
 	"gitlab.com/volvlabs/nebularcore/test"
@@ -80,9 +81,8 @@ func TestAdminPasswordChange(t *testing.T) {
 
 			adminPasswordChange := services.NewAdminPasswordChange(app.Dao(), app.Validator())
 			err := adminPasswordChange.ChangePassword(adminId, scenario.req)
-			if err != nil && err.Error() != scenario.wantErr.Error() {
-				t.Errorf("got error %v, want %v", err, scenario.wantErr)
-			}
+
+			assert.Equal(t, scenario.wantErr, err)
 		})
 	}
 }

@@ -1,14 +1,15 @@
 package services_test
 
 import (
-	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"gitlab.com/volvlabs/nebularcore/models"
 	"gitlab.com/volvlabs/nebularcore/services"
 	"gitlab.com/volvlabs/nebularcore/test"
 	"gitlab.com/volvlabs/nebularcore/tools/filesystem"
 	"gitlab.com/volvlabs/nebularcore/tools/security"
+	"gitlab.com/volvlabs/nebularcore/tools/types"
 )
 
 func TestAdminLogin(t *testing.T) {
@@ -43,7 +44,7 @@ func TestAdminLogin(t *testing.T) {
 				Password: "XXXXXXXXXXX",
 			},
 			admin:   nil,
-			wantErr: errors.New("invalid login credentials"),
+			wantErr: &types.UserError{Message: "invalid login credentials"},
 		},
 	}
 	for _, scenario := range scenarios {
@@ -61,10 +62,8 @@ func TestAdminLogin(t *testing.T) {
 
 			adminLogin := services.NewAdminLogin(app.Dao(), app.Validator())
 			_, err := adminLogin.Submit(scenario.req)
-			if err != nil && err.Error() != scenario.wantErr.Error() {
-				t.Errorf("AdminService.Login() error = %v, wantErr %v", err, scenario.wantErr)
-				return
-			}
+
+			assert.Equal(t, scenario.wantErr, err)
 		})
 	}
 }
