@@ -7,7 +7,7 @@ type Settings struct {
 
 func NewSettings() *Settings {
 	return &Settings{
-		AuthTokenSecret:   "test123",
+		AuthTokenSecret:   "test",
 		AuthTokenDuration: 900,
 	}
 }
