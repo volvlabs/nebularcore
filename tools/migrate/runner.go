@@ -65,5 +65,5 @@ func (r *Runner) down(toRevertCount int) error {
 }
 
 func (r *Runner) Close() {
-	fmt.Println(r.migrate.Close())
+	r.migrate.Close()
 }
