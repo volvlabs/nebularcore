@@ -1,5 +1,5 @@
 variables:
-  ACCOUNT_NAME: "volvlabs1"
+  ACCOUNT_NAME: "jideobs"
   PROJECT_NAME: "NebularCore"
 
 include:
