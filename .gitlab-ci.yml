@@ -3,5 +3,5 @@ variables:
   PROJECT_NAME: "nebular-core"
 
 include:
-  - project: volvlabs1/gitlab
+  - project: jideobs/gitlab
     file: /ci/templates/go-package.yml
