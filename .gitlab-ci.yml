@@ -1,3 +1,6 @@
+variables:
+  ACCOUNT_NAME: "volvlabs1"
+  PROJECT_NAME: "NebularCore"
 include:
   - project: volvlabs1/gitlab
     file: /ci/templates/go-package.yml
