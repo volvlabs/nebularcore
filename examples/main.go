@@ -5,11 +5,11 @@ import (
 	"log"
 	"path/filepath"
 
-	"gitlab.com/volvlabs/nebularcore"
-	"gitlab.com/volvlabs/nebularcore/apis"
-	"gitlab.com/volvlabs/nebularcore/models/config"
-	"gitlab.com/volvlabs/nebularcore/tools/auth"
-	"gitlab.com/volvlabs/nebularcore/tools/filesystem"
+	"gitlab.com/jideobs/nebularcore"
+	"gitlab.com/jideobs/nebularcore/apis"
+	"gitlab.com/jideobs/nebularcore/models/config"
+	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 )
 
 func main() {

@@ -2,10 +2,10 @@ package core
 
 import (
 	"github.com/gin-gonic/gin"
-	"gitlab.com/volvlabs/nebularcore/daos"
-	"gitlab.com/volvlabs/nebularcore/models"
-	"gitlab.com/volvlabs/nebularcore/tools/auth"
-	"gitlab.com/volvlabs/nebularcore/tools/validation"
+	"gitlab.com/jideobs/nebularcore/daos"
+	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/validation"
 )
 
 type TerminateHandler func() error

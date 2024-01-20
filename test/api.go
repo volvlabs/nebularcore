@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/assert/v2"
-	"gitlab.com/volvlabs/nebularcore/tools/filesystem"
+	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 )
 
 type ApiScenario struct {

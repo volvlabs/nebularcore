@@ -5,12 +5,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/volvlabs/nebularcore/models"
-	"gitlab.com/volvlabs/nebularcore/services"
-	"gitlab.com/volvlabs/nebularcore/test"
-	"gitlab.com/volvlabs/nebularcore/tools/filesystem"
-	"gitlab.com/volvlabs/nebularcore/tools/security"
-	"gitlab.com/volvlabs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/services"
+	"gitlab.com/jideobs/nebularcore/test"
+	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"gitlab.com/jideobs/nebularcore/tools/security"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 )
 
 func TestAdminPasswordChange(t *testing.T) {

@@ -1,10 +1,10 @@
 package services
 
 import (
-	"gitlab.com/volvlabs/nebularcore/daos"
-	"gitlab.com/volvlabs/nebularcore/models"
-	"gitlab.com/volvlabs/nebularcore/tools/types"
-	"gitlab.com/volvlabs/nebularcore/tools/validation"
+	"gitlab.com/jideobs/nebularcore/daos"
+	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/tools/validation"
 
 	"github.com/rs/zerolog/log"
 )

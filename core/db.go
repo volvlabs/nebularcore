@@ -3,7 +3,7 @@ package core
 import (
 	"fmt"
 
-	"gitlab.com/volvlabs/nebularcore/models/config"
+	"gitlab.com/jideobs/nebularcore/models/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"

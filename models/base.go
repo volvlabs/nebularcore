@@ -1,7 +1,7 @@
 package models
 
 import (
-	"gitlab.com/volvlabs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

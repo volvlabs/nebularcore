@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"gitlab.com/volvlabs/nebularcore/tools/migrate"
+	"gitlab.com/jideobs/nebularcore/tools/migrate"
 )
 
 func RunMigration(t *testing.T, baseDir, dataDir string) func(*testing.T) {

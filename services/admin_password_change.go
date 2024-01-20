@@ -1,9 +1,9 @@
 package services
 
 import (
-	"gitlab.com/volvlabs/nebularcore/daos"
-	"gitlab.com/volvlabs/nebularcore/tools/types"
-	"gitlab.com/volvlabs/nebularcore/tools/validation"
+	"gitlab.com/jideobs/nebularcore/daos"
+	"gitlab.com/jideobs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/tools/validation"
 
 	"github.com/google/uuid"
 )

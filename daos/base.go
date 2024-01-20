@@ -1,7 +1,7 @@
 package daos
 
 import (
-	"gitlab.com/volvlabs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/models"
 
 	"gorm.io/gorm"
 )

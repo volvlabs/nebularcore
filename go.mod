@@ -1,4 +1,4 @@
-module gitlab.com/volvlabs/nebularcore
+module gitlab.com/jideobs/nebularcore
 
 go 1.21.3
 

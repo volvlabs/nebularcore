@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"time"
 
-	"gitlab.com/volvlabs/nebularcore/core"
-	"gitlab.com/volvlabs/nebularcore/models/config"
-	"gitlab.com/volvlabs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/core"
+	"gitlab.com/jideobs/nebularcore/models/config"
+	"gitlab.com/jideobs/nebularcore/tools/auth"
 )
 
 func getTempDataDirName(length int) string {

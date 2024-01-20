@@ -1,6 +1,6 @@
 variables:
   ACCOUNT_NAME: "jideobs"
-  PROJECT_NAME: "nebular-core"
+  PROJECT_NAME: "nebularcore"
 
 include:
   - project: jideobs/gitlab
