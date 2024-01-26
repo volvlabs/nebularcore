@@ -4,8 +4,8 @@ import (
 	"errors"
 	"strings"
 
-	"gitlab.com/volvlabs/nebularcore/models"
-	"gitlab.com/volvlabs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gorm.io/gorm"
 )
 

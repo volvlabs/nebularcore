@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"gitlab.com/volvlabs/nebularcore/services"
-	"gitlab.com/volvlabs/nebularcore/test"
-	"gitlab.com/volvlabs/nebularcore/tools/filesystem"
-	"gitlab.com/volvlabs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/services"
+	"gitlab.com/jideobs/nebularcore/test"
+	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 )
 
 func TestCreateAdmin(t *testing.T) {
-	app, _ := test.NewTestApp()
 	scenarios := []struct {
 		name    string
 		req     services.AdminCreateRequest
@@ -53,6 +52,7 @@ func TestCreateAdmin(t *testing.T) {
 	}
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
+			app, _ := test.NewTestApp()
 			tearDownMigration := test.RunMigration(
 				t, filesystem.GetRootDir("../../"), app.DataDir())
 			defer tearDownMigration(t)

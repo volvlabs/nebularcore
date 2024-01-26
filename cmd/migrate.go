@@ -7,8 +7,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"gitlab.com/volvlabs/nebularcore/core"
-	"gitlab.com/volvlabs/nebularcore/tools/migrate"
+	"gitlab.com/jideobs/nebularcore/core"
+	"gitlab.com/jideobs/nebularcore/tools/migrate"
 )
 
 func NewMigrateCommand(app core.App) *cobra.Command {

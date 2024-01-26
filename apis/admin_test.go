@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gitlab.com/volvlabs/nebularcore/models"
-	"gitlab.com/volvlabs/nebularcore/test"
+	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/test"
 )
 
 func TestCreateAdmin(t *testing.T) {

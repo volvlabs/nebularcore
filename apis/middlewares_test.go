@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"gitlab.com/volvlabs/nebularcore/test"
+	"gitlab.com/jideobs/nebularcore/test"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"

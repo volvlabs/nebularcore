@@ -3,10 +3,10 @@ package daos_test
 import (
 	"testing"
 
-	"gitlab.com/volvlabs/nebularcore/models"
-	"gitlab.com/volvlabs/nebularcore/test"
-	"gitlab.com/volvlabs/nebularcore/tools/filesystem"
-	"gitlab.com/volvlabs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/test"
+	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 )
 
 func TestCreateAuth(t *testing.T) {
@@ -115,7 +115,7 @@ func TestFindAuthByIdentity(t *testing.T) {
 		if scenario.authToCreate != nil {
 			err := d.CreateAuth(scenario.authToCreate)
 			if err != nil {
-				t.Fatalf("got %v, want %v", err, scenario.want)
+				t.Fatalf("FindAuthByIdentity: got %v, want %v", err, scenario.want)
 			}
 		}
 

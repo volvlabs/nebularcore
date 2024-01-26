@@ -49,3 +49,5 @@ go.work
 docker/postgres/data
 
 dist/
+
+data.db

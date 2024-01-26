@@ -1,4 +1,4 @@
-module gitlab.com/volvlabs/nebularcore
+module gitlab.com/jideobs/nebularcore
 
 go 1.21.3
 
@@ -15,6 +15,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/google/uuid v1.5.0
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/pquerna/otp v1.4.0
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/cobra v1.8.0
@@ -27,6 +28,7 @@ require (
 )
 
 require (
+	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/bytedance/sonic v1.10.1 // indirect
 	github.com/casbin/govaluate v1.1.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
