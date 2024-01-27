@@ -1,147 +1,87 @@
 package services_test
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/services"
 	"gitlab.com/jideobs/nebularcore/test"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 )
 
-func TestCreate(t *testing.T) {
-	app, _ := test.NewTestApp()
-
+func TestOauth2CreateValidate(t *testing.T) {
 	scenarios := []struct {
-		name         string
-		identity     string
-		passwordHash string
-		wantErr      error
+		name          string
+		oauth2Request services.OAuth2Request
+		expectedError error
 	}{
 		{
-			name:         "should successfully create auth information",
-			identity:     "john.doe@gmail.com",
-			passwordHash: "password",
-			wantErr:      nil,
+			name:          "should return error because of empty body",
+			oauth2Request: services.OAuth2Request{},
+			expectedError: &types.RequestBodyError{
+				Message: "error validating request",
+				Errors: []types.FieldError{
+					{
+						Field:   "Code",
+						Message: "Code is a required field",
+					},
+					{
+						Field:   "State",
+						Message: "State is a required field",
+					},
+					{
+						Field:   "Provider",
+						Message: "Provider is a required field",
+					},
+				},
+			},
+		},
+		{
+
+			name: "should return error because of invalid provider",
+			oauth2Request: services.OAuth2Request{
+				Code:     "test",
+				State:    "test",
+				Provider: "invalid",
+			},
+			expectedError: errors.New("invalid provider provided"),
+		},
+		{
+			name: "should return error because provider is not enabled",
+			oauth2Request: services.OAuth2Request{
+				Code:     "test",
+				State:    "test",
+				Provider: "apple",
+			},
+			expectedError: errors.New("provider not enabled"),
+		},
+		{
+			name: "should return no error",
+			oauth2Request: services.OAuth2Request{
+				Code:     "test",
+				State:    "test",
+				Provider: "google",
+			},
+			expectedError: nil,
 		},
 	}
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			tearDownMigration := test.RunMigration(
-				t, filesystem.GetRootDir("../../"), app.DataDir())
-			defer tearDownMigration(t)
+			// Arrange:
+			testapp, _ := test.NewTestApp()
+			auth := services.NewAuth(testapp)
 
-			auth := services.NewAuth(app.Dao())
-			err := auth.Create(scenario.identity, scenario.passwordHash)
-			if err != nil && err != scenario.wantErr {
-				t.Errorf("got %v, want %v", err, scenario.wantErr)
-			}
-		})
-	}
-}
+			otherSettings := models.NewSettings()
+			otherSettings.GoogleAuth.Enabled = true
+			testapp.Settings().Merge(otherSettings)
 
-func TestChangePassword(t *testing.T) {
-	app, _ := test.NewTestApp()
-	scenarios := []struct {
-		name                string
-		identity            string
-		password            string
-		oldPassword         string
-		userEnteredPassword string
-		wantErr             error
-	}{
-		{
-			name:                "should successfully change password",
-			identity:            "john.doe@gmail.com",
-			password:            "password",
-			oldPassword:         "password123",
-			userEnteredPassword: "password123",
-			wantErr:             nil,
-		},
-		{
-			name:                "should return error because current password is incorrect",
-			identity:            "john.doe@gmail.com",
-			password:            "password",
-			oldPassword:         "password123",
-			userEnteredPassword: "password12",
-			wantErr:             &types.UserError{Message: "current password is incorrect"},
-		},
-	}
-	for _, scenario := range scenarios {
-		t.Run(scenario.name, func(t *testing.T) {
-			tearDownMigration := test.RunMigration(
-				t, filesystem.GetRootDir("../../"), app.DataDir())
-			defer tearDownMigration(t)
+			// Act:
+			err := auth.ValidateOAuth2Request(scenario.oauth2Request)
 
-			auth := services.NewAuth(app.Dao())
-			err := auth.Create(scenario.identity, scenario.oldPassword)
-			if err != nil {
-				t.Fatalf("Tyring to create auth, got %v", err)
-			}
-
-			err = auth.ChangePassword(
-				scenario.identity,
-				scenario.userEnteredPassword,
-				scenario.password)
-			if err != nil && err.Error() != scenario.wantErr.Error() {
-				t.Errorf("got error %v, want %v", err, scenario.wantErr)
-			}
-		})
-	}
-}
-
-func TestPasswordLogin(t *testing.T) {
-	app, _ := test.NewTestApp()
-	scenarios := []struct {
-		name                string
-		identity            string
-		password            string
-		userEnteredIdentity string
-		userEnteredPassword string
-		wantErr             error
-	}{
-		{
-			name:                "should successfully login",
-			identity:            "XXXXXXXXXXXXXXXXXX",
-			password:            "XXXXXXXX",
-			userEnteredIdentity: "XXXXXXXXXXXXXXXXXX",
-			userEnteredPassword: "XXXXXXXX",
-			wantErr:             nil,
-		},
-		{
-			name:                "should return error because password is incorrect",
-			identity:            "XXXXXXXXXXXXXXXXXX",
-			password:            "XXXXXXXX",
-			userEnteredIdentity: "XXXXXXXXXXXXXXXXXX",
-			userEnteredPassword: "wrongPassword",
-			wantErr:             &types.UserError{Message: "invalid login credentials"},
-		},
-		{
-			name:                "should return error because auth was not found with the entered identity",
-			identity:            "XXXXXXXXXXXXXXXXXX",
-			password:            "XXXXXXXX",
-			userEnteredIdentity: "inexistent-identity",
-			userEnteredPassword: "wrongPassword",
-			wantErr:             &types.UserError{Message: "invalid login credentials"},
-		},
-	}
-	for _, scenario := range scenarios {
-		t.Run(scenario.name, func(t *testing.T) {
-			tearDownMigration := test.RunMigration(
-				t, filesystem.GetRootDir("../../"), app.DataDir())
-			defer tearDownMigration(t)
-
-			auth := services.NewAuth(app.Dao())
-			err := auth.Create(scenario.identity, scenario.password)
-			if err != nil {
-				t.Fatalf("Error creating auth, got %v", err)
-			}
-
-			err = auth.PasswordLogin(
-				scenario.userEnteredIdentity, scenario.userEnteredPassword)
-			if err != nil && err.Error() != scenario.wantErr.Error() {
-				t.Errorf("got error %v, want %v", err, scenario.wantErr)
-			}
+			// Assert:
+			assert.Equal(t, scenario.expectedError, err)
 		})
 	}
 }

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/daos"
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/tools/types"
@@ -15,12 +16,13 @@ type AdminLoginRequest struct {
 }
 
 type AdminLogin struct {
+	app       core.App
 	dao       *daos.Dao
 	validator *validation.Validator
 }
 
-func NewAdminLogin(dao *daos.Dao, validator *validation.Validator) *AdminLogin {
-	return &AdminLogin{dao, validator}
+func NewAdminLogin(app core.App) *AdminLogin {
+	return &AdminLogin{app, app.Dao(), app.Validator()}
 }
 
 func (a *AdminLogin) validate(adminLoginRequest AdminLoginRequest) error {
@@ -50,7 +52,7 @@ func (a *AdminLogin) Submit(adminLoginRequest AdminLoginRequest) (*models.Admin,
 		return nil, err
 	}
 
-	auth := Auth{a.dao}
+	auth := Auth{a.app, a.dao, a.validator}
 	if err := auth.PasswordLogin(adminLoginRequest.Identity, adminLoginRequest.Password); err != nil {
 		return nil, err
 	}

@@ -1,67 +1,64 @@
 package services
 
 import (
-	"github.com/rs/zerolog/log"
+	"errors"
+
+	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/daos"
-	"gitlab.com/jideobs/nebularcore/models"
-	"gitlab.com/jideobs/nebularcore/tools/security"
+	"gitlab.com/jideobs/nebularcore/tools/auth"
 	"gitlab.com/jideobs/nebularcore/tools/types"
+	"gitlab.com/jideobs/nebularcore/tools/validation"
 )
 
+type OAuth2Request struct {
+	Code     string `json:"code" validate:"required"`
+	State    string `json:"state" validate:"required"`
+	Provider string `json:"provider" validate:"required"`
+}
+
 type Auth struct {
-	dao *daos.Dao
+	app       core.App
+	dao       *daos.Dao
+	validator *validation.Validator
 }
 
-func NewAuth(dao *daos.Dao) *Auth {
-	return &Auth{dao: dao}
+func NewAuth(app core.App) *Auth {
+	return &Auth{app: app, dao: app.Dao(), validator: app.Validator()}
 }
 
-func (a *Auth) Create(identity, password string) error {
-	hashedPassword, err := security.HashPassword(password)
+func (a *Auth) ValidateOAuth2Request(oauth2Request OAuth2Request) error {
+	fieldErrs, err := a.validator.Validate(oauth2Request)
 	if err != nil {
-		log.Err(err).Msgf("AuthCreate: could not hash password")
-		return err
-	}
-
-	auth := &models.Auth{
-		Identity:     identity,
-		PasswordHash: hashedPassword,
-	}
-
-	return a.dao.CreateAuth(auth)
-}
-
-func (a *Auth) ChangePassword(identity, oldPassword, password string) error {
-	auth, err := a.dao.FindAuthByIdentity(identity)
-	if err != nil {
-		return err
-	}
-
-	if !security.ValidatePassword(auth.PasswordHash, oldPassword) {
-		return &types.UserError{Message: "current password is incorrect"}
-	}
-
-	hashedPassword, err := security.HashPassword(password)
-	if err != nil {
-		log.Err(err).Msgf("AuthChangePassword: could not hash password")
-		return err
-	}
-
-	return a.dao.UpdatePassword(identity, hashedPassword)
-}
-
-func (a *Auth) PasswordLogin(identity, password string) error {
-	auth, err := a.dao.FindAuthByIdentity(identity)
-	if err != nil {
-		if err.Error() == "auth not found" {
-			return &types.UserError{Message: "invalid login credentials"}
+		return &types.RequestBodyError{
+			Message: "error validating request",
+			Errors:  fieldErrs,
 		}
-		return err
 	}
 
-	if auth == nil || !security.ValidatePassword(auth.PasswordHash, password) {
-		return &types.UserError{Message: "invalid login credentials"}
+	providerConfig, ok := a.app.Settings().NamedAuthProviderConfig(oauth2Request.Provider)
+	if !ok {
+		return errors.New("invalid provider provided")
+	}
+
+	if !providerConfig.Enabled {
+		return errors.New("provider not enabled")
 	}
 
 	return nil
+}
+
+func (a *Auth) getProvider(providerName string) (auth.Provider, error) {
+	provider, _ := auth.NewProviderByName(providerName)
+	providerConfig, _ := a.app.Settings().NamedAuthProviderConfig(providerName)
+	err := providerConfig.SetupProvider(provider)
+	return provider, err
+}
+
+func (a *Auth) getAuthUser(provider auth.Provider, code string) (*auth.AuthUser, error) {
+	token, err := provider.FetchToken(code)
+	if err != nil {
+		return nil, err
+	}
+
+	return provider.FetchAuthUser(token)
 }

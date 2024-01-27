@@ -57,7 +57,7 @@ func TestCreateAdmin(t *testing.T) {
 				t, filesystem.GetRootDir("../../"), app.DataDir())
 			defer tearDownMigration(t)
 
-			adminCreate := services.NewAdminCreate(app.Dao(), app.Validator())
+			adminCreate := services.NewAdminCreate(app)
 			admin, err := adminCreate.Create(scenario.req)
 			if err != nil && err.Error() != scenario.wantErr.Error() {
 				t.Errorf("got error %v, want %v", err, scenario.wantErr)

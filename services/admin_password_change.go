@@ -1,6 +1,7 @@
 package services
 
 import (
+	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/daos"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gitlab.com/jideobs/nebularcore/tools/validation"
@@ -15,14 +16,16 @@ type AdminPasswordChangeRequest struct {
 }
 
 type AdminPasswordChange struct {
+	app       core.App
 	dao       *daos.Dao
 	validator *validation.Validator
 }
 
-func NewAdminPasswordChange(dao *daos.Dao, validator *validation.Validator) *AdminPasswordChange {
+func NewAdminPasswordChange(app core.App) *AdminPasswordChange {
 	return &AdminPasswordChange{
-		dao:       dao,
-		validator: validator,
+		app:       app,
+		dao:       app.Dao(),
+		validator: app.Validator(),
 	}
 }
 
@@ -51,7 +54,7 @@ func (a *AdminPasswordChange) ChangePassword(adminId uuid.UUID, adminPasswordCha
 		return err
 	}
 
-	auth := Auth{a.dao}
+	auth := Auth{a.app, a.dao, a.validator}
 	return auth.ChangePassword(
 		admin.Email,
 		adminPasswordChangeRequest.OldPassword,
