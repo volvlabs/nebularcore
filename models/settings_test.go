@@ -14,7 +14,7 @@ func TestNewSettings(t *testing.T) {
 
 	// Assert:
 	assert.NotNil(t, settings)
-	assert.Equal(t, "XXXXXXXXXXXXXXXXXXXXX", settings.AuthTokenSecret)
+	assert.Equal(t, "test", settings.AuthTokenSecret)
 	assert.Equal(t, "XXXXXXXXXXXXXXXXXXXXX123A", settings.OtpGenerationSecret)
 	assert.Equal(t, uint(900), settings.OtpPeriod)
 	assert.Equal(t, int64(900), settings.AuthTokenDuration)

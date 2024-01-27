@@ -20,7 +20,7 @@ type Settings struct {
 
 func NewSettings() *Settings {
 	return &Settings{
-		AuthTokenSecret:     "XXXXXXXXXXXXXXXXXXXXX",
+		AuthTokenSecret:     "test",
 		OtpGenerationSecret: "XXXXXXXXXXXXXXXXXXXXX123A",
 		OtpPeriod:           900,
 		AuthTokenDuration:   900,
