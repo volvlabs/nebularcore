@@ -47,7 +47,7 @@ func TestPasswordLogin(t *testing.T) {
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
 			tearDownMigration := test.RunMigration(
-				t, filesystem.GetRootDir("../../"), app.DataDir())
+				t, filesystem.GetRootDir("../"), app.DataDir())
 			defer tearDownMigration(t)
 
 			auth := services.NewAuth(app)

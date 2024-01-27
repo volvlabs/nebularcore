@@ -12,7 +12,7 @@ import (
 func TestCreateAuth(t *testing.T) {
 	app, _ := test.NewTestApp()
 
-	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../../"), app.DataDir())
+	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 	defer tearDownMigration(t)
 	d := app.Dao()
 
@@ -50,7 +50,7 @@ func TestCreateAuth(t *testing.T) {
 func TestUpdatePassword(t *testing.T) {
 	app, _ := test.NewTestApp()
 
-	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../../"), app.DataDir())
+	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 	defer tearDownMigration(t)
 	d := app.Dao()
 
@@ -107,7 +107,7 @@ func TestFindAuthByIdentity(t *testing.T) {
 	for _, scenario := range scenarios {
 		tearDownMigration := test.RunMigration(
 			t,
-			filesystem.GetRootDir("../../"),
+			filesystem.GetRootDir("../"),
 			app.DataDir())
 		defer tearDownMigration(t)
 		d := app.Dao()

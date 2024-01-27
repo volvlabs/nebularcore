@@ -36,7 +36,7 @@ func (a *ApiScenario) Test(t *testing.T) {
 		}
 
 		if a.RunMigration {
-			tearDownMigration := RunMigration(t, filesystem.GetRootDir("../../"), testApp.DataDir())
+			tearDownMigration := RunMigration(t, filesystem.GetRootDir("../"), testApp.DataDir())
 			defer tearDownMigration(t)
 		}
 

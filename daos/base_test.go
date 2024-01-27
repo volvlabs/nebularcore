@@ -29,7 +29,7 @@ func TestDao_Save(t *testing.T) {
 	}
 	for _, tt := range scenarios {
 		t.Run(tt.name, func(t *testing.T) {
-			tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../../"), app.DataDir())
+			tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 			defer tearDownMigration(t)
 			d := daos.New(app.Dao().DB())
 			if err := d.Save(tt.model); (err != nil) != tt.wantErr {
@@ -42,7 +42,7 @@ func TestDao_Save(t *testing.T) {
 func TestDao_SaveExistingRecordEntry(t *testing.T) {
 	app, _ := test.NewTestApp()
 
-	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../../"), app.DataDir())
+	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 	defer tearDownMigration(t)
 	d := daos.New(app.Dao().DB())
 
@@ -94,7 +94,7 @@ func TestDao_FindRecord(t *testing.T) {
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
 			d := daos.New(app.Dao().DB())
-			tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../../"), app.DataDir())
+			tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 			defer tearDownMigration(t)
 
 			if scenario.recordToCreate != nil {
