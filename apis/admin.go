@@ -54,7 +54,7 @@ func (api *adminApi) create(c *gin.Context) {
 		return
 	}
 
-	adminCreateSrv := services.NewAdminCreate(api.app.Dao(), api.app.Validator())
+	adminCreateSrv := services.NewAdminCreate(api.app)
 	admin, err := adminCreateSrv.Create(adminCreateRequest)
 	if err != nil {
 		HandleError(c, err)
@@ -71,7 +71,7 @@ func (api *adminApi) login(c *gin.Context) {
 		return
 	}
 
-	adminLoginSrv := services.NewAdminLogin(api.app.Dao(), api.app.Validator())
+	adminLoginSrv := services.NewAdminLogin(api.app)
 	admin, err := adminLoginSrv.Submit(adminLoginRequest)
 	if err != nil {
 		HandleError(c, err)
@@ -88,10 +88,7 @@ func (api *adminApi) changePassword(c *gin.Context) {
 		return
 	}
 
-	adminChangePassword := services.NewAdminPasswordChange(
-		api.app.Dao(),
-		api.app.Validator(),
-	)
+	adminChangePassword := services.NewAdminPasswordChange(api.app)
 	claims, _ := c.Get("claims")
 	id := claims.(jwt.MapClaims)["id"]
 

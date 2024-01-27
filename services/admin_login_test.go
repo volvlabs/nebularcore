@@ -60,7 +60,7 @@ func TestAdminLogin(t *testing.T) {
 				})
 			}
 
-			adminLogin := services.NewAdminLogin(app.Dao(), app.Validator())
+			adminLogin := services.NewAdminLogin(app)
 			_, err := adminLogin.Submit(scenario.req)
 
 			assert.Equal(t, scenario.wantErr, err)

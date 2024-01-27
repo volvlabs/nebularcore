@@ -1,6 +1,7 @@
 package services
 
 import (
+	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/daos"
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/tools/types"
@@ -18,12 +19,13 @@ type AdminCreateRequest struct {
 }
 
 type AdminCreate struct {
+	app       core.App
 	dao       *daos.Dao
 	validator *validation.Validator
 }
 
-func NewAdminCreate(dao *daos.Dao, validator *validation.Validator) *AdminCreate {
-	return &AdminCreate{dao, validator}
+func NewAdminCreate(app core.App) *AdminCreate {
+	return &AdminCreate{app, app.Dao(), app.Validator()}
 }
 
 func (a *AdminCreate) validate(adminCreateRequest AdminCreateRequest) error {
@@ -64,7 +66,7 @@ func (a *AdminCreate) Create(adminCreateRequest AdminCreateRequest) (*models.Adm
 	if err != nil {
 		return nil, err
 	}
-	auth := Auth{a.dao}
+	auth := Auth{a.app, a.dao, a.validator}
 	err = auth.Create(
 		adminCreateRequest.Email,
 		adminCreateRequest.Password,

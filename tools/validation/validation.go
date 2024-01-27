@@ -36,12 +36,8 @@ func New() *Validator {
 func (v *Validator) Validate(i any) ([]types.FieldError, error) {
 	err := v.validate.Struct(i)
 	if err != nil {
-		errs := make([]types.FieldError, len(err.(validator.ValidationErrors)))
+		errs := []types.FieldError{}
 		for _, err := range err.(validator.ValidationErrors) {
-			if err.Field() == "" {
-				continue
-			}
-
 			errs = append(errs, types.FieldError{
 				Field:   err.Field(),
 				Message: err.Translate(v.translator),
