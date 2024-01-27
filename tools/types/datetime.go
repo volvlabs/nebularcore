@@ -15,6 +15,12 @@ type DateTime struct {
 	t time.Time
 }
 
+func ParseDateTime(value any) (DateTime, error) {
+	d := DateTime{}
+	err := d.Scan(value)
+	return d, err
+}
+
 func (d DateTime) Time() time.Time {
 	return d.t
 }
@@ -23,7 +29,7 @@ func (d DateTime) Value() (driver.Value, error) {
 	return d.t, nil
 }
 
-func (d *DateTime) Scan(value interface{}) error {
+func (d *DateTime) Scan(value any) error {
 	if value == nil {
 		d.t = time.Time{}
 		return nil

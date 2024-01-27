@@ -79,7 +79,7 @@ func TestAdminPasswordChange(t *testing.T) {
 				adminId = scenario.admin.Id
 			}
 
-			adminPasswordChange := services.NewAdminPasswordChange(app.Dao(), app.Validator())
+			adminPasswordChange := services.NewAdminPasswordChange(app)
 			err := adminPasswordChange.ChangePassword(adminId, scenario.req)
 
 			assert.Equal(t, scenario.wantErr, err)
