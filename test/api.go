@@ -20,6 +20,7 @@ type ApiScenario struct {
 	RequestHeaders  map[string]string
 	ExpectedStatus  int
 	ExpectedContent []string
+	TestDir         string
 	BeforeTestFunc  func(t *testing.T, app *TestApp, router *gin.Engine)
 }
 
@@ -36,7 +37,11 @@ func (a *ApiScenario) Test(t *testing.T) {
 		}
 
 		if a.RunMigration {
-			tearDownMigration := RunMigration(t, filesystem.GetRootDir("../"), testApp.DataDir())
+			testDir := a.TestDir
+			if testDir == "" {
+				testDir = filesystem.GetRootDir("../")
+			}
+			tearDownMigration := RunMigration(t, testDir, testApp.DataDir())
 			defer tearDownMigration(t)
 		}
 
