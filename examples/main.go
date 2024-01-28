@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"path/filepath"
 
@@ -18,9 +17,8 @@ func main() {
 		log.Fatalf("error setting up config: %v", err)
 	}
 
-	cfg.Env = "test"
+	cfg.Env = "development"
 	cfg.IsDev = true
-	cfg.BaseDir = fmt.Sprintf("%s/test/data", filesystem.GetRootDir(""))
 	cfg.EnforceAcl = true
 	cfg.Server.AllowedOrigins = "*"
 	app := nebularcore.New(cfg)

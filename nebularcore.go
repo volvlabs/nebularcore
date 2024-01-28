@@ -38,7 +38,7 @@ func New(cfg *config.AppConfig) *NebularCore {
 		IsDev:          cfg.IsDev,
 		EnforceAcl:     cfg.EnforceAcl,
 		DatabaseConfig: cfg.Database,
-		MigrationsDir:  cfg.MigrationDir,
+		MigrationsDir:  cfg.MigrationsDir,
 	})}
 
 	return backendApp
