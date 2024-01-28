@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.New("")
+	cfg, err := config.New("config.yml")
 	if err != nil {
 		log.Fatalf("error setting up config: %v", err)
 	}
@@ -41,5 +41,7 @@ func main() {
 		{Role: "developers", PolicyPath: policyPath, ConfPath: confPath},
 	})
 
-	app.Execute()
+	if err := app.Start(); err != nil {
+		log.Fatal(err)
+	}
 }
