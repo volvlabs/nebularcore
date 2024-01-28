@@ -43,7 +43,7 @@ func New(cfg *config.AppConfig) *NebularCore {
 	})}
 
 	backendApp.RootCmd.AddCommand(cmd.NewServeCommand(backendApp, cfg.Server))
-	backendApp.RootCmd.AddCommand(cmd.NewMigrateCommand(backendApp))
+	backendApp.RootCmd.AddCommand(cmd.NewMigrateCommand(backendApp, cfg.Database))
 	return backendApp
 }
 
