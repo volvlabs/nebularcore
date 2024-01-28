@@ -10,8 +10,8 @@ import (
 	"gitlab.com/jideobs/nebularcore/cmd"
 	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/models/config"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -22,11 +22,13 @@ type appWrapper struct {
 type NebularCore struct {
 	*appWrapper
 
+	cfg     *config.AppConfig
 	RootCmd *cobra.Command
 }
 
 func New(cfg *config.AppConfig) *NebularCore {
 	backendApp := &NebularCore{
+		cfg: cfg,
 		RootCmd: &cobra.Command{
 			Use:   fmt.Sprintf("%s [configfilepath]", filepath.Base(os.Args[0])),
 			Short: "Backend CLI",
@@ -37,7 +39,7 @@ func New(cfg *config.AppConfig) *NebularCore {
 		IsDev:          cfg.IsDev,
 		EnforceAcl:     cfg.EnforceAcl,
 		DatabaseConfig: cfg.Database,
-		MigrationsDir:  filepath.Join(filesystem.GetRootDir(""), "migrations"),
+		MigrationsDir:  cfg.MigrationDir,
 	})}
 
 	backendApp.RootCmd.AddCommand(cmd.NewServeCommand(backendApp, cfg.Server))
@@ -45,9 +47,18 @@ func New(cfg *config.AppConfig) *NebularCore {
 	return backendApp
 }
 
-func (b *NebularCore) Execute() error {
-	if err := b.appWrapper.Bootstrap(); err != nil {
+func (n *NebularCore) Execute() error {
+	if err := n.appWrapper.Bootstrap(); err != nil {
 		return err
+	}
+
+	if n.cfg.AutoMigrate {
+		n.RootCmd.SetArgs([]string{"migrate", "up"})
+		if err := n.RootCmd.Execute(); err != nil {
+			log.Err(err).Msg("failed to migrate database")
+		}
+
+		n.RootCmd.SetArgs([]string{})
 	}
 
 	done := make(chan bool, 1)
@@ -62,12 +73,12 @@ func (b *NebularCore) Execute() error {
 	}()
 
 	go func() {
-		b.RootCmd.Execute()
+		n.RootCmd.Execute()
 
 		done <- true
 	}()
 
 	<-done
 
-	return b.Terminate()
+	return n.Terminate()
 }
