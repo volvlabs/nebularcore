@@ -13,6 +13,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/models/config"
 
 	"github.com/gin-contrib/cors"
+	"github.com/rs/zerolog/log"
 )
 
 func Serve(app core.App, config config.ServeConfig) error {
@@ -50,6 +51,7 @@ func Serve(app core.App, config config.ServeConfig) error {
 
 	// handle server graceful shutdown
 	app.OnTerminate(func() error {
+		log.Info().Msg("terminating server")
 		cancelCtx()
 
 		ctx, cancel := context.WithTimeout(

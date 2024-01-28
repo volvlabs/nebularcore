@@ -11,7 +11,6 @@ import (
 	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/models/config"
 
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -42,23 +41,19 @@ func New(cfg *config.AppConfig) *NebularCore {
 		MigrationsDir:  cfg.MigrationDir,
 	})}
 
-	backendApp.RootCmd.AddCommand(cmd.NewServeCommand(backendApp, cfg.Server))
-	backendApp.RootCmd.AddCommand(cmd.NewMigrateCommand(backendApp, cfg.Database))
 	return backendApp
+}
+
+func (n *NebularCore) Start() error {
+	n.RootCmd.AddCommand(cmd.NewServeCommand(n, n.cfg.Server))
+	n.RootCmd.AddCommand(cmd.NewMigrateCommand(n, n.cfg.Database))
+
+	return n.Execute()
 }
 
 func (n *NebularCore) Execute() error {
 	if err := n.appWrapper.Bootstrap(); err != nil {
 		return err
-	}
-
-	if n.cfg.AutoMigrate {
-		n.RootCmd.SetArgs([]string{"migrate", "up"})
-		if err := n.RootCmd.Execute(); err != nil {
-			log.Err(err).Msg("failed to migrate database")
-		}
-
-		n.RootCmd.SetArgs([]string{})
 	}
 
 	done := make(chan bool, 1)
