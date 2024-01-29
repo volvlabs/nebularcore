@@ -9,14 +9,15 @@ import (
 )
 
 type AuthUser struct {
-	Id           string         `json:"id"`
-	Name         string         `json:"name"`
-	Email        string         `json:"email"`
-	AvatarUrl    string         `json:"avatarUrl"`
-	AccessToken  string         `json:"accessToken"`
-	RefreshToken string         `json:"refreshToken"`
-	ExpiresAt    types.DateTime `json:"expiresAt"`
-	RawUser      map[string]any `json:"rawUser"`
+	Id            string         `json:"id"`
+	Name          string         `json:"name"`
+	Email         string         `json:"email"`
+	EmailVerified bool           `json:"emailVerified"`
+	AvatarUrl     string         `json:"avatarUrl"`
+	AccessToken   string         `json:"accessToken"`
+	RefreshToken  string         `json:"refreshToken"`
+	ExpiresAt     types.DateTime `json:"expiresAt"`
+	RawUser       map[string]any `json:"rawUser"`
 }
 
 func (a *AuthUser) ExtractNames() (string, string) {

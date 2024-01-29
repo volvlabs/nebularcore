@@ -47,12 +47,14 @@ func (f *Facebook) FetchAuthUser(token *oauth2.Token) (*AuthUser, error) {
 	}
 
 	user := &AuthUser{
-		Id:           extracted.Id,
-		Name:         extracted.Email,
-		AvatarUrl:    extracted.Picture.Data.Url,
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		RawUser:      rawUser,
+		Id:            extracted.Id,
+		Name:          extracted.Name,
+		Email:         extracted.Email,
+		EmailVerified: true,
+		AvatarUrl:     extracted.Picture.Data.Url,
+		AccessToken:   token.AccessToken,
+		RefreshToken:  token.RefreshToken,
+		RawUser:       rawUser,
 	}
 
 	return user, nil

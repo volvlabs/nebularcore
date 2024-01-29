@@ -50,18 +50,17 @@ func (g *Google) FetchAuthUser(token *oauth2.Token) (*AuthUser, error) {
 	}
 
 	user := &AuthUser{
-		Id:           extracted.Id,
-		Name:         extracted.Name,
-		AvatarUrl:    extracted.Picture,
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		RawUser:      rawUser,
+		Id:            extracted.Id,
+		Name:          extracted.Name,
+		Email:         extracted.Email,
+		EmailVerified: extracted.VerifiedEmail,
+		AvatarUrl:     extracted.Picture,
+		AccessToken:   token.AccessToken,
+		RefreshToken:  token.RefreshToken,
+		RawUser:       rawUser,
 	}
 
 	user.ExpiresAt, _ = types.ParseDateTime(token.Expiry)
-	if extracted.VerifiedEmail {
-		user.Email = extracted.Email
-	}
 
 	return user, nil
 }
