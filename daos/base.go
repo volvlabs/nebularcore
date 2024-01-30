@@ -2,6 +2,7 @@ package daos
 
 import (
 	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 
 	"gorm.io/gorm"
 )
@@ -38,5 +39,11 @@ func (d *Dao) FindBy(model models.Model, where any) error {
 func (d *Dao) Update(model models.Model, where any, column string, value any) error {
 	return d.dbConn.Transaction(func(tx *gorm.DB) error {
 		return tx.Model(model).Where(where).Update(column, value).Error
+	})
+}
+
+func (d *Dao) Delete(model models.Model) error {
+	return d.dbConn.Transaction(func(tx *gorm.DB) error {
+		return tx.Model(model).Updates(map[string]any{"is_deleted": true, "deleted_at": types.NowDateTime()}).Error
 	})
 }

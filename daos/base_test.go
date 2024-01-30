@@ -3,6 +3,7 @@ package daos_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"gitlab.com/jideobs/nebularcore/daos"
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/test"
@@ -111,4 +112,29 @@ func TestDao_FindRecord(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDao_Delete(t *testing.T) {
+	// Arrange:
+	app, _ := test.NewTestApp()
+	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
+	defer tearDownMigration(t)
+
+	admin := &models.Admin{
+		Email: "john.doe@gmail.com",
+	}
+	app.Dao().Save(admin)
+
+	// Act:
+	where := &models.Admin{}
+	where.SetId(admin.Id)
+	err := app.Dao().Delete(where)
+
+	// Assert:
+	assert.Equal(t, nil, err)
+	adminGotten := models.Admin{}
+	app.Dao().FindBy(&adminGotten, &models.Admin{Email: admin.Email})
+
+	assert.Equal(t, true, adminGotten.IsDeleted)
+	assert.NotNil(t, adminGotten.DeletedAt)
 }
