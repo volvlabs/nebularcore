@@ -42,6 +42,12 @@ func (d *Dao) Update(model models.Model, where any, column string, value any) er
 	})
 }
 
+func (d *Dao) Updates(model models.Model, updates models.Model) error {
+	return d.dbConn.Transaction(func(tx *gorm.DB) error {
+		return tx.Model(model).Updates(updates).Error
+	})
+}
+
 func (d *Dao) Delete(model models.Model) error {
 	return d.dbConn.Transaction(func(tx *gorm.DB) error {
 		return tx.Model(model).Updates(map[string]any{"is_deleted": true, "deleted_at": types.NowDateTime()}).Error
