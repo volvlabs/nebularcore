@@ -9,7 +9,7 @@ import (
 func BindHealthApi(rg *gin.RouterGroup) {
 	api := healthApi{}
 
-	subGroup := rg.Group("/health")
+	subGroup := rg.Group("")
 	subGroup.GET("", api.healthCheck)
 }
 
