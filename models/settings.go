@@ -17,6 +17,9 @@ type Settings struct {
 	FacebookAuth AuthProviderConfig `json:"facebookAuth"`
 	AppleAuth    AuthProviderConfig `json:"appleAuth"`
 
+	Aws AwsConfig `json:"aws"`
+	S3  S3Config  `json:"s3"`
+
 	OtherSettings map[string]any `json:"otherSettings"`
 }
 
@@ -97,4 +100,15 @@ func (a AuthProviderConfig) SetupProvider(provider auth.Provider) error {
 	}
 
 	return nil
+}
+
+type AwsConfig struct {
+	AccessKeyID     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	Region          string `json:"region"`
+}
+
+type S3Config struct {
+	Bucket  string `json:"bucket"`
+	Enabled bool   `json:"enabled"`
 }
