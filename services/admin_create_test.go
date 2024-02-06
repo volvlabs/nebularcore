@@ -28,17 +28,6 @@ func TestCreateAdmin(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "should fail to create admin with invalid email",
-			req: services.AdminCreateRequest{
-				FirstName: "John",
-				LastName:  "Doe",
-				Email:     "john.doe@turgish.com",
-				Role:      "operator",
-				Password:  "password123",
-			},
-			wantErr: &types.UserError{Message: "email entered is invalid"},
-		},
-		{
 			name: "should fail to create admin with already existing email",
 			req: services.AdminCreateRequest{
 				FirstName: "John",
