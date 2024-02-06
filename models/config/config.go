@@ -26,13 +26,15 @@ type ServeConfig struct {
 }
 
 type AppConfig struct {
-	Env        string         `yaml:"env" envconfig:"ENV"`
-	IsDev      bool           `yaml:"isDev" envconfig:"IS_DEV"`
-	BaseDir    string         `yaml:"baseDir" envconfig:"BASE_DIR"`
-	TestDir    string         `yaml:"testDir" envconfig:"TEST_DIR"`
-	EnforceAcl bool           `yaml:"enforceAcl" envconfig:"ENFORCE_ACL"`
-	Database   DatabaseConfig `yaml:"database"`
-	Server     ServeConfig    `yaml:"server"`
+	Env           string         `yaml:"env" envconfig:"ENV"`
+	IsDev         bool           `yaml:"isDev" envconfig:"IS_DEV"`
+	BaseDir       string         `yaml:"baseDir" envconfig:"BASE_DIR"`
+	TestDir       string         `yaml:"testDir" envconfig:"TEST_DIR"`
+	EnforceAcl    bool           `yaml:"enforceAcl" envconfig:"ENFORCE_ACL"`
+	AutoMigrate   bool           `yaml:"autoMigrate" envconfig:"AUTOMIRGATE"`
+	MigrationsDir string         `yaml:"migrationsDir" envconfig:"MIGRATION_DIR"`
+	Database      DatabaseConfig `yaml:"database"`
+	Server        ServeConfig    `yaml:"server"`
 }
 
 func readConfigFromFile(configFilePath string) (*AppConfig, error) {

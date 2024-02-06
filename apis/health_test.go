@@ -13,7 +13,7 @@ func TestHealthCheck(t *testing.T) {
 	// Arrange:
 	scenario := test.ApiScenario{
 		Name:           "should return 200 success response",
-		Url:            "/api/health",
+		Url:            "/api",
 		Method:         http.MethodGet,
 		Body:           nil,
 		ExpectedStatus: http.StatusOK,

@@ -63,16 +63,15 @@ func (a *Apple) FetchAuthUser(token *oauth2.Token) (*AuthUser, error) {
 	}
 
 	user := &AuthUser{
-		Id:           extracted.Id,
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		RawUser:      rawUser,
+		Id:            extracted.Id,
+		AccessToken:   token.AccessToken,
+		RefreshToken:  token.RefreshToken,
+		Email:         extracted.Email,
+		EmailVerified: cast.ToBool(extracted.EmailVerified),
+		RawUser:       rawUser,
 	}
 
 	user.ExpiresAt, _ = types.ParseDateTime(token.Expiry)
-	if cast.ToBool(extracted.EmailVerified) {
-		user.Email = extracted.Email
-	}
 
 	return user, nil
 }

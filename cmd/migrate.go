@@ -8,10 +8,11 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"gitlab.com/jideobs/nebularcore/core"
+	"gitlab.com/jideobs/nebularcore/models/config"
 	"gitlab.com/jideobs/nebularcore/tools/migrate"
 )
 
-func NewMigrateCommand(app core.App) *cobra.Command {
+func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command {
 	const cmdDesc = `Supported commands are:
 - up			- runs migrtations
 - down [number] - revert last number of migrations
@@ -32,7 +33,10 @@ func NewMigrateCommand(app core.App) *cobra.Command {
 					return err
 				}
 			default:
-				runner, err := migrate.NewRunner("", "")
+				runner, err := migrate.NewRunner(
+					fmt.Sprintf("file://%s", app.MigrationsDir()),
+					fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+						dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode))
 				if err != nil {
 					return err
 				}

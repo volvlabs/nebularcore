@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"path/filepath"
 
@@ -13,14 +12,13 @@ import (
 )
 
 func main() {
-	cfg, err := config.New("")
+	cfg, err := config.New("config.yml")
 	if err != nil {
 		log.Fatalf("error setting up config: %v", err)
 	}
 
-	cfg.Env = "test"
+	cfg.Env = "development"
 	cfg.IsDev = true
-	cfg.BaseDir = fmt.Sprintf("%s/test/data", filesystem.GetRootDir(""))
 	cfg.EnforceAcl = true
 	cfg.Server.AllowedOrigins = "*"
 	app := nebularcore.New(cfg)
@@ -41,5 +39,7 @@ func main() {
 		{Role: "developers", PolicyPath: policyPath, ConfPath: confPath},
 	})
 
-	app.Execute()
+	if err := app.Start(); err != nil {
+		log.Fatal(err)
+	}
 }
