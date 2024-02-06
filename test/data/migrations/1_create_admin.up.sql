@@ -8,5 +8,7 @@ CREATE TABLE IF NOT EXISTS admins (
     email TEXT UNIQUE,
     role TEXT,
     token_key TEXT,
-    password_hash TEXT
+    password_hash TEXT,
+    is_deleted BOOLEAN DEFAULT false,
+    deleted_at TIMESTAMP
 );

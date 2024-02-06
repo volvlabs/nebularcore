@@ -52,7 +52,9 @@ func NewForbiddenError(c *gin.Context) {
 }
 
 func HandleError(c *gin.Context, err error) {
-	if types.ErrIsUserError(err) {
+	if err == types.ErrRecordNotFound {
+		NewNotFoundError(c)
+	} else if types.ErrIsUserError(err) {
 		var errs any = nil
 		if err, ok := err.(*types.RequestBodyError); ok {
 			errs = err.Errors

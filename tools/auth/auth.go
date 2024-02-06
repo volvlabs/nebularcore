@@ -2,20 +2,37 @@ package auth
 
 import (
 	"fmt"
+	"strings"
 
 	"gitlab.com/jideobs/nebularcore/tools/types"
 	"golang.org/x/oauth2"
 )
 
 type AuthUser struct {
-	Id           string         `json:"id"`
-	Name         string         `json:"name"`
-	Email        string         `json:"email"`
-	AvatarUrl    string         `json:"avatarUrl"`
-	AccessToken  string         `json:"accessToken"`
-	RefreshToken string         `json:"refreshToken"`
-	ExpiresAt    types.DateTime `json:"expiresAt"`
-	RawUser      map[string]any `json:"rawUser"`
+	Id            string         `json:"id"`
+	Name          string         `json:"name"`
+	Email         string         `json:"email"`
+	EmailVerified bool           `json:"emailVerified"`
+	AvatarUrl     string         `json:"avatarUrl"`
+	AccessToken   string         `json:"accessToken"`
+	RefreshToken  string         `json:"refreshToken"`
+	ExpiresAt     types.DateTime `json:"expiresAt"`
+	RawUser       map[string]any `json:"rawUser"`
+}
+
+func (a *AuthUser) ExtractNames() (string, string) {
+	tokens := strings.Fields(a.Name)
+
+	switch len(tokens) {
+	case 0:
+		return "", ""
+	case 1:
+		return tokens[0], ""
+	case 2:
+		return tokens[0], tokens[1]
+	default:
+		return tokens[0], tokens[len(tokens)-1]
+	}
 }
 
 type Provider interface {

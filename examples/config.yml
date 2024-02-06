@@ -1,0 +1,18 @@
+env: "development"
+isDev: true
+enforceAcl: false
+autoMigrate: true
+migrationsDir: "/Users/jideobs/Projects/go/src/gitlab.com/jideobs/tunu/migrations"
+database:
+  type: 0
+  host: "localhost"
+  username: "flippay"
+  password: "password"
+  name: "flippay"
+  port: "5432"
+  sslmode: "disable"
+server:
+  port: "8888"
+  host: "localhost"
+  shutdownTimeout: 5
+  allowedOrigins: "*"

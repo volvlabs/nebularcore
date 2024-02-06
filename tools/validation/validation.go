@@ -33,6 +33,10 @@ func New() *Validator {
 	}
 }
 
+func (v *Validator) GetValidate() *validator.Validate {
+	return v.validate
+}
+
 func (v *Validator) Validate(i any) ([]types.FieldError, error) {
 	err := v.validate.Struct(i)
 	if err != nil {

@@ -1,5 +1,9 @@
 package types
 
+import "errors"
+
+var ErrRecordNotFound = errors.New("record not found")
+
 type FieldError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`

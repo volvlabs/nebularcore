@@ -16,6 +16,8 @@ type Settings struct {
 	GoogleAuth   AuthProviderConfig `json:"googleAuth"`
 	FacebookAuth AuthProviderConfig `json:"facebookAuth"`
 	AppleAuth    AuthProviderConfig `json:"appleAuth"`
+
+	OtherSettings map[string]any `json:"otherSettings"`
 }
 
 func NewSettings() *Settings {
@@ -33,6 +35,7 @@ func NewSettings() *Settings {
 		AppleAuth: AuthProviderConfig{
 			Enabled: false,
 		},
+		OtherSettings: map[string]any{},
 	}
 }
 
@@ -53,6 +56,10 @@ func (s *Settings) NamedAuthProviderConfig(providerName string) (AuthProviderCon
 	}
 	config, ok := providerConfigs[providerName]
 	return config, ok
+}
+
+func (s *Settings) AddOtherSetting(key string, val any) {
+	s.OtherSettings[key] = val
 }
 
 type AuthProviderConfig struct {

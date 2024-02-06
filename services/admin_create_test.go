@@ -54,7 +54,7 @@ func TestCreateAdmin(t *testing.T) {
 		t.Run(scenario.name, func(t *testing.T) {
 			app, _ := test.NewTestApp()
 			tearDownMigration := test.RunMigration(
-				t, filesystem.GetRootDir("../../"), app.DataDir())
+				t, filesystem.GetRootDir("../"), app.DataDir())
 			defer tearDownMigration(t)
 
 			adminCreate := services.NewAdminCreate(app)

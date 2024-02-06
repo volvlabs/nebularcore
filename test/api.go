@@ -20,6 +20,8 @@ type ApiScenario struct {
 	RequestHeaders  map[string]string
 	ExpectedStatus  int
 	ExpectedContent []string
+	TestDir         string
+	App             *TestApp
 	BeforeTestFunc  func(t *testing.T, app *TestApp, router *gin.Engine)
 }
 
@@ -30,13 +32,21 @@ func (a *ApiScenario) createRoute() *gin.Engine {
 
 func (a *ApiScenario) Test(t *testing.T) {
 	t.Run(a.Name, func(t *testing.T) {
-		testApp, err := NewTestApp()
-		if err != nil {
-			t.Errorf("error occurred creating test app, %v", err)
+		testApp := a.App
+		if testApp == nil {
+			var err error
+			testApp, err = NewTestApp()
+			if err != nil {
+				t.Errorf("error occurred creating test app, %v", err)
+			}
 		}
 
 		if a.RunMigration {
-			tearDownMigration := RunMigration(t, filesystem.GetRootDir("../../"), testApp.DataDir())
+			testDir := a.TestDir
+			if testDir == "" {
+				testDir = filesystem.GetRootDir("../")
+			}
+			tearDownMigration := RunMigration(t, testDir, testApp.DataDir())
 			defer tearDownMigration(t)
 		}
 

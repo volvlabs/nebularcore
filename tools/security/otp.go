@@ -23,6 +23,8 @@ func NewOtp(opts OtpOptions) *Otp {
 	return &Otp{encodedSecret, opts}
 }
 
+// Todo: allow generate to take in optional secret in other to further personalize
+// token generated for each user.
 func (o *Otp) Generate() (string, error) {
 	return totp.GenerateCodeCustom(o.encodedSecret, time.Now(), totp.ValidateOpts{
 		Period: o.opts.Period,

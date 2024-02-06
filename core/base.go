@@ -102,7 +102,11 @@ func (b *BaseApp) OnTerminate(handler TerminateHandler) {
 }
 
 func (b *BaseApp) Terminate() error {
-	return b.onTerminateHandler()
+	if b.onTerminateHandler != nil {
+		return b.onTerminateHandler()
+	}
+
+	return nil
 }
 
 func (b *BaseApp) IsACLEnforced() bool {

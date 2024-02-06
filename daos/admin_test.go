@@ -15,7 +15,7 @@ import (
 func TestCreateAdmin(t *testing.T) {
 	app, _ := test.NewTestApp()
 
-	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../../"), app.DataDir())
+	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 	defer tearDownMigration(t)
 	d := app.Dao()
 
@@ -58,7 +58,7 @@ func TestCreateAdmin(t *testing.T) {
 func TestSaveAdmin(t *testing.T) {
 	app, _ := test.NewTestApp()
 
-	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../../"), app.DataDir())
+	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 	defer tearDownMigration(t)
 	d := daos.New(app.Dao().DB())
 
@@ -104,7 +104,7 @@ func TestFindAdminByEmail(t *testing.T) {
 	}
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../../"), app.DataDir())
+			tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 			defer tearDownMigration(t)
 			d := app.Dao()
 
@@ -154,7 +154,7 @@ func TestFindAdminById(t *testing.T) {
 	}
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../../"), app.DataDir())
+			tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 			defer tearDownMigration(t)
 			d := app.Dao()
 
