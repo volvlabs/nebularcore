@@ -77,3 +77,7 @@ func (s *System) Upload(content []byte, fileKey string) error {
 func (s *System) Delete(fileKey string) error {
 	return s.bucket.Delete(s.ctx, fileKey)
 }
+
+func (s *System) Close() error {
+	return s.bucket.Close()
+}
