@@ -41,6 +41,7 @@ func NewWithS3(bucketName, region, accessKey, secretKey string) (*System, error)
 }
 
 func NewLocal(dirPath string) (*System, error) {
+	ctx := context.Background()
 	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
 		return nil, err
 	}
@@ -50,7 +51,7 @@ func NewLocal(dirPath string) (*System, error) {
 		return nil, err
 	}
 
-	return &System{bucket: bucket}, nil
+	return &System{ctx: ctx, bucket: bucket}, nil
 }
 
 func (s *System) Upload(content []byte, fileKey string) error {
