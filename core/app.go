@@ -27,4 +27,5 @@ type App interface {
 	Router() *gin.Engine
 	Otp() *security.Otp
 	NewFileSystem() (*filesystem.System, error)
+	GetFileURL(key string) string
 }

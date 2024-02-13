@@ -20,8 +20,9 @@ type Settings struct {
 	FacebookAuth AuthProviderConfig `json:"facebookAuth"`
 	AppleAuth    AuthProviderConfig `json:"appleAuth"`
 
-	Aws AwsConfig `json:"aws"`
-	S3  S3Config  `json:"s3"`
+	Aws        AwsConfig        `json:"aws"`
+	S3         S3Config         `json:"s3"`
+	CloudFront CloudFrontConfig `json:"cloudFront"`
 
 	AppSettings map[string]any `json:"otherSettings"`
 }
@@ -132,4 +133,10 @@ type AwsConfig struct {
 type S3Config struct {
 	Bucket  string `json:"bucket"`
 	Enabled bool   `json:"enabled"`
+}
+
+type CloudFrontConfig struct {
+	KeyId              string `yaml:"keyId" envconfig:"KEY_ID"`
+	Domain             string `yaml:"domain" envconfig:"DOMAIN"`
+	PrivateKeyFilePath string `yaml:"privateKeyFilePath" envconfig:"PRIVATE_KEY_FILE_PATH"`
 }

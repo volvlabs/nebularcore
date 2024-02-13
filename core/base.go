@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -166,4 +167,14 @@ func (b *BaseApp) NewFileSystem() (*filesystem.System, error) {
 	}
 
 	return filesystem.NewLocal(filepath.Join(b.DataDir(), LocalStorageDirName))
+}
+
+func (b *BaseApp) GetFileURL(key string) string {
+	settings := b.Settings()
+	if settings.S3.Enabled {
+		cloudFrontConfig := settings.CloudFront
+		return fmt.Sprintf("%s/%s", cloudFrontConfig.Domain, key)
+	}
+
+	return fmt.Sprintf("/files?key=%s", key)
 }
