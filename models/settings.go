@@ -3,8 +3,11 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"maps"
+	"os"
 
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gopkg.in/yaml.v2"
 )
 
 type Settings struct {
@@ -20,7 +23,7 @@ type Settings struct {
 	Aws AwsConfig `json:"aws"`
 	S3  S3Config  `json:"s3"`
 
-	OtherSettings map[string]any `json:"otherSettings"`
+	AppSettings map[string]any `json:"otherSettings"`
 }
 
 func NewSettings() *Settings {
@@ -38,7 +41,7 @@ func NewSettings() *Settings {
 		AppleAuth: AuthProviderConfig{
 			Enabled: false,
 		},
-		OtherSettings: map[string]any{},
+		AppSettings: map[string]any{},
 	}
 }
 
@@ -62,7 +65,25 @@ func (s *Settings) NamedAuthProviderConfig(providerName string) (AuthProviderCon
 }
 
 func (s *Settings) AddOtherSetting(key string, val any) {
-	s.OtherSettings[key] = val
+	s.AppSettings[key] = val
+}
+
+func (s *Settings) LoadSettings(settingsFile string) error {
+	f, err := os.Open(settingsFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	appSettings := map[string]any{}
+	decoder := yaml.NewDecoder(f)
+	err = decoder.Decode(&appSettings)
+	if err != nil {
+		return err
+	}
+
+	maps.Copy(s.AppSettings, appSettings)
+	return nil
 }
 
 type AuthProviderConfig struct {
