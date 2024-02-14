@@ -30,10 +30,11 @@ type Settings struct {
 
 func NewSettings() *Settings {
 	return &Settings{
-		AuthTokenSecret:     "test",
-		OtpGenerationSecret: "XXXXXXXXXXXXXXXXXXXXX123A",
-		OtpPeriod:           900,
-		AuthTokenDuration:   900,
+		AuthTokenSecret:        "test",
+		AuthTokenRefreshSecret: "test",
+		OtpGenerationSecret:    "XXXXXXXXXXXXXXXXXXXXX123A",
+		OtpPeriod:              900,
+		AuthTokenDuration:      900,
 		GoogleAuth: AuthProviderConfig{
 			Enabled: false,
 		},
