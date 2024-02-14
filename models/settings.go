@@ -11,10 +11,12 @@ import (
 )
 
 type Settings struct {
-	AuthTokenSecret     string `json:"authTokenSecret"`
-	OtpGenerationSecret string `json:"otpGenerationSecret"`
-	OtpPeriod           uint   `json:"otpPeriod"`
-	AuthTokenDuration   int64  `json:"authTokenDuration"`
+	AuthTokenSecret                string `json:"authTokenSecret"`
+	AuthTokenRefreshSecret         string `json:"authTokenRefreshSecret"`
+	OtpGenerationSecret            string `json:"otpGenerationSecret"`
+	OtpPeriod                      uint   `json:"otpPeriod"`
+	AuthTokenDuration              int64  `json:"authTokenDuration"`
+	AuthRefreshTokenExpiryDuration int64  `json:"authRefreshTokenExpiryDuration"`
 
 	GoogleAuth   AuthProviderConfig `json:"googleAuth"`
 	FacebookAuth AuthProviderConfig `json:"facebookAuth"`
@@ -29,10 +31,12 @@ type Settings struct {
 
 func NewSettings() *Settings {
 	return &Settings{
-		AuthTokenSecret:     "test",
-		OtpGenerationSecret: "XXXXXXXXXXXXXXXXXXXXX123A",
-		OtpPeriod:           900,
-		AuthTokenDuration:   900,
+		AuthTokenSecret:                "test",
+		AuthTokenRefreshSecret:         "test",
+		OtpGenerationSecret:            "XXXXXXXXXXXXXXXXXXXXX123A",
+		OtpPeriod:                      900,
+		AuthTokenDuration:              900,
+		AuthRefreshTokenExpiryDuration: 172800, // 2 days.
 		GoogleAuth: AuthProviderConfig{
 			Enabled: false,
 		},
