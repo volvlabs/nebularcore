@@ -11,10 +11,11 @@ import (
 )
 
 type Settings struct {
-	AuthTokenSecret     string `json:"authTokenSecret"`
-	OtpGenerationSecret string `json:"otpGenerationSecret"`
-	OtpPeriod           uint   `json:"otpPeriod"`
-	AuthTokenDuration   int64  `json:"authTokenDuration"`
+	AuthTokenSecret        string `json:"authTokenSecret"`
+	AuthTokenRefreshSecret string `json:"authTokenRefreshSecret"`
+	OtpGenerationSecret    string `json:"otpGenerationSecret"`
+	OtpPeriod              uint   `json:"otpPeriod"`
+	AuthTokenDuration      int64  `json:"authTokenDuration"`
 
 	GoogleAuth   AuthProviderConfig `json:"googleAuth"`
 	FacebookAuth AuthProviderConfig `json:"facebookAuth"`
