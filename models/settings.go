@@ -3,8 +3,11 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"maps"
+	"os"
 
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gopkg.in/yaml.v2"
 )
 
 type Settings struct {
@@ -17,7 +20,11 @@ type Settings struct {
 	FacebookAuth AuthProviderConfig `json:"facebookAuth"`
 	AppleAuth    AuthProviderConfig `json:"appleAuth"`
 
-	OtherSettings map[string]any `json:"otherSettings"`
+	Aws        AwsConfig        `json:"aws"`
+	S3         S3Config         `json:"s3"`
+	CloudFront CloudFrontConfig `json:"cloudFront"`
+
+	AppSettings map[string]any `json:"otherSettings"`
 }
 
 func NewSettings() *Settings {
@@ -35,7 +42,7 @@ func NewSettings() *Settings {
 		AppleAuth: AuthProviderConfig{
 			Enabled: false,
 		},
-		OtherSettings: map[string]any{},
+		AppSettings: map[string]any{},
 	}
 }
 
@@ -59,7 +66,25 @@ func (s *Settings) NamedAuthProviderConfig(providerName string) (AuthProviderCon
 }
 
 func (s *Settings) AddOtherSetting(key string, val any) {
-	s.OtherSettings[key] = val
+	s.AppSettings[key] = val
+}
+
+func (s *Settings) LoadSettings(settingsFile string) error {
+	f, err := os.Open(settingsFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	appSettings := map[string]any{}
+	decoder := yaml.NewDecoder(f)
+	err = decoder.Decode(&appSettings)
+	if err != nil {
+		return err
+	}
+
+	maps.Copy(s.AppSettings, appSettings)
+	return nil
 }
 
 type AuthProviderConfig struct {
@@ -97,4 +122,21 @@ func (a AuthProviderConfig) SetupProvider(provider auth.Provider) error {
 	}
 
 	return nil
+}
+
+type AwsConfig struct {
+	AccessKeyID     string `json:"accessKeyId"`
+	SecretAccessKey string `json:"secretAccessKey"`
+	Region          string `json:"region"`
+}
+
+type S3Config struct {
+	Bucket  string `json:"bucket"`
+	Enabled bool   `json:"enabled"`
+}
+
+type CloudFrontConfig struct {
+	KeyId              string `yaml:"keyId" envconfig:"KEY_ID"`
+	Domain             string `yaml:"domain" envconfig:"DOMAIN"`
+	PrivateKeyFilePath string `yaml:"privateKeyFilePath" envconfig:"PRIVATE_KEY_FILE_PATH"`
 }
