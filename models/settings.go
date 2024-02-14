@@ -22,9 +22,10 @@ type Settings struct {
 	FacebookAuth AuthProviderConfig `json:"facebookAuth"`
 	AppleAuth    AuthProviderConfig `json:"appleAuth"`
 
-	Aws        AwsConfig        `json:"aws"`
-	S3         S3Config         `json:"s3"`
-	CloudFront CloudFrontConfig `json:"cloudFront"`
+	Aws         AwsConfig         `json:"aws"`
+	S3          S3Config          `json:"s3"`
+	CloudFront  CloudFrontConfig  `json:"cloudFront"`
+	EventBridge EventBridgeConfig `json:"eventBridge"`
 
 	AppSettings map[string]any `json:"otherSettings"`
 }
@@ -143,4 +144,8 @@ type CloudFrontConfig struct {
 	KeyId              string `yaml:"keyId" envconfig:"KEY_ID"`
 	Domain             string `yaml:"domain" envconfig:"DOMAIN"`
 	PrivateKeyFilePath string `yaml:"privateKeyFilePath" envconfig:"PRIVATE_KEY_FILE_PATH"`
+}
+
+type EventBridgeConfig struct {
+	EventBus string `json:"eventBus"`
 }

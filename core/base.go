@@ -5,10 +5,12 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"gitlab.com/jideobs/nebularcore/daos"
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/models/config"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/eventclient"
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 	"gitlab.com/jideobs/nebularcore/tools/security"
 	"gitlab.com/jideobs/nebularcore/tools/validation"
@@ -36,6 +38,8 @@ type BaseApp struct {
 	router   *gin.Engine
 
 	otp *security.Otp
+
+	eventClient eventclient.Client
 }
 
 type BaseAppConfig struct {
@@ -177,4 +181,23 @@ func (b *BaseApp) GetFileURL(key string) string {
 	}
 
 	return fmt.Sprintf("/files?key=%s", key)
+}
+
+func (b *BaseApp) EventClient() eventclient.Client {
+	if b.eventClient == nil {
+		settings := b.Settings()
+		eventClient, err := eventclient.New(
+			settings.Aws.AccessKeyID,
+			settings.Aws.SecretAccessKey,
+			settings.Aws.Region,
+			settings.EventBridge.EventBus,
+		)
+		if err != nil {
+			log.Err(err).Msgf("failed to initialize event bridge client")
+		}
+
+		b.eventClient = eventClient
+	}
+
+	return b.eventClient
 }
