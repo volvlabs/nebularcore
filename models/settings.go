@@ -11,15 +11,15 @@ import (
 )
 
 type Settings struct {
-	AuthTokenSecret        string `json:"authTokenSecret"`
-	AuthTokenRefreshSecret string `json:"authTokenRefreshSecret"`
-	OtpGenerationSecret    string `json:"otpGenerationSecret"`
-	OtpPeriod              uint   `json:"otpPeriod"`
-	AuthTokenDuration      int64  `json:"authTokenDuration"`
-
-	GoogleAuth   AuthProviderConfig `json:"googleAuth"`
-	FacebookAuth AuthProviderConfig `json:"facebookAuth"`
-	AppleAuth    AuthProviderConfig `json:"appleAuth"`
+	AuthTokenSecret                string             `json:"authTokenSecret"`
+	AuthTokenRefreshSecret         string             `json:"authTokenRefreshSecret"`
+	OtpGenerationSecret            string             `json:"otpGenerationSecret"`
+	OtpPeriod                      uint               `json:"otpPeriod"`
+	AuthTokenDuration              int64              `json:"authTokenDuration"`
+	AuthRefreshTokenExpiryDuration int64              `json:"authRefreshTokenExpiryDuration"`
+	GoogleAuth                     AuthProviderConfig `json:"googleAuth"`
+	FacebookAuth                   AuthProviderConfig `json:"facebookAuth"`
+	AppleAuth                      AuthProviderConfig `json:"appleAuth"`
 
 	Aws        AwsConfig        `json:"aws"`
 	S3         S3Config         `json:"s3"`
@@ -30,11 +30,12 @@ type Settings struct {
 
 func NewSettings() *Settings {
 	return &Settings{
-		AuthTokenSecret:        "test",
-		AuthTokenRefreshSecret: "test",
-		OtpGenerationSecret:    "XXXXXXXXXXXXXXXXXXXXX123A",
-		OtpPeriod:              900,
-		AuthTokenDuration:      900,
+		AuthTokenSecret:                "test",
+		AuthTokenRefreshSecret:         "test",
+		OtpGenerationSecret:            "XXXXXXXXXXXXXXXXXXXXX123A",
+		OtpPeriod:                      900,
+		AuthTokenDuration:              900,
+		AuthRefreshTokenExpiryDuration: 172800, // 2 days.
 		GoogleAuth: AuthProviderConfig{
 			Enabled: false,
 		},
