@@ -1,6 +1,8 @@
 package apis
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/jideobs/nebularcore/core"
@@ -42,6 +44,5 @@ func (api *filesApi) Get(c *gin.Context) {
 		return
 	}
 
-	c.Writer.Header().Set("Content-Type", contentType)
-	c.Writer.Write(content)
+	c.Data(http.StatusOK, contentType, content)
 }
