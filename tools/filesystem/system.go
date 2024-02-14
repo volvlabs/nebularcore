@@ -41,6 +41,7 @@ func NewWithS3(bucketName, region, accessKey, secretKey string) (*System, error)
 }
 
 func NewLocal(dirPath string) (*System, error) {
+	ctx := context.Background()
 	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
 		return nil, err
 	}
@@ -50,7 +51,7 @@ func NewLocal(dirPath string) (*System, error) {
 		return nil, err
 	}
 
-	return &System{bucket: bucket}, nil
+	return &System{ctx: ctx, bucket: bucket}, nil
 }
 
 func (s *System) Upload(content []byte, fileKey string) error {
@@ -76,4 +77,29 @@ func (s *System) Upload(content []byte, fileKey string) error {
 
 func (s *System) Delete(fileKey string) error {
 	return s.bucket.Delete(s.ctx, fileKey)
+}
+
+// This is only meant for development purposes only as in production files
+// would be served using cloudfront.
+func (s *System) Download(fileKey string) ([]byte, string, error) {
+	ctx, cancel := context.WithCancel(s.ctx)
+	defer cancel()
+
+	r, err := s.bucket.NewReader(ctx, fileKey, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	defer r.Close()
+
+	var content []byte
+	_, err = r.Read(content)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return content, r.ContentType(), nil
+}
+
+func (s *System) Close() error {
+	return s.bucket.Close()
 }

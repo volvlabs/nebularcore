@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -8,11 +9,14 @@ import (
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/models/config"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 	"gitlab.com/jideobs/nebularcore/tools/security"
 	"gitlab.com/jideobs/nebularcore/tools/validation"
 
 	"gorm.io/gorm"
 )
+
+const LocalStorageDirName string = "storage"
 
 type BaseApp struct {
 	Env           string
@@ -149,4 +153,28 @@ func (b *BaseApp) Otp() *security.Otp {
 		})
 	}
 	return b.otp
+}
+
+func (b *BaseApp) NewFileSystem() (*filesystem.System, error) {
+	settings := b.Settings()
+	if settings.S3.Enabled {
+		return filesystem.NewWithS3(
+			settings.S3.Bucket,
+			settings.Aws.Region,
+			settings.Aws.AccessKeyID,
+			settings.Aws.SecretAccessKey,
+		)
+	}
+
+	return filesystem.NewLocal(filepath.Join(b.DataDir(), LocalStorageDirName))
+}
+
+func (b *BaseApp) GetFileURL(key string) string {
+	settings := b.Settings()
+	if settings.S3.Enabled {
+		cloudFrontConfig := settings.CloudFront
+		return fmt.Sprintf("%s/%s", cloudFrontConfig.Domain, key)
+	}
+
+	return fmt.Sprintf("/files?key=%s", key)
 }
