@@ -5,6 +5,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/daos"
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/eventclient"
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 	"gitlab.com/jideobs/nebularcore/tools/security"
 	"gitlab.com/jideobs/nebularcore/tools/validation"
@@ -28,4 +29,5 @@ type App interface {
 	Otp() *security.Otp
 	NewFileSystem() (*filesystem.System, error)
 	GetFileURL(key string) string
+	EventClient() eventclient.Client
 }

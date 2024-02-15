@@ -3,7 +3,6 @@ package models
 import (
 	"encoding/json"
 	"errors"
-	"maps"
 	"os"
 
 	"gitlab.com/jideobs/nebularcore/tools/auth"
@@ -18,15 +17,16 @@ type Settings struct {
 	AuthTokenDuration              int64  `json:"authTokenDuration"`
 	AuthRefreshTokenExpiryDuration int64  `json:"authRefreshTokenExpiryDuration"`
 
-	GoogleAuth   AuthProviderConfig `json:"googleAuth"`
-	FacebookAuth AuthProviderConfig `json:"facebookAuth"`
-	AppleAuth    AuthProviderConfig `json:"appleAuth"`
+	GoogleAuth   AuthProviderConfig `yaml:"googleAuth" json:"googleAuth"`
+	FacebookAuth AuthProviderConfig `yaml:"facebookAuth" json:"facebookAuth"`
+	AppleAuth    AuthProviderConfig `yaml:"appleAuth" json:"appleAuth"`
 
-	Aws        AwsConfig        `json:"aws"`
-	S3         S3Config         `json:"s3"`
-	CloudFront CloudFrontConfig `json:"cloudFront"`
+	Aws         AwsConfig         `yaml:"aws" json:"aws"`
+	S3          S3Config          `yaml:"s3" json:"s3"`
+	CloudFront  CloudFrontConfig  `yaml:"cloudFront" json:"cloudFront"`
+	EventBridge EventBridgeConfig `yaml:"eventBridge" json:"eventBridge"`
 
-	AppSettings map[string]any `json:"otherSettings"`
+	AppSettings map[string]any `yaml:"appSettings" json:"appSettings"`
 }
 
 func NewSettings() *Settings {
@@ -80,15 +80,14 @@ func (s *Settings) LoadSettings(settingsFile string) error {
 	}
 	defer f.Close()
 
-	appSettings := map[string]any{}
+	settings := &Settings{}
 	decoder := yaml.NewDecoder(f)
-	err = decoder.Decode(&appSettings)
+	err = decoder.Decode(settings)
 	if err != nil {
 		return err
 	}
 
-	maps.Copy(s.AppSettings, appSettings)
-	return nil
+	return s.Merge(settings)
 }
 
 type AuthProviderConfig struct {
@@ -129,18 +128,22 @@ func (a AuthProviderConfig) SetupProvider(provider auth.Provider) error {
 }
 
 type AwsConfig struct {
-	AccessKeyID     string `json:"accessKeyId"`
-	SecretAccessKey string `json:"secretAccessKey"`
-	Region          string `json:"region"`
+	AccessKeyID     string `yaml:"accessKeyId" json:"accessKeyId"`
+	SecretAccessKey string `yaml:"secretAccessKey" json:"secretAccessKey"`
+	Region          string `yaml:"region" json:"region"`
 }
 
 type S3Config struct {
-	Bucket  string `json:"bucket"`
-	Enabled bool   `json:"enabled"`
+	Bucket  string `yaml:"bucket" json:"bucket"`
+	Enabled bool   `yaml:"enabled" json:"enabled"`
 }
 
 type CloudFrontConfig struct {
-	KeyId              string `yaml:"keyId" envconfig:"KEY_ID"`
-	Domain             string `yaml:"domain" envconfig:"DOMAIN"`
-	PrivateKeyFilePath string `yaml:"privateKeyFilePath" envconfig:"PRIVATE_KEY_FILE_PATH"`
+	KeyId              string `yaml:"keyId" json:"keyId"`
+	Domain             string `yaml:"domain" json:"domain"`
+	PrivateKeyFilePath string `yaml:"privateKeyFilePath" json:"privateKeyFilePath"`
+}
+
+type EventBridgeConfig struct {
+	EventBus string `yaml:"eventBus" json:"eventBus"`
 }
