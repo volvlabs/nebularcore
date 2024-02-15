@@ -33,7 +33,7 @@ type Settings struct {
 	CloudFront  CloudFrontConfig  `yaml:"cloudFront" json:"cloudFront"`
 	EventBridge EventBridgeConfig `yaml:"eventBridge" json:"eventBridge"`
 
-	AppSettings map[string]any `yaml:"appSettings" json:"appSettings"`
+	AppSettings map[string]interface{} `yaml:"appSettings" json:"appSettings"`
 }
 
 func NewSettings() *Settings {
