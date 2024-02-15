@@ -11,6 +11,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/models/config"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/eventclient"
 )
 
 func getTempDataDirName(length int) string {
@@ -30,6 +31,10 @@ type TestApp struct {
 
 func (t *TestApp) CleanUp() {
 	os.RemoveAll(t.DataDir())
+}
+
+func (t *TestApp) EventClient() eventclient.Client {
+	return &eventClientMock{}
 }
 
 func NewTestApp() (*TestApp, error) {
