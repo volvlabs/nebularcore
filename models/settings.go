@@ -6,24 +6,16 @@ import (
 	"os"
 
 	"gitlab.com/jideobs/nebularcore/tools/auth"
-	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gopkg.in/yaml.v2"
 )
 
 type Settings struct {
-<<<<<<< HEAD
 	AuthTokenSecret                string `json:"authTokenSecret"`
 	AuthTokenRefreshSecret         string `json:"authTokenRefreshSecret"`
 	OtpGenerationSecret            string `json:"otpGenerationSecret"`
 	OtpPeriod                      uint   `json:"otpPeriod"`
 	AuthTokenDuration              int64  `json:"authTokenDuration"`
 	AuthRefreshTokenExpiryDuration int64  `json:"authRefreshTokenExpiryDuration"`
-=======
-	AuthTokenSecret     string `yaml:"authTokenSecret" json:"authTokenSecret"`
-	OtpGenerationSecret string `yaml:"otpGenerationSecret" json:"otpGenerationSecret"`
-	OtpPeriod           uint   `yaml:"otpPeriod" json:"otpPeriod"`
-	AuthTokenDuration   int64  `yaml:"authTokenDuration" json:"authTokenDuration"`
->>>>>>> 628947c (yaml tags for settings struct)
 
 	GoogleAuth   AuthProviderConfig `yaml:"googleAuth" json:"googleAuth"`
 	FacebookAuth AuthProviderConfig `yaml:"facebookAuth" json:"facebookAuth"`
@@ -34,7 +26,7 @@ type Settings struct {
 	CloudFront  CloudFrontConfig  `yaml:"cloudFront" json:"cloudFront"`
 	EventBridge EventBridgeConfig `yaml:"eventBridge" json:"eventBridge"`
 
-	AppSettings types.AppSettings `yaml:"appSettings" json:"appSettings"`
+	AppSettings map[string]any `yaml:"appSettings" json:"appSettings"`
 }
 
 func NewSettings() *Settings {
@@ -54,7 +46,7 @@ func NewSettings() *Settings {
 		AppleAuth: AuthProviderConfig{
 			Enabled: false,
 		},
-		AppSettings: map[any]any{},
+		AppSettings: map[string]any{},
 	}
 }
 
