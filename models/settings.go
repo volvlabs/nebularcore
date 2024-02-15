@@ -3,7 +3,6 @@ package models
 import (
 	"encoding/json"
 	"errors"
-	"maps"
 	"os"
 
 	"gitlab.com/jideobs/nebularcore/tools/auth"
@@ -81,15 +80,14 @@ func (s *Settings) LoadSettings(settingsFile string) error {
 	}
 	defer f.Close()
 
-	appSettings := map[string]any{}
+	settings := &Settings{}
 	decoder := yaml.NewDecoder(f)
-	err = decoder.Decode(&appSettings)
+	err = decoder.Decode(settings)
 	if err != nil {
 		return err
 	}
 
-	maps.Copy(s.AppSettings, appSettings)
-	return nil
+	return s.Merge(settings)
 }
 
 type AuthProviderConfig struct {
