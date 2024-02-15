@@ -35,6 +35,9 @@ func TestMergeSettings(t *testing.T) {
 			"authUrl": "https://www.authurl.com",
 			"tokenUrl": "https://www.tokenurl.com",
 			"displayName": "google"
+		},
+		"appSettings": {
+			"key": "value"
 		}
 	}`)
 	err := json.Unmarshal(rawSettingsData, otherSettings)
