@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gopkg.in/yaml.v2"
 )
 
@@ -33,7 +34,7 @@ type Settings struct {
 	CloudFront  CloudFrontConfig  `yaml:"cloudFront" json:"cloudFront"`
 	EventBridge EventBridgeConfig `yaml:"eventBridge" json:"eventBridge"`
 
-	AppSettings map[string]interface{} `yaml:"appSettings" json:"appSettings"`
+	AppSettings types.AppSettings `yaml:"appSettings" json:"appSettings"`
 }
 
 func NewSettings() *Settings {
@@ -53,7 +54,7 @@ func NewSettings() *Settings {
 		AppleAuth: AuthProviderConfig{
 			Enabled: false,
 		},
-		AppSettings: map[string]any{},
+		AppSettings: map[any]any{},
 	}
 }
 
