@@ -27,10 +27,21 @@ func New() *Validator {
 		return t
 	})
 
-	return &Validator{
+	v := &Validator{
 		validate:   validate,
 		translator: trans,
 	}
+
+	validate.RegisterValidation("phonenumber", func(fl validator.FieldLevel) bool {
+		return ValidatePhoneNumber(fl.Field().String(), "NG")
+	})
+
+	validate.RegisterValidation("custom_email", func(fl validator.FieldLevel) bool {
+		isValid, _ := ValidateEmail(fl.Field().String())
+		return isValid
+	})
+
+	return v
 }
 
 func (v *Validator) GetValidate() *validator.Validate {

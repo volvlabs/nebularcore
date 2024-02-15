@@ -6,16 +6,18 @@ import (
 	"os"
 
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gopkg.in/yaml.v2"
 )
 
 type Settings struct {
-	AuthTokenSecret                string `json:"authTokenSecret"`
-	AuthTokenRefreshSecret         string `json:"authTokenRefreshSecret"`
-	OtpGenerationSecret            string `json:"otpGenerationSecret"`
-	OtpPeriod                      uint   `json:"otpPeriod"`
-	AuthTokenDuration              int64  `json:"authTokenDuration"`
-	AuthRefreshTokenExpiryDuration int64  `json:"authRefreshTokenExpiryDuration"`
+	Domain                         string `yaml:"domain" json:"domain"`
+	AuthTokenSecret                string `yaml:"authTokenSecret" json:"authTokenSecret"`
+	AuthTokenRefreshSecret         string `yaml:"authTokenRefreshSecret" json:"authTokenRefreshSecret"`
+	OtpGenerationSecret            string `yaml:"otpGenerationSecret" json:"otpGenerationSecret"`
+	OtpPeriod                      uint   `yaml:"otpPeriod" json:"otpPeriod"`
+	AuthTokenDuration              int64  `yaml:"authTokenDuration" json:"authTokenDuration"`
+	AuthRefreshTokenExpiryDuration int64  `yaml:"authRefreshTokenExpiryDuration" json:"authRefreshTokenExpiryDuration"`
 
 	GoogleAuth   AuthProviderConfig `yaml:"googleAuth" json:"googleAuth"`
 	FacebookAuth AuthProviderConfig `yaml:"facebookAuth" json:"facebookAuth"`
@@ -26,7 +28,11 @@ type Settings struct {
 	CloudFront  CloudFrontConfig  `yaml:"cloudFront" json:"cloudFront"`
 	EventBridge EventBridgeConfig `yaml:"eventBridge" json:"eventBridge"`
 
-	AppSettings map[string]any `yaml:"appSettings" json:"appSettings"`
+	Glcoud GcloudConfig `yaml:"gcloud" json:"gcloud"`
+
+	EventClient types.EventClient `yaml:"eventClient" json:"eventClient"`
+
+	AppSettings types.AppSettings `yaml:"appSettings" json:"appSettings"`
 }
 
 func NewSettings() *Settings {
@@ -46,7 +52,7 @@ func NewSettings() *Settings {
 		AppleAuth: AuthProviderConfig{
 			Enabled: false,
 		},
-		AppSettings: map[string]any{},
+		AppSettings: map[any]any{},
 	}
 }
 
@@ -146,4 +152,18 @@ type CloudFrontConfig struct {
 
 type EventBridgeConfig struct {
 	EventBus string `yaml:"eventBus" json:"eventBus"`
+}
+
+type GcloudConfig struct {
+	ProjectId        string `yaml:"projectId" json:"projectId"`
+	CredfileLocation string `yaml:"credfileLocation" json:"credfileLocation"`
+
+	PubSub struct {
+		Topic string `yaml:"topic" json:"topic"`
+	} `yaml:"pubsub" json:"pubsub"`
+	Storage struct {
+		Enabled          bool   `yaml:"enabled" json:"enabled"`
+		Bucket           string `yaml:"bucket" json:"bucket"`
+		CredfileLocation string `yaml:"credfileLocation" json:"credfileLocation"`
+	} `yaml:"storage" json:"storage"`
 }

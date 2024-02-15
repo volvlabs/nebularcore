@@ -5,6 +5,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/daos"
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/aws/scheduler"
 	"gitlab.com/jideobs/nebularcore/tools/eventclient"
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 	"gitlab.com/jideobs/nebularcore/tools/security"
@@ -30,4 +31,5 @@ type App interface {
 	NewFileSystem() (*filesystem.System, error)
 	GetFileURL(key string) string
 	EventClient() eventclient.Client
+	Scheduler() scheduler.Client
 }

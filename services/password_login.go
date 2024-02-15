@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/rs/zerolog/log"
 	"gitlab.com/jideobs/nebularcore/tools/security"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 )
@@ -15,6 +16,7 @@ func (a *Auth) PasswordLogin(identity, password string) error {
 	}
 
 	if auth == nil || !security.ValidatePassword(auth.PasswordHash, password) {
+		log.Info().Msgf("Auth: user password invalid, user: %s", identity)
 		return &types.UserError{Message: "invalid login credentials"}
 	}
 

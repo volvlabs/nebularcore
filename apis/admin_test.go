@@ -1,17 +1,48 @@
 package apis
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/test"
+	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"gitlab.com/jideobs/nebularcore/tools/security"
 )
 
+func setupAdmin(app *test.TestApp) *models.Admin {
+	user := &models.Admin{
+		Email:     "john.doe@gmail.com",
+		FirstName: "John",
+		LastName:  "Doe",
+	}
+	app.Dao().Save(user)
+	return user
+}
+
+func getAuthorizationToken(app *test.TestApp, user *models.Admin) string {
+	token, _ := security.NewJWT(
+		jwt.MapClaims{"id": user.Id, "identity": user.Email, "role": "admin"},
+		app.Settings().AuthTokenSecret,
+		app.Settings().AuthTokenDuration,
+	)
+
+	return token
+}
+
 func TestCreateAdmin(t *testing.T) {
+	testapp, _ := test.NewTestApp()
+	tearDownMigration := test.RunMigration(
+		t, filesystem.GetRootDir("../"), testapp.DataDir())
+	defer tearDownMigration(t)
+
+	admin := setupAdmin(testapp)
+	token := getAuthorizationToken(testapp, admin)
 	scenarios := []test.ApiScenario{
 		{
 			Name:   "should create admin successfully",
@@ -24,8 +55,10 @@ func TestCreateAdmin(t *testing.T) {
 				"role": "operator",
 				"password": "password123"
 			}`),
-			RunMigration:   true,
-			RequestHeaders: map[string]string{},
+			RunMigration: true,
+			RequestHeaders: map[string]string{
+				"Authorization": fmt.Sprintf("Bearer %s", token),
+			},
 			ExpectedStatus: http.StatusOK,
 			ExpectedContent: []string{
 				`"token":`,
@@ -44,12 +77,14 @@ func TestCreateAdmin(t *testing.T) {
 			},
 		},
 		{
-			Name:           "should return 400 bad request because of empty request body",
-			Url:            "/admin",
-			Method:         http.MethodPost,
-			Body:           strings.NewReader(""),
-			RunMigration:   true,
-			RequestHeaders: map[string]string{},
+			Name:         "should return 400 bad request because of empty request body",
+			Url:          "/admin",
+			Method:       http.MethodPost,
+			Body:         strings.NewReader(""),
+			RunMigration: true,
+			RequestHeaders: map[string]string{
+				"Authorization": fmt.Sprintf("Bearer %s", token),
+			},
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedContent: []string{
 				`"code":400`,
@@ -61,12 +96,14 @@ func TestCreateAdmin(t *testing.T) {
 			},
 		},
 		{
-			Name:           "should return 400 bad request because required vals are not set",
-			Url:            "/admin",
-			Method:         http.MethodPost,
-			Body:           strings.NewReader("{}"),
-			RunMigration:   true,
-			RequestHeaders: map[string]string{},
+			Name:         "should return 400 bad request because required vals are not set",
+			Url:          "/admin",
+			Method:       http.MethodPost,
+			Body:         strings.NewReader("{}"),
+			RunMigration: true,
+			RequestHeaders: map[string]string{
+				"Authorization": fmt.Sprintf("Bearer %s", token),
+			},
 			ExpectedStatus: http.StatusBadRequest,
 			ExpectedContent: []string{
 				`"code":400`,
@@ -88,8 +125,10 @@ func TestCreateAdmin(t *testing.T) {
 				"role": "operator",
 				"password": "password123"
 			}`),
-			RunMigration:   false,
-			RequestHeaders: map[string]string{},
+			RunMigration: false,
+			RequestHeaders: map[string]string{
+				"Authorization": fmt.Sprintf("Bearer %s", token),
+			},
 			ExpectedStatus: http.StatusInternalServerError,
 			ExpectedContent: []string{
 				`"code":500`,
@@ -379,14 +418,14 @@ func TestChangePasswordAdmin(t *testing.T) {
 func TestRefreshPassword(t *testing.T) {
 	scenarios := []test.ApiScenario{
 		{
-			Name:         "should refresh token successfully",
-			Url:          "/admin/refresh-token",
-			Method:       http.MethodPost,
-			Body:         nil,
-			RunMigration: true,
-			RequestHeaders: map[string]string{
-				"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzYyMDI5MDUsImlkIjoiNTc5Mzg3ZmMtZDhjZC00ODAzLThiNmUtNTI3NDJkMTQ2MGE4Iiwicm9sZSI6Im9wZXJhdG9yIn0.MFj5LWW4VEJbPbFhiAKNGNuDZ5SVZwPLDUyKcYv-boo",
-			},
+			Name:   "should refresh token successfully",
+			Url:    "/admin/refresh-token",
+			Method: http.MethodPut,
+			Body: strings.NewReader(`{
+				"refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzYyMDI5MDUsImlkIjoiNTc5Mzg3ZmMtZDhjZC00ODAzLThiNmUtNTI3NDJkMTQ2MGE4Iiwicm9sZSI6Im9wZXJhdG9yIn0.MFj5LWW4VEJbPbFhiAKNGNuDZ5SVZwPLDUyKcYv-boo"
+			}`),
+			RunMigration:   true,
+			RequestHeaders: map[string]string{},
 			ExpectedStatus: http.StatusOK,
 			ExpectedContent: []string{
 				`"token":`,
@@ -414,14 +453,14 @@ func TestRefreshPassword(t *testing.T) {
 			},
 		},
 		{
-			Name:         "should return 500 internal server error because of a server error",
-			Url:          "/admin/refresh-token",
-			Method:       http.MethodPost,
-			Body:         nil,
-			RunMigration: false,
-			RequestHeaders: map[string]string{
-				"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzYyMDI5MDUsImlkIjoiNTc5Mzg3ZmMtZDhjZC00ODAzLThiNmUtNTI3NDJkMTQ2MGE4Iiwicm9sZSI6Im9wZXJhdG9yIn0.MFj5LWW4VEJbPbFhiAKNGNuDZ5SVZwPLDUyKcYv-boo",
-			},
+			Name:   "should return 500 internal server error because of a server error",
+			Url:    "/admin/refresh-token",
+			Method: http.MethodPut,
+			Body: strings.NewReader(`{
+				"refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzYyMDI5MDUsImlkIjoiNTc5Mzg3ZmMtZDhjZC00ODAzLThiNmUtNTI3NDJkMTQ2MGE4Iiwicm9sZSI6Im9wZXJhdG9yIn0.MFj5LWW4VEJbPbFhiAKNGNuDZ5SVZwPLDUyKcYv-boo"
+			}`),
+			RunMigration:   false,
+			RequestHeaders: map[string]string{},
 			ExpectedStatus: http.StatusInternalServerError,
 			ExpectedContent: []string{
 				`"code":500`,

@@ -2,15 +2,20 @@ package filesystem
 
 import (
 	"context"
+	"io"
 	"os"
 
+	"cloud.google.com/go/storage"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gabriel-vasile/mimetype"
 	"gocloud.dev/blob"
 	"gocloud.dev/blob/fileblob"
+	"gocloud.dev/blob/gcsblob"
 	"gocloud.dev/blob/s3blob"
+	"gocloud.dev/gcp"
+	"golang.org/x/oauth2/google"
 )
 
 type System struct {
@@ -33,6 +38,33 @@ func NewWithS3(bucketName, region, accessKey, secretKey string) (*System, error)
 	}
 	s3Client := s3.NewFromConfig(awsConfig)
 	bucket, err := s3blob.OpenBucketV2(ctx, s3Client, bucketName, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &System{ctx: ctx, bucket: bucket}, nil
+}
+
+func NewWithGoogleCloudStorage(bucketName, credfileLocation string) (*System, error) {
+	ctx := context.Background()
+
+	credContent, err := os.ReadFile(credfileLocation)
+	if err != nil {
+		return nil, err
+	}
+	creds, err := google.CredentialsFromJSON(ctx, credContent, storage.ScopeReadWrite)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := gcp.NewHTTPClient(
+		gcp.DefaultTransport(),
+		gcp.CredentialsTokenSource(creds))
+	if err != nil {
+		return nil, err
+	}
+
+	bucket, err := gcsblob.OpenBucket(ctx, client, bucketName, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +123,7 @@ func (s *System) Download(fileKey string) ([]byte, string, error) {
 	}
 	defer r.Close()
 
-	var content []byte
-	_, err = r.Read(content)
+	content, err := io.ReadAll(r)
 	if err != nil {
 		return nil, "", err
 	}
