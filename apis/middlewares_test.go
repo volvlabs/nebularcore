@@ -37,7 +37,7 @@ func TestAuthenticateRequestThenLoadAuthContext(t *testing.T) {
 			},
 		},
 		{
-			Name:   "should return 401 because of invalid auth token",
+			Name:   "should return 401 because of invalid authentication token",
 			Url:    "/",
 			Method: http.MethodGet,
 			Body:   nil,
@@ -129,7 +129,7 @@ func TestAuthorizeRequest(t *testing.T) {
 			},
 		},
 		{
-			Name:   "should return 403 since role is not available within the auth claims",
+			Name:   "should return 403 since role is not available within the authentication claims",
 			Url:    "/admin/create",
 			Method: http.MethodGet,
 			Body:   nil,

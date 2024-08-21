@@ -1,9 +1,10 @@
-package services_test
+package authentication_test
 
 import (
+	"github.com/google/uuid"
+	"gitlab.com/jideobs/nebularcore/services/authentication"
 	"testing"
 
-	"gitlab.com/jideobs/nebularcore/services"
 	"gitlab.com/jideobs/nebularcore/test"
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 	"gitlab.com/jideobs/nebularcore/tools/types"
@@ -39,16 +40,16 @@ func TestChangePassword(t *testing.T) {
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
 			tearDownMigration := test.RunMigration(
-				t, filesystem.GetRootDir("../"), app.DataDir())
+				t, filesystem.GetRootDir("../../"), app.DataDir())
 			defer tearDownMigration(t)
 
-			auth := services.NewAuth(app)
-			err := auth.Create(scenario.identity, scenario.oldPassword)
+			authService := authentication.New(app)
+			err := authService.Create(scenario.identity, scenario.oldPassword, "admins", uuid.New())
 			if err != nil {
-				t.Fatalf("Tyring to create auth, got %v", err)
+				t.Fatalf("Tyring to create authentication, got %v", err)
 			}
 
-			err = auth.ChangePassword(
+			err = authService.ChangePassword(
 				scenario.identity,
 				scenario.userEnteredPassword,
 				scenario.password)

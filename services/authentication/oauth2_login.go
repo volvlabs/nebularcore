@@ -1,4 +1,4 @@
-package services
+package authentication
 
 import "gitlab.com/jideobs/nebularcore/tools/auth"
 

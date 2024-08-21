@@ -1,12 +1,12 @@
-package services_test
+package authentication_test
 
 import (
 	"errors"
+	"gitlab.com/jideobs/nebularcore/services/authentication"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/jideobs/nebularcore/models"
-	"gitlab.com/jideobs/nebularcore/services"
 	"gitlab.com/jideobs/nebularcore/test"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 )
@@ -14,12 +14,12 @@ import (
 func TestOauth2CreateValidate(t *testing.T) {
 	scenarios := []struct {
 		name          string
-		oauth2Request services.OAuth2Request
+		oauth2Request authentication.OAuth2Request
 		expectedError error
 	}{
 		{
 			name:          "should return error because of empty body",
-			oauth2Request: services.OAuth2Request{},
+			oauth2Request: authentication.OAuth2Request{},
 			expectedError: &types.RequestBodyError{
 				Message: "error validating request",
 				Errors: []types.FieldError{
@@ -41,7 +41,7 @@ func TestOauth2CreateValidate(t *testing.T) {
 		{
 
 			name: "should return error because of invalid provider",
-			oauth2Request: services.OAuth2Request{
+			oauth2Request: authentication.OAuth2Request{
 				Code:     "test",
 				State:    "test",
 				Provider: "invalid",
@@ -50,7 +50,7 @@ func TestOauth2CreateValidate(t *testing.T) {
 		},
 		{
 			name: "should return error because provider is not enabled",
-			oauth2Request: services.OAuth2Request{
+			oauth2Request: authentication.OAuth2Request{
 				Code:     "test",
 				State:    "test",
 				Provider: "apple",
@@ -59,7 +59,7 @@ func TestOauth2CreateValidate(t *testing.T) {
 		},
 		{
 			name: "should return no error",
-			oauth2Request: services.OAuth2Request{
+			oauth2Request: authentication.OAuth2Request{
 				Code:     "test",
 				State:    "test",
 				Provider: "google",
@@ -71,7 +71,7 @@ func TestOauth2CreateValidate(t *testing.T) {
 		t.Run(scenario.name, func(t *testing.T) {
 			// Arrange:
 			testapp, _ := test.NewTestApp()
-			auth := services.NewAuth(testapp)
+			auth := authentication.New(testapp)
 
 			otherSettings := models.NewSettings()
 			otherSettings.GoogleAuth.Enabled = true

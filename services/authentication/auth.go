@@ -1,11 +1,11 @@
-package services
+package authentication
 
 import (
 	"errors"
+	"gitlab.com/jideobs/nebularcore/entities"
 
 	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/daos"
-	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/models/requests"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
 	"gitlab.com/jideobs/nebularcore/tools/security"
@@ -26,7 +26,7 @@ type Auth struct {
 	validator *validation.Validator
 }
 
-func NewAuth(app core.App) *Auth {
+func New(app core.App) *Auth {
 	return &Auth{app: app, dao: app.Dao(), validator: app.Validator()}
 }
 
@@ -79,7 +79,7 @@ func (a *Auth) Validate(request requests.RefreshTokenRequest) error {
 	return nil
 }
 
-func (a *Auth) RefreshToken(request requests.RefreshTokenRequest) (*models.Admin, error) {
+func (a *Auth) RefreshToken(request requests.RefreshTokenRequest) (map[string]any, error) {
 	if err := a.Validate(request); err != nil {
 		return nil, err
 	}
@@ -89,19 +89,21 @@ func (a *Auth) RefreshToken(request requests.RefreshTokenRequest) (*models.Admin
 		return nil, security.ErrInvalidRefreshToken
 	}
 
-	adminId := claims["id"].(string)
-	admin := &models.Admin{}
+	userId := claims["id"].(string)
+	authEntity := &entities.Auth{}
+	userInfo := map[string]any{}
 	err = a.app.Dao().DB().Transaction(func(tx *gorm.DB) error {
-		err := tx.Model(&models.Admin{}).Where("id = ?", adminId).First(admin).Error
+		err := tx.Model(&entities.Auth{}).Where("user_id = ?", userId).First(authEntity).Error
 		if err != nil {
 			return err
 		}
 
-		return nil
+		return tx.Table(authEntity.UserTableName).Where("id = ?", userId).Scan(&userInfo).Error
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return admin, nil
+	userInfo["role"], _ = types.RoleFromString(userInfo["role"].(string))
+	return userInfo, nil
 }

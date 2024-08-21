@@ -1,11 +1,11 @@
 package daos_test
 
 import (
+	"gitlab.com/jideobs/nebularcore/entities"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/jideobs/nebularcore/daos"
-	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/test"
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 )
@@ -15,15 +15,17 @@ func TestDao_Save(t *testing.T) {
 
 	scenarios := []struct {
 		name    string
-		model   *models.Admin
+		model   *entities.Admin
 		wantErr bool
 	}{
 		{
 			name: "should create new entry in database successfully",
-			model: &models.Admin{
-				FirstName: "John",
-				LastName:  "Doe",
-				Email:     "john.doe@gmail.com",
+			model: &entities.Admin{
+				UserBase: entities.UserBase{
+					FirstName: "John",
+					LastName:  "Doe",
+					Email:     "john.doe@gmail.com",
+				},
 			},
 			wantErr: false,
 		},
@@ -47,10 +49,12 @@ func TestDao_SaveExistingRecordEntry(t *testing.T) {
 	defer tearDownMigration(t)
 	d := daos.New(app.Dao().DB())
 
-	admin := &models.Admin{
-		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "john.doe@gmail.com",
+	admin := &entities.Admin{
+		UserBase: entities.UserBase{
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "john.doe@gmail.com",
+		},
 	}
 	err := d.Save(admin)
 	if err != nil {
@@ -67,27 +71,33 @@ func TestDao_FindRecord(t *testing.T) {
 	app, _ := test.NewTestApp()
 	scenarios := []struct {
 		name           string
-		recordToCreate *models.Admin
-		where          *models.Admin
+		recordToCreate *entities.Admin
+		where          *entities.Admin
 		wantErr        bool
 	}{
 		{
 			name:           "should return error record not found",
 			recordToCreate: nil,
-			where: &models.Admin{
-				Email: "test@gmail.com",
+			where: &entities.Admin{
+				UserBase: entities.UserBase{
+					Email: "test@gmail.com",
+				},
 			},
 			wantErr: true,
 		},
 		{
 			name: "should return record successfully",
-			recordToCreate: &models.Admin{
-				FirstName: "John",
-				LastName:  "Doe",
-				Email:     "john.doe@gmail.com",
+			recordToCreate: &entities.Admin{
+				UserBase: entities.UserBase{
+					FirstName: "John",
+					LastName:  "Doe",
+					Email:     "john.doe@gmail.com",
+				},
 			},
-			where: &models.Admin{
-				Email: "john.doe@gmail.com",
+			where: &entities.Admin{
+				UserBase: entities.UserBase{
+					Email: "john.doe@gmail.com",
+				},
 			},
 			wantErr: false,
 		},
@@ -105,7 +115,7 @@ func TestDao_FindRecord(t *testing.T) {
 				}
 			}
 
-			admin := models.Admin{}
+			admin := entities.Admin{}
 			err := d.FindBy(&admin, scenario.where)
 			if (err != nil) != scenario.wantErr {
 				t.Errorf("Dao.FindRecord() error = %v, wantErr %v", err, scenario.wantErr)
@@ -120,12 +130,14 @@ func TestDao_Delete(t *testing.T) {
 	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 	defer tearDownMigration(t)
 
-	admin := &models.Admin{
-		Email: "john.doe@gmail.com",
+	admin := &entities.Admin{
+		UserBase: entities.UserBase{
+			Email: "john.doe@gmail.com",
+		},
 	}
 	app.Dao().Save(admin)
 
-	where := &models.Admin{}
+	where := &entities.Admin{}
 	where.SetId(admin.Id)
 
 	// Act:
@@ -133,8 +145,11 @@ func TestDao_Delete(t *testing.T) {
 
 	// Assert:
 	assert.Equal(t, nil, err)
-	adminGotten := models.Admin{}
-	app.Dao().FindBy(&adminGotten, &models.Admin{Email: admin.Email})
+	adminGotten := entities.Admin{}
+	app.Dao().FindBy(&adminGotten, &entities.Admin{
+		UserBase: entities.UserBase{
+			Email: admin.Email,
+		}})
 
 	assert.Equal(t, true, adminGotten.IsDeleted)
 	assert.NotNil(t, adminGotten.DeletedAt)
@@ -146,19 +161,23 @@ func TestDao_Updates(t *testing.T) {
 	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 	defer tearDownMigration(t)
 
-	admin := &models.Admin{
-		FirstName: "John",
-		Email:     "john.doe@gmail.com",
+	admin := &entities.Admin{
+		UserBase: entities.UserBase{
+			FirstName: "John",
+			Email:     "john.doe@gmail.com",
+		},
 	}
 	app.Dao().Save(admin)
 	assert.Equal(t, "John", admin.FirstName)
 	assert.Equal(t, "", admin.LastName)
 
-	where := &models.Admin{}
+	where := &entities.Admin{}
 	where.SetId(admin.Id)
-	updates := &models.Admin{
-		FirstName: "Jane",
-		LastName:  "Dawn",
+	updates := &entities.Admin{
+		UserBase: entities.UserBase{
+			FirstName: "Jane",
+			LastName:  "Dawn",
+		},
 	}
 
 	// Act:
@@ -167,8 +186,12 @@ func TestDao_Updates(t *testing.T) {
 	// Assert:
 	assert.Equal(t, nil, err)
 
-	adminGotten := models.Admin{}
-	app.Dao().FindBy(&adminGotten, &models.Admin{Email: admin.Email})
+	adminGotten := entities.Admin{}
+	app.Dao().FindBy(&adminGotten, &entities.Admin{
+		UserBase: entities.UserBase{
+			Email: admin.Email,
+		},
+	})
 
 	assert.Equal(t, "Jane", adminGotten.FirstName)
 	assert.Equal(t, "Dawn", adminGotten.LastName)

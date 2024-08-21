@@ -1,7 +1,7 @@
 package daos
 
 import (
-	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/entities"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ func (d *Dao) DB() *gorm.DB {
 	return d.dbConn
 }
 
-func (d *Dao) Save(model models.Model) error {
+func (d *Dao) Save(model entities.Model) error {
 	return d.dbConn.Transaction(func(tx *gorm.DB) (err error) {
 		if !model.HasId() {
 			err = tx.Create(model).Error
@@ -30,25 +30,25 @@ func (d *Dao) Save(model models.Model) error {
 	})
 }
 
-func (d *Dao) FindBy(model models.Model, where any) error {
+func (d *Dao) FindBy(model entities.Model, where any) error {
 	return d.dbConn.Transaction(func(tx *gorm.DB) error {
 		return tx.Where(where).First(model).Error
 	})
 }
 
-func (d *Dao) Update(model models.Model, where any, column string, value any) error {
+func (d *Dao) Update(model entities.Model, where any, column string, value any) error {
 	return d.dbConn.Transaction(func(tx *gorm.DB) error {
 		return tx.Model(model).Where(where).Update(column, value).Error
 	})
 }
 
-func (d *Dao) Updates(model models.Model, updates models.Model) error {
+func (d *Dao) Updates(model entities.Model, updates entities.Model) error {
 	return d.dbConn.Transaction(func(tx *gorm.DB) error {
 		return tx.Model(model).Updates(updates).Error
 	})
 }
 
-func (d *Dao) Delete(model models.Model) error {
+func (d *Dao) Delete(model entities.Model) error {
 	return d.dbConn.Transaction(func(tx *gorm.DB) error {
 		return tx.Model(model).Updates(map[string]any{"is_deleted": true, "deleted_at": types.NowDateTime()}).Error
 	})

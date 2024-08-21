@@ -1,7 +1,7 @@
-package services
+package authentication
 
 import (
-	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/entities"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
 )
 
@@ -21,7 +21,7 @@ func (a *Auth) CreateWithOAuth2(oauth2Request OAuth2Request) (*auth.AuthUser, er
 		return nil, err
 	}
 
-	err = a.dao.CreateAuth(&models.Auth{
+	err = a.dao.CreateAuth(&entities.Auth{
 		Identity:     authUser.Email,
 		PasswordHash: "",
 	})
