@@ -28,11 +28,8 @@ func TestPhoneNumberValidation(t *testing.T) {
 	}
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			// Arrange:
-			validator := New()
-
 			// Act:
-			isValid := validator.ValidatePhoneNumber(scenario.phoneNumber, scenario.region)
+			isValid := ValidatePhoneNumber(scenario.phoneNumber, scenario.region)
 
 			// Assert:
 			assert.Equal(t, scenario.expected, isValid)

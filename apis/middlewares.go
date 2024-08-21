@@ -18,6 +18,7 @@ func AuthenticateRequestThenLoadAuthContext(app core.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.Request.Header.Get("Authorization")
 		if token == "" {
+			log.Info().Msg("Auth: no request authorization")
 			NewUnauthorizedError(c)
 			return
 		}
@@ -26,6 +27,7 @@ func AuthenticateRequestThenLoadAuthContext(app core.App) gin.HandlerFunc {
 
 		claims, err := security.ParseJWT(token, app.Settings().AuthTokenSecret)
 		if err != nil {
+			log.Err(err).Msgf("Auth: error parsing JWT Token")
 			NewUnauthorizedError(c)
 			return
 		}

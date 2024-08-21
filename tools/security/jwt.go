@@ -7,6 +7,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
+var ErrInvalidRefreshToken = errors.New("invalid refresh token")
+
 func ParseJWT(token string, verificationKey string) (jwt.MapClaims, error) {
 	parser := jwt.NewParser(jwt.WithValidMethods([]string{"HS256"}))
 	parsedToken, err := parser.Parse(token, func(t *jwt.Token) (any, error) {

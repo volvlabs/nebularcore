@@ -1,4 +1,4 @@
-package eventclient
+package aws
 
 import (
 	"context"
@@ -9,18 +9,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
+	"gitlab.com/jideobs/nebularcore/tools/eventclient"
 )
-
-type Client interface {
-	Send(events ...Event) error
-}
 
 type AwsEventBridgeClient struct {
 	eventBus string
 	client   *eventbridge.Client
 }
 
-func New(accessKey, secretKey, region, eventBus string) (*AwsEventBridgeClient, error) {
+func NewEventClient(accessKey, secretKey, region, eventBus string) (eventclient.Client, error) {
 	awsConfig, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(region),
 		config.WithCredentialsProvider(
@@ -35,7 +32,7 @@ func New(accessKey, secretKey, region, eventBus string) (*AwsEventBridgeClient, 
 	}, nil
 }
 
-func (a *AwsEventBridgeClient) Send(events ...Event) error {
+func (a *AwsEventBridgeClient) Send(events ...eventclient.Event) error {
 	putEventsRequestEntries := []types.PutEventsRequestEntry{}
 
 	for _, event := range events {

@@ -5,25 +5,27 @@ import (
 
 	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/models/requests"
 	"gitlab.com/jideobs/nebularcore/services"
 	"gitlab.com/jideobs/nebularcore/tools/security"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 )
 
 func BindAdminApi(app core.App, rg *gin.RouterGroup) {
 	api := adminApi{app: app}
 
 	subGroup := rg.Group("/admin")
-	subGroup.POST("", api.create)
 	subGroup.POST("/login", api.login)
+	subGroup.PUT("/refresh-token", api.refreshToken)
 
 	authGroup := subGroup.Group("")
 	authGroup.Use(AuthenticateRequestThenLoadAuthContext(app))
+	authGroup.POST("", api.create)
 	authGroup.PUT("/change-password", api.changePassword)
-	authGroup.POST("/refresh-token", api.refreshToken)
 }
 
 type adminApi struct {
@@ -41,9 +43,21 @@ func (api *adminApi) authResponse(c *gin.Context, admin *models.Admin) {
 		return
 	}
 
+	refreshToken, err := security.NewJWT(
+		jwt.MapClaims{"id": admin.Id, "identity": admin.Email, "role": "user"},
+		api.app.Settings().AuthTokenRefreshSecret,
+		api.app.Settings().AuthRefreshTokenExpiryDuration,
+	)
+	if err != nil {
+		log.Err(err).Msg("UserAuth: error creating refresh token")
+		NewInternalServerError(c)
+		return
+	}
+
 	c.JSON(http.StatusOK, map[string]any{
-		"token": token,
-		"admin": admin,
+		"token":        token,
+		"admin":        admin,
+		"refreshToken": refreshToken,
 	})
 }
 
@@ -103,13 +117,23 @@ func (api *adminApi) changePassword(c *gin.Context) {
 }
 
 func (api *adminApi) refreshToken(c *gin.Context) {
-	claimsRaw, _ := c.Get(ContextClaimsKey)
-	claims := claimsRaw.(jwt.MapClaims)
-	adminId := uuid.MustParse(claims["id"].(string))
-	admin, err := api.app.Dao().FindAdminById(adminId)
-	if err != nil {
-		NewInternalServerError(c)
+	var refreshTokenRequest requests.RefreshTokenRequest
+	if err := c.BindJSON(&refreshTokenRequest); err != nil {
+		NewBadRequestError(c, "error handling submitted data", nil)
 		return
 	}
+
+	auth := services.NewAuth(api.app)
+	admin, err := auth.RefreshToken(refreshTokenRequest)
+	if err != nil {
+		if err == security.ErrInvalidRefreshToken {
+			NewBadRequestError(c, "invalid refresh token", nil)
+			return
+		}
+
+		HandleError(c, err)
+		return
+	}
+
 	api.authResponse(c, admin)
 }

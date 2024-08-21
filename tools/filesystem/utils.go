@@ -33,3 +33,14 @@ func IsValidAudioFileType(fileHeader *multipart.FileHeader) bool {
 
 	return strings.HasPrefix(mimeType, "audio/")
 }
+
+func EncodeFilePathAsFileURL(path string) string {
+	slashPath := filepath.ToSlash(path)
+	fileURL := "file:///"
+	if slashPath[1] == ':' {
+		fileURL += slashPath
+	} else {
+		fileURL += slashPath[1:]
+	}
+	return fileURL
+}

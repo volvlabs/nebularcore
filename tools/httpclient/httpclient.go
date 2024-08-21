@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,8 @@ type HTTPClient interface {
 	SetBaseUrl(baseUrl string) HTTPClient
 	SetAuthToken(token string) HTTPClient
 	Bearer(token string) HTTPClient
+	BasicAuth(username, password string) HTTPClient
+	SetHeader(key, value string) HTTPClient
 	ToJson(any) HTTPClient
 	ToBytesBuffer(*[]byte) HTTPClient
 	ToPlainText(*string) HTTPClient
@@ -34,6 +37,7 @@ type HTTPClientImpl struct {
 	toTextResp    *string
 	errorResp     any
 	contentType   string
+	headers       map[string]string
 }
 
 func NewHTTPClient(baseURL, authToken string) HTTPClient {
@@ -42,6 +46,7 @@ func NewHTTPClient(baseURL, authToken string) HTTPClient {
 		AuthToken:   authToken,
 		HTTPClient:  &http.Client{},
 		contentType: "application/json",
+		headers:     make(map[string]string),
 	}
 }
 
@@ -52,6 +57,17 @@ func (c *HTTPClientImpl) SetBaseUrl(baseURL string) HTTPClient {
 
 func (c *HTTPClientImpl) SetAuthToken(token string) HTTPClient {
 	c.AuthToken = token
+	return c
+}
+
+func (c *HTTPClientImpl) BasicAuth(username, password string) HTTPClient {
+	encodedAuth := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
+	c.AuthToken = fmt.Sprintf("Basic %s", encodedAuth)
+	return c
+}
+
+func (c *HTTPClientImpl) SetHeader(key, value string) HTTPClient {
+	c.headers[key] = value
 	return c
 }
 
@@ -105,6 +121,10 @@ func (c *HTTPClientImpl) prepareRequest(method, path string, body any) (*http.Re
 	req.Header.Set("Content-Type", c.contentType)
 	req.Header.Set("Authorization", c.AuthToken)
 
+	for key, value := range c.headers {
+		req.Header.Set(key, value)
+	}
+
 	return req, nil
 }
 
@@ -126,7 +146,7 @@ func (c *HTTPClientImpl) handleResponseBody(respStatusCode int, respBody []byte)
 			return err
 		}
 	} else if c.bytesRespBody != nil {
-		c.bytesRespBody = &respBody
+		*c.bytesRespBody = respBody
 	} else if c.toTextResp != nil {
 		strResp := string(respBody)
 		*c.toTextResp = strResp

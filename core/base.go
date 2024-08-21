@@ -10,9 +10,13 @@ import (
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/models/config"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/aws"
+	"gitlab.com/jideobs/nebularcore/tools/aws/scheduler"
 	"gitlab.com/jideobs/nebularcore/tools/eventclient"
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"gitlab.com/jideobs/nebularcore/tools/gcloud"
 	"gitlab.com/jideobs/nebularcore/tools/security"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gitlab.com/jideobs/nebularcore/tools/validation"
 
 	"gorm.io/gorm"
@@ -40,6 +44,7 @@ type BaseApp struct {
 	otp *security.Otp
 
 	eventClient eventclient.Client
+	scheduler   scheduler.Client
 }
 
 type BaseAppConfig struct {
@@ -168,6 +173,11 @@ func (b *BaseApp) NewFileSystem() (*filesystem.System, error) {
 			settings.Aws.AccessKeyID,
 			settings.Aws.SecretAccessKey,
 		)
+	} else if settings.Glcoud.Storage.Enabled {
+		return filesystem.NewWithGoogleCloudStorage(
+			settings.Glcoud.Storage.Bucket,
+			settings.Glcoud.Storage.CredfileLocation,
+		)
 	}
 
 	return filesystem.NewLocal(filepath.Join(b.DataDir(), LocalStorageDirName))
@@ -180,24 +190,49 @@ func (b *BaseApp) GetFileURL(key string) string {
 		return fmt.Sprintf("%s/%s", cloudFrontConfig.Domain, key)
 	}
 
-	return fmt.Sprintf("/files?key=%s", key)
+	return fmt.Sprintf("%s/files?key=%s", settings.Domain, key)
 }
 
 func (b *BaseApp) EventClient() eventclient.Client {
 	if b.eventClient == nil {
 		settings := b.Settings()
-		eventClient, err := eventclient.New(
-			settings.Aws.AccessKeyID,
-			settings.Aws.SecretAccessKey,
-			settings.Aws.Region,
-			settings.EventBridge.EventBus,
-		)
-		if err != nil {
-			log.Err(err).Msgf("failed to initialize event bridge client")
+		switch settings.EventClient {
+		case types.AWSEventBridgeClient:
+			eventClient, err := aws.NewEventClient(
+				settings.Aws.AccessKeyID,
+				settings.Aws.SecretAccessKey,
+				settings.Aws.Region,
+				settings.EventBridge.EventBus,
+			)
+			if err != nil {
+				log.Err(err).Msgf("failed to initialize event bridge client")
+			}
+			b.eventClient = eventClient
+		case types.GcloudPubSubClient:
+			eventClient, err := gcloud.NewEventClient(settings.Glcoud)
+			if err != nil {
+				log.Err(err).Msgf("failed to initialize gcloud pubsub client")
+			}
+			b.eventClient = eventClient
 		}
-
-		b.eventClient = eventClient
 	}
 
 	return b.eventClient
+}
+
+func (b *BaseApp) Scheduler() scheduler.Client {
+	if b.scheduler == nil {
+		settings := b.Settings()
+		scheduler, err := scheduler.New(
+			settings.Aws.AccessKeyID,
+			settings.Aws.SecretAccessKey,
+			settings.Aws.Region,
+		)
+		if err != nil {
+			log.Err(err).Msgf("failed to initialize scheduler client")
+		}
+		b.scheduler = scheduler
+	}
+
+	return b.scheduler
 }

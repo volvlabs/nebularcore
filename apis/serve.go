@@ -13,8 +13,27 @@ import (
 	"gitlab.com/jideobs/nebularcore/models/config"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
+
+func Cors(allowedOrigins string, router *gin.Engine) {
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: strings.Split(allowedOrigins, ","),
+		AllowMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodDelete,
+			http.MethodHead,
+			http.MethodOptions,
+		},
+		AllowHeaders:     []string{"Origin", "Content-Type"},
+		ExposeHeaders:    []string{"Origin", "Content-Type", "Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+}
 
 func Serve(app core.App, config config.ServeConfig) error {
 	router := app.Router()
@@ -29,22 +48,6 @@ func Serve(app core.App, config config.ServeConfig) error {
 			return baseCtx
 		},
 	}
-
-	router.Use(cors.New(cors.Config{
-		AllowOrigins: strings.Split(config.AllowedOrigins, ","),
-		AllowMethods: []string{
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodDelete,
-			http.MethodHead,
-			http.MethodOptions,
-		},
-		AllowHeaders:     []string{"Origin"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
 
 	// Wait for server.Shutdown to return.
 	var wg sync.WaitGroup

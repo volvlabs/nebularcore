@@ -3,6 +3,7 @@ package types
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/spf13/cast"
@@ -65,7 +66,7 @@ func (d DateTime) String() string {
 }
 
 func (d DateTime) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + d.String() + `"`), nil
+	return []byte(fmt.Sprintf("%d", d.Time().UnixMilli())), nil
 }
 
 func (d *DateTime) UnmarshalJSON(b []byte) error {

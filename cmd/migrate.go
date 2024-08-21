@@ -34,7 +34,7 @@ func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command
 				}
 			default:
 				runner, err := migrate.NewRunner(
-					fmt.Sprintf("file://%s", app.MigrationsDir()),
+					fmt.Sprintf("file:///%s", app.MigrationsDir()),
 					fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 						dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode))
 				if err != nil {

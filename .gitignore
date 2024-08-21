@@ -51,3 +51,5 @@ docker/postgres/data
 dist/
 
 data.db
+
+.idea/

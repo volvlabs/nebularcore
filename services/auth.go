@@ -5,9 +5,13 @@ import (
 
 	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/daos"
+	"gitlab.com/jideobs/nebularcore/models"
+	"gitlab.com/jideobs/nebularcore/models/requests"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"gitlab.com/jideobs/nebularcore/tools/security"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gitlab.com/jideobs/nebularcore/tools/validation"
+	"gorm.io/gorm"
 )
 
 type OAuth2Request struct {
@@ -61,4 +65,43 @@ func (a *Auth) getAuthUser(provider auth.Provider, code string) (*auth.AuthUser,
 	}
 
 	return provider.FetchAuthUser(token)
+}
+
+func (a *Auth) Validate(request requests.RefreshTokenRequest) error {
+	fieldErrs, err := a.app.Validator().Validate(request)
+	if err != nil {
+		return &types.RequestBodyError{
+			Message: "error validating request body",
+			Errors:  fieldErrs,
+		}
+	}
+
+	return nil
+}
+
+func (a *Auth) RefreshToken(request requests.RefreshTokenRequest) (*models.Admin, error) {
+	if err := a.Validate(request); err != nil {
+		return nil, err
+	}
+
+	claims, err := security.ParseJWT(request.Token, a.app.Settings().AuthTokenRefreshSecret)
+	if err != nil {
+		return nil, security.ErrInvalidRefreshToken
+	}
+
+	adminId := claims["id"].(string)
+	admin := &models.Admin{}
+	err = a.app.Dao().DB().Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(&models.Admin{}).Where("id = ?", adminId).First(admin).Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return admin, nil
 }

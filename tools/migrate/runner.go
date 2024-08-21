@@ -7,6 +7,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/rs/zerolog/log"
 )
 
 type Runner struct {
@@ -16,6 +17,7 @@ type Runner struct {
 func NewRunner(migrationsDir, connectionString string) (*Runner, error) {
 	migrate, err := migrate.New(migrationsDir, connectionString)
 	if err != nil {
+		log.Err(err).Msg("unable to start migration")
 		return nil, err
 	}
 
@@ -46,8 +48,10 @@ func (r *Runner) Run(args ...string) error {
 
 func (r *Runner) up() error {
 	if err := r.migrate.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Err(err).Msg("database migration failed")
 		return err
 	}
+	log.Info().Msg("database migration ran successfully")
 	return nil
 }
 
@@ -60,8 +64,10 @@ func (r *Runner) down(toRevertCount int) error {
 	}
 
 	if err != nil && err != migrate.ErrNoChange {
+		log.Err(err).Msg("database miration rollback ran failed")
 		return err
 	}
+	log.Info().Msg("database miration rollback ran successfully")
 	return nil
 }
 
