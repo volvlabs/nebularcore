@@ -25,6 +25,10 @@ type ServeConfig struct {
 	AllowedOrigins  string `yaml:"allowedOrigins" envconfig:"ALLOWED_ORIGINS"`
 }
 
+type Endpoints struct {
+	AuthEnabled bool `yaml:"authEnabled" envconfig:"AUTH_ENABLED"`
+}
+
 type AppConfig struct {
 	Env           string         `yaml:"env" envconfig:"ENV"`
 	IsDev         bool           `yaml:"isDev" envconfig:"IS_DEV"`
@@ -35,6 +39,7 @@ type AppConfig struct {
 	MigrationsDir string         `yaml:"migrationsDir" envconfig:"MIGRATION_DIR"`
 	Database      DatabaseConfig `yaml:"database"`
 	Server        ServeConfig    `yaml:"server"`
+	Endpoints     Endpoints      `yaml:"endpoints"`
 }
 
 func readConfigFromFile(configFilePath string) (*AppConfig, error) {

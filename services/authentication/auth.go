@@ -67,7 +67,7 @@ func (a *Auth) getAuthUser(provider auth.Provider, code string) (*auth.AuthUser,
 	return provider.FetchAuthUser(token)
 }
 
-func (a *Auth) Validate(request requests.RefreshTokenRequest) error {
+func (a *Auth) Validate(request any) error {
 	fieldErrs, err := a.app.Validator().Validate(request)
 	if err != nil {
 		return &types.RequestBodyError{

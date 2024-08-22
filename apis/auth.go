@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/jideobs/nebularcore/entities"
+	"gitlab.com/jideobs/nebularcore/models/responses"
 	"gitlab.com/jideobs/nebularcore/services/authentication"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 	"net/http"
@@ -22,6 +23,7 @@ func BindAuthApi(app core.App, rg *gin.RouterGroup) {
 
 	subGroup := rg.Group("")
 	subGroup.POST("/login", api.login)
+	subGroup.PUT("/reset-password", api.resetPassword)
 	subGroup.PUT("/refresh-token", api.refreshToken)
 
 	authGroup := subGroup.Group("")
@@ -143,4 +145,24 @@ func (api *authApi) refreshToken(c *gin.Context) {
 	}
 
 	api.authResponseWithUserInfoMap(c, userInfo["email"].(string), userInfo)
+}
+
+func (api *authApi) resetPassword(c *gin.Context) {
+	var resetPasswordRequest requests.ResetPasswordRequest
+	if err := c.BindJSON(&resetPasswordRequest); err != nil {
+		NewBadRequestError(c, "error handling submitted data", nil)
+		return
+	}
+
+	authService := authentication.New(api.app)
+	err := authService.ResetPassword(resetPasswordRequest)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, responses.ApiResponse{
+		Code:    "00",
+		Message: "password reset successful",
+	})
 }
