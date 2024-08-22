@@ -184,7 +184,7 @@ func (api *authApi) refreshToken(c *gin.Context) {
 // resetPassword godoc
 // @Summary      initiate password reset process for user
 // @Description  start the process of resetting user's password
-// @Tags         credential
+// @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param 		 request body requests.ResetPasswordRequest true "Reset password request"
