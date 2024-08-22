@@ -45,7 +45,7 @@ func New(cfg *config.AppConfig) *NebularCore {
 }
 
 func (n *NebularCore) Start() error {
-	n.RootCmd.AddCommand(cmd.NewServeCommand(n, n.cfg.Server))
+	n.RootCmd.AddCommand(cmd.NewServeCommand(n, n.cfg.Endpoints, n.cfg.Server))
 	n.RootCmd.AddCommand(cmd.NewMigrateCommand(n, n.cfg.Database))
 
 	return n.Execute()
