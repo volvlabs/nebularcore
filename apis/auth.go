@@ -86,6 +86,16 @@ func (api *authApi) authResponseWithUserType(c *gin.Context, user entities.User)
 	})
 }
 
+// login godoc
+// @Summary      login a user
+// @Description  authenticate a user returning auth token, refresh token and user information
+// @Tags         auth
+// @Accept       json
+// @Param 		  request body requests.LoginRequest true "Login request"
+// @Produce      json
+// @Success      200  {object}  responses.AuthResponse
+// @Failure      500  {object}  apis.ApiError
+// @Router       /login [post]
 func (api *authApi) login(c *gin.Context) {
 	var loginRequest requests.LoginRequest
 	if err := c.BindJSON(&loginRequest); err != nil {
@@ -103,6 +113,18 @@ func (api *authApi) login(c *gin.Context) {
 	api.authResponseWithUserInfoMap(c, loginRequest.Identity, userInfo)
 }
 
+// changePassword godoc
+// @Summary      change user's password
+// @Description  allow a user to change its password.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param 		 request body requests.PasswordChangeRequest true "Password Change request"
+// @Security 	 BearerAuth
+// @Success      200  {object}  responses.ApiResponse
+// @Failure      401  {object}  apis.ApiError
+// @Failure      500  {object}  apis.ApiError
+// @Router       /change-password [put]
 func (api *authApi) changePassword(c *gin.Context) {
 	var passwordChangeRequest requests.PasswordChangeRequest
 	if err := c.BindJSON(&passwordChangeRequest); err != nil {
@@ -122,9 +144,21 @@ func (api *authApi) changePassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]string{})
+	c.JSON(http.StatusOK, responses.ApiResponse{Code: "00", Message: "password changed successfully"})
 }
 
+// refreshToken godoc
+// @Summary      refresh an auth token
+// @Description  get a new auth token with the refresh token for user
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param 		 request body requests.RefreshTokenRequest true "Refresh token request"
+// @Security 	 BearerAuth
+// @Success      200  {object}  responses.AuthResponse
+// @Failure      401  {object}  apis.ApiError
+// @Failure      500  {object}  apis.ApiError
+// @Router       /refresh-token [put]
 func (api *authApi) refreshToken(c *gin.Context) {
 	var refreshTokenRequest requests.RefreshTokenRequest
 	if err := c.BindJSON(&refreshTokenRequest); err != nil {
@@ -147,6 +181,18 @@ func (api *authApi) refreshToken(c *gin.Context) {
 	api.authResponseWithUserInfoMap(c, userInfo["email"].(string), userInfo)
 }
 
+// resetPassword godoc
+// @Summary      initiate password reset process for user
+// @Description  start the process of resetting user's password
+// @Tags         credential
+// @Accept       json
+// @Produce      json
+// @Param 		 request body requests.ResetPasswordRequest true "Reset password request"
+// @Security 	 BearerAuth
+// @Success      200  {object}  responses.ApiResponse
+// @Failure      401  {object}  apis.ApiError
+// @Failure      500  {object}  apis.ApiError
+// @Router       /reset-password [put]
 func (api *authApi) resetPassword(c *gin.Context) {
 	var resetPasswordRequest requests.ResetPasswordRequest
 	if err := c.BindJSON(&resetPasswordRequest); err != nil {
