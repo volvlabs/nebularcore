@@ -59,7 +59,7 @@ func (api authApi) getTokenAndRefreshToken(id uuid.UUID, identity string, role t
 // Todo: look for better way to represent user information
 func (api *authApi) authResponseWithUserInfoMap(c *gin.Context, identity string, userInfo map[string]any) {
 	token, refreshToken, err := api.getTokenAndRefreshToken(
-		uuid.MustParse(userInfo["id"].(string)), identity, types.StringToRole[userInfo["role"].(string)])
+		uuid.MustParse(userInfo["id"].(string)), identity, userInfo["role"].(types.Role))
 	if err != nil {
 		log.Err(err).Msgf("LoginApi: error occurred getting token and refresh token")
 		NewInternalServerError(c)

@@ -32,6 +32,7 @@ func createAuth(t *testing.T, app *test.TestApp, admin *entities.Admin) *entitie
 	auth := &entities.Auth{
 		Identity:      admin.Email,
 		UserId:        admin.Id,
+		Role:          types.Admin,
 		UserTableName: "admins",
 		PasswordHash:  "$2a$12$oJSuU25enGzScfVVZDtj9O4roWt1Z4OH3XId4Y109ZE7BsZhmOcGO",
 	}

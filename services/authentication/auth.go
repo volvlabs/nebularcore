@@ -104,6 +104,6 @@ func (a *Auth) RefreshToken(request requests.RefreshTokenRequest) (map[string]an
 		return nil, err
 	}
 
-	userInfo["role"], _ = types.RoleFromString(userInfo["role"].(string))
+	userInfo["role"] = authEntity.Role
 	return userInfo, nil
 }
