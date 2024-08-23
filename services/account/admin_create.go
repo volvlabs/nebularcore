@@ -63,6 +63,7 @@ func (a *Service) CreateAdmin(adminCreateRequest AdminCreateRequest) (*entities.
 		adminCreateRequest.Email,
 		adminCreateRequest.Password,
 		"admins",
+		types.Admin,
 		admin.Id,
 	)
 	if err != nil {
