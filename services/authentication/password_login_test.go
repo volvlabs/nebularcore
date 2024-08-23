@@ -69,7 +69,7 @@ func TestPasswordLogin(t *testing.T) {
 			}
 
 			authService := authentication.New(app)
-			err = authService.Create(scenario.identity, scenario.password, "admins", admin.Id)
+			err = authService.Create(scenario.identity, scenario.password, "admins", types.Admin, admin.Id)
 			if err != nil {
 				t.Fatalf("Error creating authentication, got %v", err)
 			}

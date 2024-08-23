@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"gitlab.com/jideobs/nebularcore/services/authentication"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 	"testing"
 
 	"gitlab.com/jideobs/nebularcore/test"
@@ -33,7 +34,8 @@ func TestCreate(t *testing.T) {
 			defer tearDownMigration(t)
 
 			authService := authentication.New(app)
-			err := authService.Create(scenario.identity, scenario.passwordHash, "admins", uuid.New())
+			err := authService.Create(
+				scenario.identity, scenario.passwordHash, "admins", types.Admin, uuid.New())
 			if err != nil && !errors.Is(err, scenario.wantErr) {
 				t.Errorf("got %v, want %v", err, scenario.wantErr)
 			}

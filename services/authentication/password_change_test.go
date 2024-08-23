@@ -44,7 +44,8 @@ func TestChangePassword(t *testing.T) {
 			defer tearDownMigration(t)
 
 			authService := authentication.New(app)
-			err := authService.Create(scenario.identity, scenario.oldPassword, "admins", uuid.New())
+			err := authService.Create(
+				scenario.identity, scenario.oldPassword, "admins", types.Admin, uuid.New())
 			if err != nil {
 				t.Fatalf("Tyring to create authentication, got %v", err)
 			}
