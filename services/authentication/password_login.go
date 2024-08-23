@@ -9,7 +9,6 @@ import (
 )
 
 func (a *Auth) PasswordLogin(loginRequest requests.LoginRequest) (map[string]any, error) {
-
 	identity := loginRequest.Identity
 	password := loginRequest.Password
 	auth, err := a.dao.FindAuthByIdentity(identity)
@@ -33,6 +32,6 @@ func (a *Auth) PasswordLogin(loginRequest requests.LoginRequest) (map[string]any
 		return nil, err
 	}
 
-	userInfo["role"], _ = types.RoleFromString(userInfo["role"].(string))
+	userInfo["role"] = auth.Role
 	return userInfo, nil
 }
