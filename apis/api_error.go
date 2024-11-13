@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -52,7 +53,7 @@ func NewForbiddenError(c *gin.Context) {
 }
 
 func HandleError(c *gin.Context, err error) {
-	if err == types.ErrRecordNotFound {
+	if errors.Is(err, types.ErrRecordNotFound) {
 		NewNotFoundError(c)
 	} else if types.ErrIsUserError(err) {
 		var errs any = nil

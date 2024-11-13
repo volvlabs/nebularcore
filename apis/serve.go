@@ -17,6 +17,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+func Endpoints(app core.App, endpoints config.Endpoints) {
+	router := app.Router().Group("")
+	if endpoints.AuthEnabled {
+		BindAuthApi(app, router)
+	}
+}
+
 func Cors(allowedOrigins string, router *gin.Engine) {
 	router.Use(cors.New(cors.Config{
 		AllowOrigins: strings.Split(allowedOrigins, ","),

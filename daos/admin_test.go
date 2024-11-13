@@ -1,12 +1,12 @@
 package daos_test
 
 import (
+	"gitlab.com/jideobs/nebularcore/entities"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/jideobs/nebularcore/daos"
-	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/test"
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 	"gitlab.com/jideobs/nebularcore/tools/types"
@@ -21,24 +21,30 @@ func TestCreateAdmin(t *testing.T) {
 
 	scenarios := []struct {
 		name  string
-		admin *models.Admin
+		admin *entities.Admin
 		want  error
 	}{
 		{
 			name: "should successfully create admin",
-			admin: &models.Admin{
-				FirstName: "John",
-				LastName:  "Doe",
-				Email:     "john.doe@example.com",
+			admin: &entities.Admin{
+				UserBase: entities.UserBase{
+					FirstName:   "John",
+					LastName:    "Doe",
+					PhoneNumber: "2348091607292",
+					Email:       "john.doe@example.com",
+				},
 			},
 			want: nil,
 		},
 		{
 			name: "should fail to create admin because email already exists",
-			admin: &models.Admin{
-				FirstName: "John",
-				LastName:  "Doe",
-				Email:     "john.doe@example.com",
+			admin: &entities.Admin{
+				UserBase: entities.UserBase{
+					FirstName:   "John",
+					LastName:    "Doe",
+					PhoneNumber: "2348091607291",
+					Email:       "john.doe@example.com",
+				},
 			},
 			want: &types.UserError{Message: "email already registered"},
 		},
@@ -62,7 +68,7 @@ func TestSaveAdmin(t *testing.T) {
 	defer tearDownMigration(t)
 	d := daos.New(app.Dao().DB())
 
-	admin := &models.Admin{}
+	admin := &entities.Admin{}
 
 	err := d.SaveAdmin(admin)
 	assert.Error(t, err)
@@ -82,16 +88,18 @@ func TestFindAdminByEmail(t *testing.T) {
 	scenarios := []struct {
 		name          string
 		email         string
-		adminToCreate *models.Admin
+		adminToCreate *entities.Admin
 		want          error
 	}{
 		{
 			name:  "should successfully find admin by email",
 			email: "john.doe@example.com",
-			adminToCreate: &models.Admin{
-				FirstName: "John",
-				LastName:  "Doe",
-				Email:     "john.doe@example.com",
+			adminToCreate: &entities.Admin{
+				UserBase: entities.UserBase{
+					FirstName: "John",
+					LastName:  "Doe",
+					Email:     "john.doe@example.com",
+				},
 			},
 			want: nil,
 		},
@@ -132,16 +140,18 @@ func TestFindAdminById(t *testing.T) {
 	scenarios := []struct {
 		name          string
 		id            uuid.UUID
-		adminToCreate *models.Admin
+		adminToCreate *entities.Admin
 		want          error
 	}{
 		{
 			name: "should successfully find admin by ID",
 			id:   uuid.New(),
-			adminToCreate: &models.Admin{
-				FirstName: "John",
-				LastName:  "Doe",
-				Email:     "john.doe@example.com",
+			adminToCreate: &entities.Admin{
+				UserBase: entities.UserBase{
+					FirstName: "John",
+					LastName:  "Doe",
+					Email:     "john.doe@example.com",
+				},
 			},
 			want: nil,
 		},

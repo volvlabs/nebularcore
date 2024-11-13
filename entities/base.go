@@ -1,4 +1,4 @@
-package models
+package entities
 
 import (
 	"gitlab.com/jideobs/nebularcore/tools/types"

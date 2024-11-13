@@ -1,9 +1,10 @@
 package daos_test
 
 import (
+	"github.com/google/uuid"
+	"gitlab.com/jideobs/nebularcore/entities"
 	"testing"
 
-	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/test"
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 	"gitlab.com/jideobs/nebularcore/tools/types"
@@ -18,21 +19,23 @@ func TestCreateAuth(t *testing.T) {
 
 	scenarios := []struct {
 		name string
-		auth *models.Auth
+		auth *entities.Auth
 		want error
 	}{
 		{
-			name: "should enter auth info into db",
-			auth: &models.Auth{
+			name: "should enter authentication info into db",
+			auth: &entities.Auth{
 				Identity:     "jideobs@gmail.com",
+				UserId:       uuid.New(),
 				PasswordHash: "password",
 			},
 			want: nil,
 		},
 		{
 			name: "should fail to create admin because email already exists",
-			auth: &models.Auth{
+			auth: &entities.Auth{
 				Identity:     "jideobs@gmail.com",
+				UserId:       uuid.New(),
 				PasswordHash: "password",
 			},
 			want: &types.UserError{Message: "identity already created"},
@@ -61,7 +64,7 @@ func TestUpdatePassword(t *testing.T) {
 		want            error
 	}{
 		{
-			name:            "should enter auth info into db",
+			name:            "should enter authentication info into db",
 			identity:        "john.doe@gmail.com",
 			newPasswordHash: "password",
 			want:            nil,
@@ -82,14 +85,15 @@ func TestFindAuthByIdentity(t *testing.T) {
 	scenarios := []struct {
 		name         string
 		identity     string
-		authToCreate *models.Auth
+		authToCreate *entities.Auth
 		want         error
 	}{
 		{
-			name:     "should successfully return auth information",
+			name:     "should successfully return authentication information",
 			identity: "john.doe@gmail.com",
-			authToCreate: &models.Auth{
+			authToCreate: &entities.Auth{
 				Identity:     "john.doe@gmail.com",
+				UserId:       uuid.New(),
 				PasswordHash: "password",
 			},
 			want: nil,
@@ -97,11 +101,12 @@ func TestFindAuthByIdentity(t *testing.T) {
 		{
 			name:     "should return error because the identity does not found",
 			identity: "john.doe@gmail.com",
-			authToCreate: &models.Auth{
+			authToCreate: &entities.Auth{
 				Identity:     "john.doe@gmail.com",
+				UserId:       uuid.New(),
 				PasswordHash: "password",
 			},
-			want: &types.UserError{Message: "auth not found"},
+			want: &types.UserError{Message: "authentication not found"},
 		},
 	}
 	for _, scenario := range scenarios {

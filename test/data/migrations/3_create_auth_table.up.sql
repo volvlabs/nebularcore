@@ -3,6 +3,8 @@ CREATE TABLE IF NOT EXISTS auths (
     created TIMESTAMP,
     updated TIMESTAMP,
     identity TEXT,
+    user_table_name TEXT,
+    user_id TEXT UNIQUE,
     role TEXT,
     password_hash TEXT
 );

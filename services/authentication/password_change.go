@@ -1,4 +1,4 @@
-package services
+package authentication
 
 import (
 	"github.com/rs/zerolog/log"
@@ -6,13 +6,13 @@ import (
 	"gitlab.com/jideobs/nebularcore/tools/types"
 )
 
-func (a *Auth) ChangePassword(identity, oldPassword, password string) error {
+func (a *Auth) ChangePassword(identity, currentPassword, password string) error {
 	auth, err := a.dao.FindAuthByIdentity(identity)
 	if err != nil {
 		return err
 	}
 
-	if !security.ValidatePassword(auth.PasswordHash, oldPassword) {
+	if !security.ValidatePassword(auth.PasswordHash, currentPassword) {
 		return &types.UserError{Message: "current password is incorrect"}
 	}
 

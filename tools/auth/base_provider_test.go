@@ -26,8 +26,8 @@ func TestBaseProvider(t *testing.T) {
 	b.SetScopes([]string{"test"})
 	assert.Equal(t, []string{"test"}, b.Scopes())
 
-	b.SetAuthUrl("auth-url")
-	assert.Equal(t, "auth-url", b.AuthUrl())
+	b.SetAuthUrl("authentication-url")
+	assert.Equal(t, "authentication-url", b.AuthUrl())
 
 	b.SetTokenUrl("token-url")
 	assert.Equal(t, "token-url", b.TokenUrl())

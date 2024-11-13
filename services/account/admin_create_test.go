@@ -1,10 +1,10 @@
-package services_test
+package account_test
 
 import (
+	"gitlab.com/jideobs/nebularcore/services/account"
 	"testing"
 
 	"github.com/google/uuid"
-	"gitlab.com/jideobs/nebularcore/services"
 	"gitlab.com/jideobs/nebularcore/test"
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 	"gitlab.com/jideobs/nebularcore/tools/types"
@@ -13,27 +13,27 @@ import (
 func TestCreateAdmin(t *testing.T) {
 	scenarios := []struct {
 		name    string
-		req     services.AdminCreateRequest
+		req     account.AdminCreateRequest
 		wantErr error
 	}{
 		{
 			name: "should successfully create admin",
-			req: services.AdminCreateRequest{
+			req: account.AdminCreateRequest{
 				FirstName: "John",
 				LastName:  "Doe",
-				Email:     "john.doe@example.com",
-				Role:      "operator",
+				Email:     "jogn.doe@gmail.com",
+				Role:      types.Admin,
 				Password:  "password123",
 			},
 			wantErr: nil,
 		},
 		{
 			name: "should fail to create admin with already existing email",
-			req: services.AdminCreateRequest{
+			req: account.AdminCreateRequest{
 				FirstName: "John",
 				LastName:  "Doe",
 				Email:     "jogn.doe@gmail.com",
-				Role:      "operator",
+				Role:      types.Admin,
 				Password:  "password123",
 			},
 			wantErr: &types.UserError{Message: "email already exists"},
@@ -43,11 +43,11 @@ func TestCreateAdmin(t *testing.T) {
 		t.Run(scenario.name, func(t *testing.T) {
 			app, _ := test.NewTestApp()
 			tearDownMigration := test.RunMigration(
-				t, filesystem.GetRootDir("../"), app.DataDir())
+				t, filesystem.GetRootDir("../../"), app.DataDir())
 			defer tearDownMigration(t)
 
-			adminCreate := services.NewAdminCreate(app)
-			admin, err := adminCreate.Create(scenario.req)
+			adminCreate := account.New(app)
+			admin, err := adminCreate.CreateAdmin(scenario.req)
 			if err != nil && err.Error() != scenario.wantErr.Error() {
 				t.Errorf("got error %v, want %v", err, scenario.wantErr)
 			}

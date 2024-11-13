@@ -1,9 +1,12 @@
-package services_test
+package authentication_test
 
 import (
+	"errors"
+	"github.com/google/uuid"
+	"gitlab.com/jideobs/nebularcore/services/authentication"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 	"testing"
 
-	"gitlab.com/jideobs/nebularcore/services"
 	"gitlab.com/jideobs/nebularcore/test"
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 )
@@ -18,7 +21,7 @@ func TestCreate(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "should successfully create auth information",
+			name:         "should successfully create authentication information",
 			identity:     "john.doe@gmail.com",
 			passwordHash: "password",
 			wantErr:      nil,
@@ -27,12 +30,13 @@ func TestCreate(t *testing.T) {
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
 			tearDownMigration := test.RunMigration(
-				t, filesystem.GetRootDir("../"), app.DataDir())
+				t, filesystem.GetRootDir("../../"), app.DataDir())
 			defer tearDownMigration(t)
 
-			auth := services.NewAuth(app)
-			err := auth.Create(scenario.identity, scenario.passwordHash)
-			if err != nil && err != scenario.wantErr {
+			authService := authentication.New(app)
+			err := authService.Create(
+				scenario.identity, scenario.passwordHash, "admins", types.Admin, uuid.New())
+			if err != nil && !errors.Is(err, scenario.wantErr) {
 				t.Errorf("got %v, want %v", err, scenario.wantErr)
 			}
 		})

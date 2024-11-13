@@ -26,7 +26,6 @@ func main() {
 	// routes
 	r := app.Router()
 	rg := r.Group("/api")
-	apis.BindAdminApi(app, rg)
 	apis.BindHealthApi(rg)
 
 	// Register roles
