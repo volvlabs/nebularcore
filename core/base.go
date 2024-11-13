@@ -178,6 +178,8 @@ func (b *BaseApp) NewFileSystem() (*filesystem.System, error) {
 			settings.Glcoud.Storage.Bucket,
 			settings.Glcoud.Storage.CredfileLocation,
 		)
+	} else if b.Env == "test" || settings.InMemory.Enabled {
+		return filesystem.NewMemory()
 	}
 
 	return filesystem.NewLocal(filepath.Join(b.DataDir(), LocalStorageDirName))

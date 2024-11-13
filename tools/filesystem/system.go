@@ -13,6 +13,7 @@ import (
 	"gocloud.dev/blob"
 	"gocloud.dev/blob/fileblob"
 	"gocloud.dev/blob/gcsblob"
+	"gocloud.dev/blob/memblob"
 	"gocloud.dev/blob/s3blob"
 	"gocloud.dev/gcp"
 	"golang.org/x/oauth2/google"
@@ -82,6 +83,13 @@ func NewLocal(dirPath string) (*System, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return &System{ctx: ctx, bucket: bucket}, nil
+}
+
+func NewMemory() (*System, error) {
+	ctx := context.Background()
+	bucket := memblob.OpenBucket(nil)
 
 	return &System{ctx: ctx, bucket: bucket}, nil
 }

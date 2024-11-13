@@ -27,8 +27,8 @@ type Settings struct {
 	S3          S3Config          `yaml:"s3" json:"s3"`
 	CloudFront  CloudFrontConfig  `yaml:"cloudFront" json:"cloudFront"`
 	EventBridge EventBridgeConfig `yaml:"eventBridge" json:"eventBridge"`
-
-	Glcoud GcloudConfig `yaml:"gcloud" json:"gcloud"`
+	InMemory    InMemoryConfig    `yaml:"inMemoryConfig" json:"inMemoryConfig"`
+	Glcoud      GcloudConfig      `yaml:"gcloud" json:"gcloud"`
 
 	EventClient types.EventClient `yaml:"eventClient" json:"eventClient"`
 
@@ -166,4 +166,8 @@ type GcloudConfig struct {
 		Bucket           string `yaml:"bucket" json:"bucket"`
 		CredfileLocation string `yaml:"credfileLocation" json:"credfileLocation"`
 	} `yaml:"storage" json:"storage"`
+}
+
+type InMemoryConfig struct {
+	Enabled bool `yaml:"enabled" json:"enabled"`
 }
