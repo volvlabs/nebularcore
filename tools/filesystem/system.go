@@ -22,6 +22,8 @@ import (
 type System struct {
 	ctx    context.Context
 	bucket *blob.Bucket
+
+	isBucketClosed bool
 }
 
 func NewWithS3(bucketName, region, accessKey, secretKey string) (*System, error) {
@@ -140,5 +142,6 @@ func (s *System) Download(fileKey string) ([]byte, string, error) {
 }
 
 func (s *System) Close() error {
+	s.isBucketClosed = true
 	return s.bucket.Close()
 }
