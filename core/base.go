@@ -167,7 +167,7 @@ func (b *BaseApp) Otp() *security.Otp {
 }
 
 func (b *BaseApp) NewFileSystem() (*filesystem.System, error) {
-	if b.fs != nil {
+	if b.fs != nil && !b.fs.IsBucketClosed {
 		return b.fs, nil
 	}
 
