@@ -36,6 +36,10 @@ type AuthApi struct {
 	app core.App
 }
 
+func NewAuthApi(app core.App) *AuthApi {
+	return &AuthApi{app: app}
+}
+
 func (api AuthApi) GetTokenAndRefreshToken(id uuid.UUID, identity string, role types.Role) (string, string, error) {
 	var token, refreshToken string
 	token, err := security.NewJWT(
