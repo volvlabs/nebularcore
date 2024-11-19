@@ -19,13 +19,18 @@ import (
 	"github.com/google/uuid"
 )
 
-func BindAuthApi(app core.App, rg *gin.RouterGroup) {
+func BindAuthApi(app core.App, rg *gin.RouterGroup, addResetPasswordEndpoint bool) {
 	api := AuthApi{app: app}
 
 	subGroup := rg.Group("")
 	subGroup.POST("/login", api.Login)
-	subGroup.PUT("/reset-password", api.ResetPassword)
+	subGroup.PUT("/initiate-reset-password", api.InitiateResetPassword)
 	subGroup.PUT("/refresh-token", api.RefreshToken)
+	subGroup.PUT("/validate-reset-token", api.ValidateResetPassword)
+
+	if addResetPasswordEndpoint {
+		subGroup.PUT("/reset-password", api.ResetPassword)
+	}
 
 	authGroup := subGroup.Group("")
 	authGroup.Use(AuthenticateRequestThenLoadAuthContext(app))
@@ -186,7 +191,7 @@ func (api *AuthApi) RefreshToken(c *gin.Context) {
 	api.AuthResponseWithUserInfoMap(c, userInfo["email"].(string), userInfo)
 }
 
-// ResetPassword godoc
+// InitiateResetPassword godoc
 // @Summary      initiate password reset process for user
 // @Description  start the process of resetting user's password
 // @Tags         auth
@@ -198,15 +203,15 @@ func (api *AuthApi) RefreshToken(c *gin.Context) {
 // @Failure      401  {object}  apis.ApiError
 // @Failure      500  {object}  apis.ApiError
 // @Router       /reset-password [put]
-func (api *AuthApi) ResetPassword(c *gin.Context) {
-	var resetPasswordRequest requests.ResetPasswordRequest
+func (api *AuthApi) InitiateResetPassword(c *gin.Context) {
+	var resetPasswordRequest requests.InitiateResetPasswordPayload
 	if err := c.BindJSON(&resetPasswordRequest); err != nil {
 		NewBadRequestError(c, "error handling submitted data", nil)
 		return
 	}
 
 	authService := authentication.New(api.app)
-	err := authService.ResetPassword(resetPasswordRequest)
+	err := authService.InitiateResetPassword(&resetPasswordRequest)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -215,5 +220,45 @@ func (api *AuthApi) ResetPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, responses.ApiResponse{
 		Code:    "00",
 		Message: "password reset successful",
+	})
+}
+
+func (api *AuthApi) ValidateResetPassword(c *gin.Context) {
+	payload := &requests.ValidateRequestPasswordTokenPayload{}
+	if err := c.BindJSON(payload); err != nil {
+		NewBadRequestError(c, "error handling submitted data", nil)
+		return
+	}
+
+	authService := authentication.New(api.app)
+	err := authService.ValidateToken(payload)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, responses.ApiResponse{
+		Code:    "00",
+		Message: "reset password token valid",
+	})
+}
+
+func (a *AuthApi) ResetPassword(c *gin.Context) {
+	payload := &requests.ResetPasswordPayload{}
+	if err := c.BindJSON(payload); err != nil {
+		NewBadRequestError(c, "error handling submitted data", nil)
+		return
+	}
+
+	authService := authentication.New(a.app)
+	err := authService.ResetPassword(payload)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, responses.ApiResponse{
+		Code:    "00",
+		Message: "password changed successfully",
 	})
 }

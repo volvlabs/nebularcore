@@ -1,5 +1,5 @@
 package requests
 
-type ResetPasswordRequest struct {
+type InitiateResetPasswordPayload struct {
 	Email string `json:"email" validate:"required,email"`
 }

@@ -20,7 +20,7 @@ import (
 func Endpoints(app core.App, endpoints config.Endpoints) {
 	router := app.Router().Group("")
 	if endpoints.AuthEnabled {
-		BindAuthApi(app, router)
+		BindAuthApi(app, router, false)
 	}
 }
 
