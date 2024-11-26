@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 
 	"gitlab.com/jideobs/nebularcore/tools/auth"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gopkg.in/yaml.v2"
 )
+
+var ErrAppSettingsNotAPointer = errors.New("app settings must be a pointer")
 
 type Settings struct {
 	Domain                         string `yaml:"domain" json:"domain"`
@@ -32,7 +35,7 @@ type Settings struct {
 
 	EventClient types.EventClient `yaml:"eventClient" json:"eventClient"`
 
-	AppSettings types.AppSettings `yaml:"appSettings" json:"appSettings"`
+	AppSettings any `yaml:"appSettings" json:"appSettings"`
 }
 
 func NewSettings() *Settings {
@@ -52,7 +55,7 @@ func NewSettings() *Settings {
 		AppleAuth: AuthProviderConfig{
 			Enabled: false,
 		},
-		AppSettings: map[any]any{},
+		AppSettings: nil,
 	}
 }
 
@@ -62,7 +65,26 @@ func (s *Settings) Merge(other *Settings) error {
 		return err
 	}
 
-	return json.Unmarshal(bytes, s)
+	err = json.Unmarshal(bytes, s)
+	if err != nil {
+		return err
+	}
+
+	if other.AppSettings != nil {
+		bytes, err := json.Marshal(s.AppSettings)
+		if err != nil {
+			return err
+		}
+		appSettings := reflect.New(reflect.TypeOf(other.AppSettings).Elem()).Elem().Addr().Interface()
+		err = json.Unmarshal(bytes, appSettings)
+		if err != nil {
+			return err
+		}
+
+		s.AppSettings = appSettings
+	}
+
+	return nil
 }
 
 func (s *Settings) NamedAuthProviderConfig(providerName string) (AuthProviderConfig, bool) {
@@ -75,11 +97,11 @@ func (s *Settings) NamedAuthProviderConfig(providerName string) (AuthProviderCon
 	return config, ok
 }
 
-func (s *Settings) AddOtherSetting(key string, val any) {
-	s.AppSettings[key] = val
-}
+func (s *Settings) LoadSettings(settingsFile string, appSettings any) error {
+	if reflect.TypeOf(appSettings).Kind() != reflect.Ptr {
+		return ErrAppSettingsNotAPointer
+	}
 
-func (s *Settings) LoadSettings(settingsFile string) error {
 	f, err := os.Open(settingsFile)
 	if err != nil {
 		return err
@@ -92,6 +114,20 @@ func (s *Settings) LoadSettings(settingsFile string) error {
 	if err != nil {
 		return err
 	}
+
+	if settings.AppSettings != nil {
+		bytes, err := yaml.Marshal(settings.AppSettings)
+		if err != nil {
+			return err
+		}
+
+		err = yaml.Unmarshal(bytes, appSettings)
+		if err != nil {
+			return err
+		}
+	}
+
+	settings.AppSettings = appSettings
 
 	return s.Merge(settings)
 }
