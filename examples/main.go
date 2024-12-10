@@ -21,7 +21,7 @@ func main() {
 	cfg.IsDev = true
 	cfg.EnforceAcl = true
 	cfg.Server.AllowedOrigins = "*"
-	app := nebularcore.New(cfg)
+	app := nebularcore.New(cfg).(*nebularcore.NebularCore)
 
 	// routes
 	r := app.Router()

@@ -34,6 +34,6 @@ func (a *accountApi) registerAdmin(c *gin.Context) {
 		return
 	}
 
-	authApi := authApi{app: a.app}
-	authApi.authResponseWithUserType(c, admin)
+	authApi := AuthApi{app: a.app}
+	authApi.AuthResponseWithUserType(c, admin)
 }

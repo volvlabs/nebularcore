@@ -1,11 +1,12 @@
 package apis
 
 import (
-	"gitlab.com/jideobs/nebularcore/entities"
-	"gitlab.com/jideobs/nebularcore/tools/types"
 	"net/http"
 	"strings"
 	"testing"
+
+	"gitlab.com/jideobs/nebularcore/entities"
+	"gitlab.com/jideobs/nebularcore/tools/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -82,7 +83,7 @@ func TestLoginAdmin(t *testing.T) {
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
 				admin := setupAdmin(app)
 				createAuth(t, app, admin)
-				BindAuthApi(app, router.Group(""))
+				BindAuthApi(app, router.Group(""), true)
 			},
 		},
 		{
@@ -98,7 +99,7 @@ func TestLoginAdmin(t *testing.T) {
 				`"message":"error handling submitted data"`,
 			},
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
-				BindAuthApi(app, router.Group(""))
+				BindAuthApi(app, router.Group(""), true)
 			},
 		},
 		{
@@ -119,7 +120,7 @@ func TestLoginAdmin(t *testing.T) {
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
 				admin := setupAdmin(app)
 				createAuth(t, app, admin)
-				BindAuthApi(app, router.Group(""))
+				BindAuthApi(app, router.Group(""), true)
 			},
 		},
 		{
@@ -138,7 +139,7 @@ func TestLoginAdmin(t *testing.T) {
 				`"message":"internal server error"`,
 			},
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
-				BindAuthApi(app, router.Group(""))
+				BindAuthApi(app, router.Group(""), true)
 			},
 		},
 	}
@@ -168,7 +169,7 @@ func TestChangePasswordAdmin(t *testing.T) {
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
 				admin := setupAdmin(app)
 				createAuth(t, app, admin)
-				BindAuthApi(app, router.Group(""))
+				BindAuthApi(app, router.Group(""), true)
 			},
 		},
 		{
@@ -192,7 +193,7 @@ func TestChangePasswordAdmin(t *testing.T) {
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
 				admin := setupAdmin(app)
 				createAuth(t, app, admin)
-				BindAuthApi(app, router.Group(""))
+				BindAuthApi(app, router.Group(""), true)
 			},
 		},
 		{
@@ -212,7 +213,7 @@ func TestChangePasswordAdmin(t *testing.T) {
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
 				admin := setupAdmin(app)
 				createAuth(t, app, admin)
-				BindAuthApi(app, router.Group(""))
+				BindAuthApi(app, router.Group(""), true)
 			},
 		},
 		{
@@ -234,7 +235,7 @@ func TestChangePasswordAdmin(t *testing.T) {
 				`"message":"internal server error"`,
 			},
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
-				BindAuthApi(app, router.Group(""))
+				BindAuthApi(app, router.Group(""), true)
 			},
 		},
 	}
@@ -244,7 +245,7 @@ func TestChangePasswordAdmin(t *testing.T) {
 	}
 }
 
-func TestRefreshPassword(t *testing.T) {
+func TestRefreshToken(t *testing.T) {
 	scenarios := []test.ApiScenario{
 		{
 			Name:   "should refresh token successfully",
@@ -271,7 +272,7 @@ func TestRefreshPassword(t *testing.T) {
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
 				admin := setupAdmin(app)
 				createAuth(t, app, admin)
-				BindAuthApi(app, router.Group(""))
+				BindAuthApi(app, router.Group(""), true)
 			},
 		},
 		{
@@ -289,7 +290,7 @@ func TestRefreshPassword(t *testing.T) {
 				`"message":"internal server error"`,
 			},
 			BeforeTestFunc: func(t *testing.T, app *test.TestApp, router *gin.Engine) {
-				BindAuthApi(app, router.Group(""))
+				BindAuthApi(app, router.Group(""), true)
 			},
 		},
 	}

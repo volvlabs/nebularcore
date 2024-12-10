@@ -13,6 +13,7 @@ import (
 	"gocloud.dev/blob"
 	"gocloud.dev/blob/fileblob"
 	"gocloud.dev/blob/gcsblob"
+	"gocloud.dev/blob/memblob"
 	"gocloud.dev/blob/s3blob"
 	"gocloud.dev/gcp"
 	"golang.org/x/oauth2/google"
@@ -21,6 +22,8 @@ import (
 type System struct {
 	ctx    context.Context
 	bucket *blob.Bucket
+
+	IsBucketClosed bool
 }
 
 func NewWithS3(bucketName, region, accessKey, secretKey string) (*System, error) {
@@ -86,6 +89,13 @@ func NewLocal(dirPath string) (*System, error) {
 	return &System{ctx: ctx, bucket: bucket}, nil
 }
 
+func NewMemory() (*System, error) {
+	ctx := context.Background()
+	bucket := memblob.OpenBucket(nil)
+
+	return &System{ctx: ctx, bucket: bucket}, nil
+}
+
 func (s *System) Upload(content []byte, fileKey string) error {
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
@@ -132,5 +142,6 @@ func (s *System) Download(fileKey string) ([]byte, string, error) {
 }
 
 func (s *System) Close() error {
+	s.IsBucketClosed = true
 	return s.bucket.Close()
 }

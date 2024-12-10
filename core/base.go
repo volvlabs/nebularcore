@@ -45,6 +45,8 @@ type BaseApp struct {
 
 	eventClient eventclient.Client
 	scheduler   scheduler.Client
+
+	fs *filesystem.System
 }
 
 type BaseAppConfig struct {
@@ -165,22 +167,31 @@ func (b *BaseApp) Otp() *security.Otp {
 }
 
 func (b *BaseApp) NewFileSystem() (*filesystem.System, error) {
+	if b.fs != nil && !b.fs.IsBucketClosed {
+		return b.fs, nil
+	}
+
 	settings := b.Settings()
+	var err error
 	if settings.S3.Enabled {
-		return filesystem.NewWithS3(
+		b.fs, err = filesystem.NewWithS3(
 			settings.S3.Bucket,
 			settings.Aws.Region,
 			settings.Aws.AccessKeyID,
 			settings.Aws.SecretAccessKey,
 		)
 	} else if settings.Glcoud.Storage.Enabled {
-		return filesystem.NewWithGoogleCloudStorage(
+		b.fs, err = filesystem.NewWithGoogleCloudStorage(
 			settings.Glcoud.Storage.Bucket,
 			settings.Glcoud.Storage.CredfileLocation,
 		)
+	} else if b.Env == "test" || settings.InMemory.Enabled {
+		b.fs, err = filesystem.NewMemory()
+	} else {
+		b.fs, err = filesystem.NewLocal(filepath.Join(b.DataDir(), LocalStorageDirName))
 	}
 
-	return filesystem.NewLocal(filepath.Join(b.DataDir(), LocalStorageDirName))
+	return b.fs, err
 }
 
 func (b *BaseApp) GetFileURL(key string) string {

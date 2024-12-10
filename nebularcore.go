@@ -25,7 +25,7 @@ type NebularCore struct {
 	RootCmd *cobra.Command
 }
 
-func New(cfg *config.AppConfig) *NebularCore {
+func New(cfg *config.AppConfig) core.App {
 	backendApp := &NebularCore{
 		cfg: cfg,
 		RootCmd: &cobra.Command{

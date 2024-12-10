@@ -1,0 +1,3 @@
+appSettings:
+  bar: "foo"
+  foo: "baz"

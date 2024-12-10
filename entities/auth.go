@@ -8,9 +8,11 @@ import (
 type Auth struct {
 	BaseModel
 
-	Identity      string `gorm:"uniqueIndex"`
-	UserTableName string
-	UserId        uuid.UUID  `gorm:"uniqueIndex"`
-	Role          types.Role `json:"role"`
-	PasswordHash  string
+	Identity                     string `gorm:"uniqueIndex"`
+	UserTableName                string
+	UserId                       uuid.UUID  `gorm:"uniqueIndex"`
+	Role                         types.Role `json:"role"`
+	PasswordHash                 string
+	ResetPasswordToken           string         `json:"resetPasswordToken"`
+	ResetPasswordTokenExpiryDate types.DateTime `json:"resetPasswordTokenExpiryDate"`
 }

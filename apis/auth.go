@@ -2,12 +2,13 @@ package apis
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/rs/zerolog/log"
 	"gitlab.com/jideobs/nebularcore/entities"
 	"gitlab.com/jideobs/nebularcore/models/responses"
 	"gitlab.com/jideobs/nebularcore/services/authentication"
 	"gitlab.com/jideobs/nebularcore/tools/types"
-	"net/http"
 
 	"gitlab.com/jideobs/nebularcore/core"
 	"gitlab.com/jideobs/nebularcore/models/requests"
@@ -18,24 +19,33 @@ import (
 	"github.com/google/uuid"
 )
 
-func BindAuthApi(app core.App, rg *gin.RouterGroup) {
-	api := authApi{app: app}
+func BindAuthApi(app core.App, rg *gin.RouterGroup, addResetPasswordEndpoint bool) {
+	api := AuthApi{app: app}
 
 	subGroup := rg.Group("")
-	subGroup.POST("/login", api.login)
-	subGroup.PUT("/reset-password", api.resetPassword)
-	subGroup.PUT("/refresh-token", api.refreshToken)
+	subGroup.POST("/login", api.Login)
+	subGroup.PUT("/initiate-reset-password", api.InitiateResetPassword)
+	subGroup.PUT("/refresh-token", api.RefreshToken)
+	subGroup.PUT("/validate-reset-token", api.ValidateResetPassword)
+
+	if addResetPasswordEndpoint {
+		subGroup.PUT("/reset-password", api.ResetPassword)
+	}
 
 	authGroup := subGroup.Group("")
 	authGroup.Use(AuthenticateRequestThenLoadAuthContext(app))
-	authGroup.PUT("/change-password", api.changePassword)
+	authGroup.PUT("/change-password", api.ChangePassword)
 }
 
-type authApi struct {
+type AuthApi struct {
 	app core.App
 }
 
-func (api authApi) getTokenAndRefreshToken(id uuid.UUID, identity string, role types.Role) (string, string, error) {
+func NewAuthApi(app core.App) *AuthApi {
+	return &AuthApi{app: app}
+}
+
+func (api AuthApi) GetTokenAndRefreshToken(id uuid.UUID, identity string, role types.Role) (string, string, error) {
 	var token, refreshToken string
 	token, err := security.NewJWT(
 		jwt.MapClaims{"id": id, "role": role},
@@ -57,8 +67,8 @@ func (api authApi) getTokenAndRefreshToken(id uuid.UUID, identity string, role t
 }
 
 // Todo: look for better way to represent user information
-func (api *authApi) authResponseWithUserInfoMap(c *gin.Context, identity string, userInfo map[string]any) {
-	token, refreshToken, err := api.getTokenAndRefreshToken(
+func (api *AuthApi) AuthResponseWithUserInfoMap(c *gin.Context, identity string, userInfo map[string]any) {
+	token, refreshToken, err := api.GetTokenAndRefreshToken(
 		uuid.MustParse(userInfo["id"].(string)), identity, userInfo["role"].(types.Role))
 	if err != nil {
 		log.Err(err).Msgf("LoginApi: error occurred getting token and refresh token")
@@ -72,8 +82,8 @@ func (api *authApi) authResponseWithUserInfoMap(c *gin.Context, identity string,
 	})
 }
 
-func (api *authApi) authResponseWithUserType(c *gin.Context, user entities.User) {
-	token, refreshToken, err := api.getTokenAndRefreshToken(user.GetId(), user.GetEmail(), user.GetRole())
+func (api *AuthApi) AuthResponseWithUserType(c *gin.Context, user entities.User) {
+	token, refreshToken, err := api.GetTokenAndRefreshToken(user.GetId(), user.GetEmail(), user.GetRole())
 	if err != nil {
 		log.Err(err).Msgf("LoginApi: error occurred getting token and refresh token")
 		NewInternalServerError(c)
@@ -86,8 +96,8 @@ func (api *authApi) authResponseWithUserType(c *gin.Context, user entities.User)
 	})
 }
 
-// login godoc
-// @Summary      login a user
+// Login godoc
+// @Summary      Login a user
 // @Description  authenticate a user returning auth token, refresh token and user information
 // @Tags         auth
 // @Accept       json
@@ -95,8 +105,8 @@ func (api *authApi) authResponseWithUserType(c *gin.Context, user entities.User)
 // @Produce      json
 // @Success      200  {object}  responses.AuthResponse
 // @Failure      500  {object}  apis.ApiError
-// @Router       /login [post]
-func (api *authApi) login(c *gin.Context) {
+// @Router       /Login [post]
+func (api *AuthApi) Login(c *gin.Context) {
 	var loginRequest requests.LoginRequest
 	if err := c.BindJSON(&loginRequest); err != nil {
 		NewBadRequestError(c, "error handling submitted data", nil)
@@ -110,10 +120,10 @@ func (api *authApi) login(c *gin.Context) {
 		return
 	}
 
-	api.authResponseWithUserInfoMap(c, loginRequest.Identity, userInfo)
+	api.AuthResponseWithUserInfoMap(c, loginRequest.Identity, userInfo)
 }
 
-// changePassword godoc
+// ChangePassword godoc
 // @Summary      change user's password
 // @Description  allow a user to change its password.
 // @Tags         auth
@@ -125,7 +135,7 @@ func (api *authApi) login(c *gin.Context) {
 // @Failure      401  {object}  apis.ApiError
 // @Failure      500  {object}  apis.ApiError
 // @Router       /change-password [put]
-func (api *authApi) changePassword(c *gin.Context) {
+func (api *AuthApi) ChangePassword(c *gin.Context) {
 	var passwordChangeRequest requests.PasswordChangeRequest
 	if err := c.BindJSON(&passwordChangeRequest); err != nil {
 		NewBadRequestError(c, "error handling submitted data", nil)
@@ -147,7 +157,7 @@ func (api *authApi) changePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, responses.ApiResponse{Code: "00", Message: "password changed successfully"})
 }
 
-// refreshToken godoc
+// RefreshToken godoc
 // @Summary      refresh an auth token
 // @Description  get a new auth token with the refresh token for user
 // @Tags         auth
@@ -159,7 +169,7 @@ func (api *authApi) changePassword(c *gin.Context) {
 // @Failure      401  {object}  apis.ApiError
 // @Failure      500  {object}  apis.ApiError
 // @Router       /refresh-token [put]
-func (api *authApi) refreshToken(c *gin.Context) {
+func (api *AuthApi) RefreshToken(c *gin.Context) {
 	var refreshTokenRequest requests.RefreshTokenRequest
 	if err := c.BindJSON(&refreshTokenRequest); err != nil {
 		NewBadRequestError(c, "error handling submitted data", nil)
@@ -178,10 +188,10 @@ func (api *authApi) refreshToken(c *gin.Context) {
 		return
 	}
 
-	api.authResponseWithUserInfoMap(c, userInfo["email"].(string), userInfo)
+	api.AuthResponseWithUserInfoMap(c, userInfo["email"].(string), userInfo)
 }
 
-// resetPassword godoc
+// InitiateResetPassword godoc
 // @Summary      initiate password reset process for user
 // @Description  start the process of resetting user's password
 // @Tags         auth
@@ -193,15 +203,15 @@ func (api *authApi) refreshToken(c *gin.Context) {
 // @Failure      401  {object}  apis.ApiError
 // @Failure      500  {object}  apis.ApiError
 // @Router       /reset-password [put]
-func (api *authApi) resetPassword(c *gin.Context) {
-	var resetPasswordRequest requests.ResetPasswordRequest
+func (api *AuthApi) InitiateResetPassword(c *gin.Context) {
+	var resetPasswordRequest requests.InitiateResetPasswordPayload
 	if err := c.BindJSON(&resetPasswordRequest); err != nil {
 		NewBadRequestError(c, "error handling submitted data", nil)
 		return
 	}
 
 	authService := authentication.New(api.app)
-	err := authService.ResetPassword(resetPasswordRequest)
+	err := authService.InitiateResetPassword(&resetPasswordRequest)
 	if err != nil {
 		HandleError(c, err)
 		return
@@ -210,5 +220,45 @@ func (api *authApi) resetPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, responses.ApiResponse{
 		Code:    "00",
 		Message: "password reset successful",
+	})
+}
+
+func (api *AuthApi) ValidateResetPassword(c *gin.Context) {
+	payload := &requests.ValidateRequestPasswordTokenPayload{}
+	if err := c.BindJSON(payload); err != nil {
+		NewBadRequestError(c, "error handling submitted data", nil)
+		return
+	}
+
+	authService := authentication.New(api.app)
+	err := authService.ValidateToken(payload)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, responses.ApiResponse{
+		Code:    "00",
+		Message: "reset password token valid",
+	})
+}
+
+func (a *AuthApi) ResetPassword(c *gin.Context) {
+	payload := &requests.ResetPasswordPayload{}
+	if err := c.BindJSON(payload); err != nil {
+		NewBadRequestError(c, "error handling submitted data", nil)
+		return
+	}
+
+	authService := authentication.New(a.app)
+	err := authService.ResetPassword(payload)
+	if err != nil {
+		HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, responses.ApiResponse{
+		Code:    "00",
+		Message: "password changed successfully",
 	})
 }

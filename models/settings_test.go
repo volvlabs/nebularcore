@@ -56,3 +56,34 @@ func TestMergeSettings(t *testing.T) {
 	assert.Equal(t, settings.GoogleAuth.TokenUrl, "https://www.tokenurl.com")
 	assert.Equal(t, settings.GoogleAuth.DisplayName, "google")
 }
+
+type MyAppSettings struct {
+	Bar string `yaml:"bar" json:"bar"`
+	Foo string `yaml:"foo" json:"foo"`
+}
+
+func TestLoadSettings(t *testing.T) {
+	// Arrange:
+	settings := models.NewSettings()
+	// mySettings := &MyAppSettings{}
+
+	// Act:
+	err := settings.LoadSettings("./test_settings.yaml", &MyAppSettings{})
+
+	// Assert:
+	assert.NoError(t, err)
+	appSettings := settings.AppSettings.(*MyAppSettings)
+	assert.Equal(t, "foo", appSettings.Bar)
+	assert.Equal(t, "baz", appSettings.Foo)
+}
+
+func TestLoadSettings__ShouldReturnErrorBecauseAppSettingsPassedIsNotAPointerType(t *testing.T) {
+	// Arrange:
+	settings := models.NewSettings()
+
+	// Act:
+	err := settings.LoadSettings("./test_settings.yaml", MyAppSettings{})
+
+	// Assert:
+	assert.Equal(t, models.ErrAppSettingsNotAPointer, err)
+}
