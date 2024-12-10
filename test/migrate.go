@@ -9,7 +9,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/tools/migrate"
 )
 
-func RunMigration(t *testing.T, migrationDir, dataDir string) func(*testing.T) {
+func RunMigrationWithCustomPaths(t *testing.T, migrationDir, dataDir string) func(*testing.T) {
 	migrationDir = filesystem.EncodeFilePathAsFileURL(migrationDir)
 	connectionString := fmt.Sprintf("sqlite://%s", filepath.Join(dataDir, "data.db"))
 	runner, err := migrate.NewRunner(migrationDir, connectionString)
@@ -29,4 +29,9 @@ func RunMigration(t *testing.T, migrationDir, dataDir string) func(*testing.T) {
 		}
 		runner.Close()
 	}
+}
+
+func RunMigration(t *testing.T, baseDir, dataDir string) func(*testing.T) {
+	migrationDir := filepath.Join(baseDir, "test/data/migrations")
+	return RunMigrationWithCustomPaths(t, migrationDir, dataDir)
 }
