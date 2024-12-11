@@ -12,7 +12,11 @@ import (
 	"github.com/spf13/cast"
 )
 
-const ContextClaimsKey = "claims"
+const (
+	ContextClaimsKey           = "claims"
+	ContextTenantIdKey         = "tenantId"
+	ContextTenantSchemaNameKey = "tenantSchemaName"
+)
 
 func AuthenticateRequestThenLoadAuthContext(app core.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -66,6 +70,22 @@ func AuthorizeRequest(app core.App) gin.HandlerFunc {
 			NewForbiddenError(c)
 			return
 		}
+
+		c.Next()
+	}
+}
+
+func TenantMiddleware(app core.App) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tenantId := c.GetHeader("X-Tenant-ID")
+		if tenantId == "" {
+			log.Warn().Msgf("Auth: access without tenant ID")
+			NewUnauthorizedError(c)
+			return
+		}
+
+		c.Set(ContextTenantIdKey, tenantId)
+		c.Set(ContextTenantSchemaNameKey, app.GetSchemaName(tenantId))
 
 		c.Next()
 	}

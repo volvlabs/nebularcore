@@ -1,7 +1,10 @@
 package core
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +21,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/tools/security"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gitlab.com/jideobs/nebularcore/tools/validation"
+	"golang.org/x/crypto/hkdf"
 
 	"gorm.io/gorm"
 )
@@ -47,6 +51,8 @@ type BaseApp struct {
 	scheduler   scheduler.Client
 
 	fs *filesystem.System
+
+	tenantConfig config.TenantConfig
 }
 
 type BaseAppConfig struct {
@@ -56,6 +62,7 @@ type BaseAppConfig struct {
 	DataDir        string
 	MigrationsDir  string
 	DatabaseConfig config.DatabaseConfig
+	TenantConfig   config.TenantConfig
 }
 
 func NewBaseApp(config BaseAppConfig) *BaseApp {
@@ -66,6 +73,7 @@ func NewBaseApp(config BaseAppConfig) *BaseApp {
 		dataDir:        config.DataDir,
 		migrationsDir:  config.MigrationsDir,
 		databaseConfig: config.DatabaseConfig,
+		tenantConfig:   config.TenantConfig,
 		settings:       models.NewSettings(),
 		validator:      validation.New(),
 		router:         gin.Default(),
@@ -99,7 +107,7 @@ func (app *BaseApp) initDataDB() error {
 		dbConn = dbConn.Debug()
 	}
 
-	app.dao = daos.New(dbConn)
+	app.dao = daos.New(dbConn, &app.tenantConfig, &app.databaseConfig)
 
 	return nil
 }
@@ -246,4 +254,17 @@ func (b *BaseApp) Scheduler() scheduler.Client {
 	}
 
 	return b.scheduler
+}
+
+func (b *BaseApp) GetSchemaName(tenantId string) string {
+	hkdf := hkdf.New(
+		sha256.New, 
+		[]byte(tenantId), 
+		[]byte(b.tenantConfig.SchemaSalt), 
+		[]byte(b.tenantConfig.BaseDir),
+	)
+	derivedKey := make([]byte, 32)
+	io.ReadFull(hkdf, derivedKey)
+
+	return "schema_" + hex.EncodeToString(derivedKey)
 }

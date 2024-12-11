@@ -32,4 +32,5 @@ type App interface {
 	GetFileURL(key string) string
 	EventClient() eventclient.Client
 	Scheduler() scheduler.Client
+	GetSchemaName(tenantId string) string
 }

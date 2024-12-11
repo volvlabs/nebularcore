@@ -1,8 +1,10 @@
 package daos_test
 
 import (
-	"gitlab.com/jideobs/nebularcore/entities"
 	"testing"
+
+	"gitlab.com/jideobs/nebularcore/entities"
+	"gitlab.com/jideobs/nebularcore/models/config"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -66,7 +68,7 @@ func TestSaveAdmin(t *testing.T) {
 
 	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 	defer tearDownMigration(t)
-	d := daos.New(app.Dao().DB())
+	d := daos.New(app.Dao().DB(), &config.TenantConfig{}, &config.DatabaseConfig{})
 
 	admin := &entities.Admin{}
 

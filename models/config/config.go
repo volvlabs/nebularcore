@@ -29,6 +29,16 @@ type Endpoints struct {
 	AuthEnabled bool `yaml:"authEnabled" envconfig:"AUTH_ENABLED"`
 }
 
+type TenantConfig struct {
+	Enabled             bool   `json:"enabled" yaml:"enabled"`
+	TenantsTableName    string `json:"tenantsTableName" yaml:"tenantsTableName"`
+	TenantSchemaColName string `json:"tenantSchemaColName" yaml:"tenantSchemaColName"`
+	BaseDir             string `json:"baseDir" yaml:"baseDir"`
+	MigrationPath       string `json:"migrationPath" yaml:"migrationPath"`
+	SchemaDerivation    string `json:"schemaDerivation" yaml:"schemaDerivation"`
+	SchemaSalt          string `json:"schemaSalt" yaml:"schemaSalt"`
+}
+
 type AppConfig struct {
 	Env           string         `yaml:"env" envconfig:"ENV"`
 	IsDev         bool           `yaml:"isDev" envconfig:"IS_DEV"`
@@ -40,6 +50,7 @@ type AppConfig struct {
 	Database      DatabaseConfig `yaml:"database"`
 	Server        ServeConfig    `yaml:"server"`
 	Endpoints     Endpoints      `yaml:"endpoints"`
+	TenantConfig  TenantConfig   `yaml:"tenantConfig"`
 }
 
 func readConfigFromFile(configFilePath string) (*AppConfig, error) {
