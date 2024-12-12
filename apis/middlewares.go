@@ -16,6 +16,7 @@ const (
 	ContextClaimsKey           = "claims"
 	ContextTenantIdKey         = "tenantId"
 	ContextTenantSchemaNameKey = "tenantSchemaName"
+	ContextDBSessionKey        = "dbSession"
 )
 
 func AuthenticateRequestThenLoadAuthContext(app core.App) gin.HandlerFunc {
@@ -84,8 +85,16 @@ func TenantMiddleware(app core.App) gin.HandlerFunc {
 			return
 		}
 
+		schemaName := app.GetSchemaName(tenantId)
+		tenantSession, err := app.Dao().WithTenant(schemaName)
+		if err != nil {
+			log.Err(err).Msgf("error occurred creating db session for tenant %s", tenantId)
+			NewInternalServerError(c)
+			return
+		}
 		c.Set(ContextTenantIdKey, tenantId)
-		c.Set(ContextTenantSchemaNameKey, app.GetSchemaName(tenantId))
+		c.Set(ContextTenantSchemaNameKey, schemaName)
+		c.Set(ContextDBSessionKey, tenantSession)
 
 		c.Next()
 	}
