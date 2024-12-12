@@ -1,6 +1,8 @@
 package core
 
 import (
+	"context"
+
 	"github.com/gin-gonic/gin"
 	"gitlab.com/jideobs/nebularcore/daos"
 	"gitlab.com/jideobs/nebularcore/models"
@@ -10,6 +12,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/tools/filesystem"
 	"gitlab.com/jideobs/nebularcore/tools/security"
 	"gitlab.com/jideobs/nebularcore/tools/validation"
+	"gorm.io/gorm"
 )
 
 type TerminateHandler func() error
@@ -32,5 +35,6 @@ type App interface {
 	GetFileURL(key string) string
 	EventClient() eventclient.Client
 	Scheduler() scheduler.Client
-	GetSchemaName(tenantId string) string
+	SchemaName(tenantId string) string
+	DBSessionFromContext(ctx context.Context) *gorm.DB
 }

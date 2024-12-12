@@ -84,7 +84,7 @@ func TenantMiddleware(app core.App) gin.HandlerFunc {
 			return
 		}
 
-		schemaName := app.GetSchemaName(tenantId)
+		schemaName := app.SchemaName(tenantId)
 		tenantSession, err := app.Dao().WithSchemaSession(schemaName)
 		if err != nil {
 			log.Err(err).Msgf("error occurred creating db session for tenant %s", tenantId)

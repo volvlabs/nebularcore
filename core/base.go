@@ -260,7 +260,7 @@ func (b *BaseApp) Scheduler() scheduler.Client {
 	return b.scheduler
 }
 
-func (b *BaseApp) GetSchemaName(tenantId string) string {
+func (b *BaseApp) SchemaName(tenantId string) string {
 	hkdf := hkdf.New(
 		sha256.New,
 		[]byte(tenantId),
@@ -273,7 +273,7 @@ func (b *BaseApp) GetSchemaName(tenantId string) string {
 	return "schema_" + hex.EncodeToString(derivedKey)
 }
 
-func (b *BaseApp) GetDBSessionFromContext(ctx context.Context) *gorm.DB {
+func (b *BaseApp) DBSessionFromContext(ctx context.Context) *gorm.DB {
 	dbSession := ctx.Value(ContextDBSessionKey)
 	if dbSession == nil {
 		return nil
