@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func (d *Dao) WithTenant(schemaName string) (*gorm.DB, error) {
+func (d *Dao) WithSchemaSession(schemaName string) (*gorm.DB, error) {
 	dbSession := d.DB().Session(&gorm.Session{NewDB: true})
 	err := dbSession.Exec(fmt.Sprintf("SET search_path TO %s", schemaName)).Error
 	if err != nil {
@@ -17,15 +17,15 @@ func (d *Dao) WithTenant(schemaName string) (*gorm.DB, error) {
 	return dbSession, nil
 }
 
-func (d *Dao) Create(schemaName string) error {
+func (d *Dao) CreateSchema(schemaName string) error {
 	return d.DB().Exec(fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", schemaName)).Error
 }
 
-func (d *Dao) Drop(schemaName string) error {
+func (d *Dao) DropSchema(schemaName string) error {
 	return d.DB().Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schemaName)).Error
 }
 
-func (d *Dao) Migrate(schemaName string) error {
+func (d *Dao) MigrateSchema(schemaName string) error {
 	dbConfig := d.databaseConfig
 	runner, err := migrate.NewRunner(
 		fmt.Sprintf("file:///%s/%s", d.tenantConfig.BaseDir, d.tenantConfig.MigrationPath),
@@ -45,7 +45,7 @@ func (d *Dao) Migrate(schemaName string) error {
 	return runner.Run("up")
 }
 
-func (d *Dao) AutoMigrate() error {
+func (d *Dao) AutoMigrateSchemas() error {
 	const batchSize = 1000
 	var offset int
 
@@ -67,7 +67,7 @@ func (d *Dao) AutoMigrate() error {
 		}
 
 		for _, schemaName := range schemaNames {
-			if err := d.Migrate(schemaName); err != nil {
+			if err := d.MigrateSchema(schemaName); err != nil {
 				return err
 			}
 		}
