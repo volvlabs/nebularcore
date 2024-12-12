@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -26,7 +27,10 @@ import (
 	"gorm.io/gorm"
 )
 
-const LocalStorageDirName string = "storage"
+const (
+	LocalStorageDirName string = "storage"
+	ContextDBSessionKey        = "dbSession"
+)
 
 type BaseApp struct {
 	Env           string
@@ -258,13 +262,22 @@ func (b *BaseApp) Scheduler() scheduler.Client {
 
 func (b *BaseApp) GetSchemaName(tenantId string) string {
 	hkdf := hkdf.New(
-		sha256.New, 
-		[]byte(tenantId), 
-		[]byte(b.tenantConfig.SchemaSalt), 
+		sha256.New,
+		[]byte(tenantId),
+		[]byte(b.tenantConfig.SchemaSalt),
 		[]byte(b.tenantConfig.BaseDir),
 	)
 	derivedKey := make([]byte, 32)
 	io.ReadFull(hkdf, derivedKey)
 
 	return "schema_" + hex.EncodeToString(derivedKey)
+}
+
+func (b *BaseApp) GetDBSessionFromContext(ctx context.Context) *gorm.DB {
+	dbSession := ctx.Value(ContextDBSessionKey)
+	if dbSession == nil {
+		return nil
+	}
+
+	return dbSession.(*gorm.DB)
 }

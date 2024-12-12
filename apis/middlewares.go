@@ -16,7 +16,6 @@ const (
 	ContextClaimsKey           = "claims"
 	ContextTenantIdKey         = "tenantId"
 	ContextTenantSchemaNameKey = "tenantSchemaName"
-	ContextDBSessionKey        = "dbSession"
 )
 
 func AuthenticateRequestThenLoadAuthContext(app core.App) gin.HandlerFunc {
@@ -94,7 +93,7 @@ func TenantMiddleware(app core.App) gin.HandlerFunc {
 		}
 		c.Set(ContextTenantIdKey, tenantId)
 		c.Set(ContextTenantSchemaNameKey, schemaName)
-		c.Set(ContextDBSessionKey, tenantSession)
+		c.Set(core.ContextDBSessionKey, tenantSession)
 
 		c.Next()
 	}
