@@ -265,7 +265,7 @@ func (b *BaseApp) SchemaName(tenantId string) string {
 		sha256.New,
 		[]byte(tenantId),
 		[]byte(b.tenantConfig.SchemaSalt),
-		[]byte(b.tenantConfig.BaseDir),
+		[]byte(b.tenantConfig.SchemaDerivation),
 	)
 	derivedKey := make([]byte, 32)
 	io.ReadFull(hkdf, derivedKey)
