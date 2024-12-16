@@ -8,7 +8,7 @@ import (
 )
 
 func (d *Dao) WithSchemaSession(schemaName string) (*gorm.DB, error) {
-	dbSession := d.DB().Session(&gorm.Session{NewDB: true})
+	dbSession := d.DB().Session(&gorm.Session{NewDB: true, Initialized: true})
 	err := dbSession.Exec(fmt.Sprintf("SET search_path TO %s", schemaName)).Error
 	if err != nil {
 		return nil, err
