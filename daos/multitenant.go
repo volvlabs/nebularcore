@@ -8,13 +8,17 @@ import (
 )
 
 func (d *Dao) WithSchemaSession(schemaName string) (*gorm.DB, error) {
-	dbSession := d.DB().Session(&gorm.Session{NewDB: true, Initialized: true})
+	dbSession := d.DB().Session(&gorm.Session{NewDB: true})
 	err := dbSession.Exec(fmt.Sprintf("SET search_path TO %s", schemaName)).Error
 	if err != nil {
 		return nil, err
 	}
 
 	return dbSession, nil
+}
+
+func (d *Dao) ResetSchema() error {
+	return d.DB().Exec("SET search_path TO public").Error
 }
 
 func (d *Dao) CreateSchema(schemaName string) error {
