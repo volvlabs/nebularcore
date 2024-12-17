@@ -32,14 +32,14 @@ func AuthenticateRequestThenLoadAuthContext(app core.App) gin.HandlerFunc {
 			return
 		}
 
-		c.Set(ContextClaimsKey, claims)
+		c.Set(tools.ContextClaimsKey, claims)
 		c.Next()
 	}
 }
 
 func AuthorizeRequest(app core.App) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		value, _ := c.Get(ContextClaimsKey)
+		value, _ := c.Get(tools.ContextClaimsKey)
 		claims := value.(jwt.MapClaims)
 		subjectRole := cast.ToString(claims["role"])
 		if !app.IsACLEnforced() {
@@ -89,13 +89,14 @@ func TenantMiddleware(app core.App) gin.HandlerFunc {
 		}
 
 		ctx := context.Background()
-
-		context.WithValue(ctx, tools.ContextTenantIdKey, tenantId)
-		context.WithValue(ctx, tools.ContextTenantSchemaNameKey, schemaName)
-		context.WithValue(ctx, tools.ContextDBSessionKey, dbSession)
+		ctx = context.WithValue(ctx, tools.ContextTenantIdKey, tenantId)
+		ctx = context.WithValue(ctx, tools.ContextTenantSchemaNameKey, schemaName)
+		ctx = context.WithValue(ctx, tools.ContextDBSessionKey, dbSession)
 
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
+
+		app.Dao().ResetSchema()
 	}
 }
