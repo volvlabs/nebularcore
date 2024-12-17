@@ -1,21 +1,17 @@
 package apis
 
 import (
+	"context"
 	"strings"
 
 	"gitlab.com/jideobs/nebularcore/core"
+	"gitlab.com/jideobs/nebularcore/tools"
 	"gitlab.com/jideobs/nebularcore/tools/security"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cast"
-)
-
-const (
-	ContextClaimsKey           = "claims"
-	ContextTenantIdKey         = "tenantId"
-	ContextTenantSchemaNameKey = "tenantSchemaName"
 )
 
 func AuthenticateRequestThenLoadAuthContext(app core.App) gin.HandlerFunc {
@@ -85,15 +81,20 @@ func TenantMiddleware(app core.App) gin.HandlerFunc {
 		}
 
 		schemaName := app.SchemaName(tenantId)
-		tenantSession, err := app.Dao().WithSchemaSession(schemaName)
+		dbSession, err := app.Dao().WithSchemaSession(schemaName)
 		if err != nil {
 			log.Err(err).Msgf("error occurred creating db session for tenant %s", tenantId)
 			NewInternalServerError(c)
 			return
 		}
-		c.Set(ContextTenantIdKey, tenantId)
-		c.Set(ContextTenantSchemaNameKey, schemaName)
-		c.Set(core.ContextDBSessionKey, tenantSession)
+
+		ctx := context.Background()
+
+		context.WithValue(ctx, tools.ContextTenantIdKey, tenantId)
+		context.WithValue(ctx, tools.ContextTenantSchemaNameKey, schemaName)
+		context.WithValue(ctx, tools.ContextDBSessionKey, dbSession)
+
+		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
 	}

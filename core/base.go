@@ -13,6 +13,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/daos"
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/models/config"
+	"gitlab.com/jideobs/nebularcore/tools"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
 	"gitlab.com/jideobs/nebularcore/tools/aws"
 	"gitlab.com/jideobs/nebularcore/tools/aws/scheduler"
@@ -27,10 +28,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	LocalStorageDirName string = "storage"
-	ContextDBSessionKey        = "dbSession"
-)
+const LocalStorageDirName string = "storage"
 
 type BaseApp struct {
 	Env           string
@@ -274,7 +272,7 @@ func (b *BaseApp) SchemaName(tenantId string) string {
 }
 
 func (b *BaseApp) DBSessionFromContext(ctx context.Context) *gorm.DB {
-	dbSession := ctx.Value(ContextDBSessionKey)
+	dbSession := ctx.Value(tools.ContextDBSessionKey)
 	if dbSession == nil {
 		return nil
 	}
