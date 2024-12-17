@@ -81,22 +81,13 @@ func TenantMiddleware(app core.App) gin.HandlerFunc {
 		}
 
 		schemaName := app.SchemaName(tenantId)
-		dbSession, err := app.Dao().WithSchemaSession(schemaName)
-		if err != nil {
-			log.Err(err).Msgf("error occurred creating db session for tenant %s", tenantId)
-			NewInternalServerError(c)
-			return
-		}
 
 		ctx := context.Background()
 		ctx = context.WithValue(ctx, tools.ContextTenantIdKey, tenantId)
 		ctx = context.WithValue(ctx, tools.ContextTenantSchemaNameKey, schemaName)
-		ctx = context.WithValue(ctx, tools.ContextDBSessionKey, dbSession)
 
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
-
-		app.Dao().ResetSchema()
 	}
 }
