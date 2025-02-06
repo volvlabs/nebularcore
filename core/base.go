@@ -279,3 +279,7 @@ func (b *BaseApp) DBSessionFromContext(ctx context.Context) *gorm.DB {
 
 	return dbSession.(*gorm.DB)
 }
+
+func (b *BaseApp) RegisterEventClient(eventClient eventclient.Client) {
+	b.eventClient = eventClient
+}

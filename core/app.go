@@ -37,4 +37,5 @@ type App interface {
 	Scheduler() scheduler.Client
 	SchemaName(tenantId string) string
 	DBSessionFromContext(ctx context.Context) *gorm.DB
+	RegisterEventClient(eventClinet eventclient.Client)
 }
