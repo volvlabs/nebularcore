@@ -173,6 +173,9 @@ type AwsConfig struct {
 	AccessKeyID     string `yaml:"accessKeyId" json:"accessKeyId"`
 	SecretAccessKey string `yaml:"secretAccessKey" json:"secretAccessKey"`
 	Region          string `yaml:"region" json:"region"`
+	SQS             struct {
+		QueueUrl string `yaml:"queueUrl" json:"queueUrl"`
+	} `yaml:"sqs" json:"sqs"`
 }
 
 type S3Config struct {

@@ -235,6 +235,17 @@ func (b *BaseApp) EventClient() eventclient.Client {
 				log.Err(err).Msgf("failed to initialize gcloud pubsub client")
 			}
 			b.eventClient = eventClient
+		case types.AWSSQSClient:
+			eventClient, err := aws.NewSqsClient(
+				settings.Aws.AccessKeyID,
+				settings.Aws.SecretAccessKey,
+				settings.Aws.Region,
+				settings.Aws.SQS.QueueUrl,
+			)
+			if err != nil {
+				log.Err(err).Msgf("failed to initialize aws sqs client")
+			}
+			b.eventClient = eventClient
 		}
 	}
 

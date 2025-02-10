@@ -14,6 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/eventbridge v1.31.3
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.54.3
 	github.com/aws/aws-sdk-go-v2/service/scheduler v1.8.4
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.31.2
 	github.com/casbin/casbin/v2 v2.80.0
 	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/gin-contrib/cors v1.7.0
