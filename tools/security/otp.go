@@ -1,9 +1,12 @@
 package security
 
 import (
+	"crypto/sha256"
 	"encoding/base32"
+	"encoding/hex"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 )
@@ -38,4 +41,34 @@ func (o *Otp) Validate(passcode string) bool {
 		Digits: otp.DigitsSix,
 	})
 	return isValid
+}
+
+func GenerateUniqueOtpSecret(userId uuid.UUID) (string, error) {
+	hashedId := hashUserId(userId)
+	code := normalizeCode(hashedId)
+	return code, nil
+}
+
+func hashUserId(userId uuid.UUID) string {
+	userIdBytes := []byte(userId.String())
+	hash := sha256.Sum256(userIdBytes)
+	return hex.EncodeToString(hash[:])
+}
+
+func normalizeCode(input string) string {
+	normalizedCode := ""
+	alphanumericCount := 0
+
+	for _, char := range input {
+		if (char >= '0' && char <= '9') || (char >= 'a' && char <= 'f') {
+			if char >= 'a' && char <= 'f' {
+				char = char - 'a' + 'A'
+			}
+
+			normalizedCode += string(char)
+			alphanumericCount++
+		}
+	}
+
+	return normalizedCode
 }
