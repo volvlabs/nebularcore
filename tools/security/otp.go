@@ -28,29 +28,38 @@ func NewOtp(opts OtpOptions) *Otp {
 
 // Todo: allow generate to take in optional secret in other to further personalize
 // token generated for each user.
-func (o *Otp) Generate() (string, error) {
-	return totp.GenerateCodeCustom(o.encodedSecret, time.Now(), totp.ValidateOpts{
+func (o *Otp) Generate(secret string) (string, error) {
+	key := o.GenerateUserPersonalKey(secret)
+	return totp.GenerateCodeCustom(key, time.Now(), totp.ValidateOpts{
 		Period: o.opts.Period,
 		Digits: otp.DigitsSix,
 	})
 }
 
-func (o *Otp) Validate(passcode string) bool {
-	isValid, _ := totp.ValidateCustom(passcode, o.encodedSecret, time.Now(), totp.ValidateOpts{
+func (o *Otp) Validate(passcode string, secret string) bool {
+	key := o.GenerateUserPersonalKey(secret)
+	isValid, _ := totp.ValidateCustom(passcode, key, time.Now(), totp.ValidateOpts{
 		Period: o.opts.Period,
 		Digits: otp.DigitsSix,
 	})
 	return isValid
 }
 
-func GenerateUniqueOtpSecret(userId uuid.UUID) (string, error) {
-	hashedId := hashUserId(userId)
-	code := normalizeCode(hashedId)
-	return code, nil
+func (o *Otp) GenerateUserPersonalKey(secret string) string {
+	combined := secret + "|" + o.encodedSecret
+	hasher := sha256.New()
+	hasher.Write([]byte(combined))
+	return base32.StdEncoding.EncodeToString([]byte(hex.EncodeToString(hasher.Sum(nil))))
 }
 
-func hashUserId(userId uuid.UUID) string {
-	userIdBytes := []byte(userId.String())
+func GenerateUniqueOtpSecret(id uuid.UUID) string {
+	hashedId := hashId(id)
+	code := normalizeCode(hashedId)
+	return code
+}
+
+func hashId(id uuid.UUID) string {
+	userIdBytes := []byte(id.String())
 	hash := sha256.Sum256(userIdBytes)
 	return hex.EncodeToString(hash[:])
 }

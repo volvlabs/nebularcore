@@ -20,16 +20,7 @@ type Auth struct {
 	OtpSecret                    string         `json:"otpSecret"`
 }
 
-func (a *Auth) AfterCreate(tx *gorm.DB) error {
-	userOtp, err := security.GenerateUniqueOtpSecret(a.Id)
-
-	if err != nil {
-		return err
-	}
-
-	return tx.Model(&Auth{}).
-		Where("id = ?", a.Id).
-		Updates(&Auth{
-			OtpSecret: userOtp,
-		}).Error
+func (a *Auth) BeforeCreate(tx *gorm.DB) error {
+	a.OtpSecret = security.GenerateUniqueOtpSecret(a.Id)
+	return nil
 }
