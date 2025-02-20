@@ -8,5 +8,6 @@ CREATE TABLE IF NOT EXISTS auths (
     role TEXT,
     password_hash TEXT,
     reset_password_token TEXT,
-    reset_password_token_expiry_date TIMESTAMP
+    reset_password_token_expiry_date TIMESTAMP,
+    otp_secret TEXT
 );
