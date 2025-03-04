@@ -16,12 +16,14 @@ func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command
 	const cmdDesc = `Supported commands are:
 - up			- runs migrtations
 - down [number] - revert last number of migrations
-- create [name] - creates new blank migration file`
+- create [name] - creates new blank migration file
+- tenant [schema] [command] - runs migrations for a specific tenant schema
+- all-tenants   - runs migrations for all tenant schemas`
 	command := &cobra.Command{
 		Use:       "migrate",
 		Short:     "Execute app DB migration scripts",
 		Long:      cmdDesc,
-		ValidArgs: []string{"up", "down", "create"},
+		ValidArgs: []string{"up", "down", "create", "tenant", "all-tenants"},
 		RunE: func(command *cobra.Command, args []string) error {
 			cmd := ""
 			if len(args) > 0 {
@@ -29,9 +31,52 @@ func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command
 			}
 			switch cmd {
 			case "create":
+				if len(args) < 2 {
+					return fmt.Errorf("migration name is required")
+				}
 				if err := createMigrationFileHandler(app.MigrationsDir(), args[1]); err != nil {
 					return err
 				}
+			case "tenant":
+				if len(args) < 2 {
+					return fmt.Errorf("schema name is required")
+				}
+
+				schemaName := args[1]
+
+				// Create a new migration runner
+				runner, err := migrate.NewRunner(
+					fmt.Sprintf("file:///%s", app.MigrationsDir()),
+					fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+						dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode))
+				if err != nil {
+					return err
+				}
+
+				// Create a schema-specific runner
+				schemaRunner, err := runner.WithSchema(schemaName)
+				if err != nil {
+					return err
+				}
+
+				// Run the migration with the remaining args
+				var migrationArgs []string
+				if len(args) > 2 {
+					migrationArgs = args[2:]
+				} else {
+					migrationArgs = []string{"up"}
+				}
+
+				return schemaRunner.Run(migrationArgs...)
+			case "all-tenants":
+				// Create a DAO to access the database
+				dao := app.Dao()
+				if dao == nil {
+					return fmt.Errorf("database access is not available")
+				}
+
+				// Run migrations for all tenants
+				return dao.AutoMigrateSchemas()
 			default:
 				runner, err := migrate.NewRunner(
 					fmt.Sprintf("file:///%s", app.MigrationsDir()),

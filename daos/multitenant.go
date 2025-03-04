@@ -31,22 +31,30 @@ func (d *Dao) DropSchema(schemaName string) error {
 
 func (d *Dao) MigrateSchema(schemaName string) error {
 	dbConfig := d.databaseConfig
+	// Create a base runner
 	runner, err := migrate.NewRunner(
 		fmt.Sprintf("file:///%s/%s", d.tenantConfig.BaseDir, d.tenantConfig.MigrationPath),
 		fmt.Sprintf(
-			"postgres://%s:%s@%s:%s/%s?sslmode=%s&search_path=%s",
+			"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 			dbConfig.Username,
 			dbConfig.Password,
 			dbConfig.Host,
 			dbConfig.Port,
 			dbConfig.Name,
 			dbConfig.SSLMode,
-			schemaName,
 		))
 	if err != nil {
 		return err
 	}
-	return runner.Run("up")
+
+	// Create a schema-specific runner
+	schemaRunner, err := runner.WithSchema(schemaName)
+	if err != nil {
+		return err
+	}
+
+	// Run the migration
+	return schemaRunner.Run("up")
 }
 
 func (d *Dao) AutoMigrateSchemas() error {

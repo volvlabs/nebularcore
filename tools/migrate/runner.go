@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -11,7 +12,10 @@ import (
 )
 
 type Runner struct {
-	migrate *migrate.Migrate
+	migrate           *migrate.Migrate
+	migrationsDir     string
+	connectionString  string
+	schemaSearchParam string
 }
 
 func NewRunner(migrationsDir, connectionString string) (*Runner, error) {
@@ -22,9 +26,45 @@ func NewRunner(migrationsDir, connectionString string) (*Runner, error) {
 	}
 
 	r := &Runner{
-		migrate: migrate,
+		migrate:          migrate,
+		migrationsDir:    migrationsDir,
+		connectionString: connectionString,
 	}
 	return r, nil
+}
+
+// WithSchema creates a new Runner instance with the specified schema
+func (r *Runner) WithSchema(schemaName string) (*Runner, error) {
+	connectionString := r.connectionString
+	if !strings.Contains(connectionString, "search_path=") {
+		if strings.Contains(connectionString, "?") {
+			connectionString = fmt.Sprintf("%s&search_path=%s", connectionString, schemaName)
+		} else {
+			connectionString = fmt.Sprintf("%s?search_path=%s", connectionString, schemaName)
+		}
+	} else {
+		parts := strings.Split(connectionString, "search_path=")
+		prefix := parts[0]
+		suffix := ""
+		if len(parts) > 1 && strings.Contains(parts[1], "&") {
+			suffixParts := strings.SplitN(parts[1], "&", 2)
+			suffix = "&" + suffixParts[1]
+		}
+		connectionString = fmt.Sprintf("%ssearch_path=%s%s", prefix, schemaName, suffix)
+	}
+
+	newMigrate, err := migrate.New(r.migrationsDir, connectionString)
+	if err != nil {
+		log.Err(err).Msgf("unable to start migration for schema %s", schemaName)
+		return nil, err
+	}
+
+	return &Runner{
+		migrate:           newMigrate,
+		migrationsDir:     r.migrationsDir,
+		connectionString:  connectionString,
+		schemaSearchParam: schemaName,
+	}, nil
 }
 
 func (r *Runner) Run(args ...string) error {
@@ -38,7 +78,7 @@ func (r *Runner) Run(args ...string) error {
 	case "down":
 		toRevertCount := 0
 		if len(args) > 1 {
-			toRevertCount, _ = fmt.Sscanf(args[1], "%d", &toRevertCount)
+			fmt.Sscanf(args[1], "%d", &toRevertCount)
 		}
 		return r.down(toRevertCount)
 	default:
@@ -47,15 +87,25 @@ func (r *Runner) Run(args ...string) error {
 }
 
 func (r *Runner) up() error {
+	schemaInfo := ""
+	if r.schemaSearchParam != "" {
+		schemaInfo = fmt.Sprintf(" for schema '%s'", r.schemaSearchParam)
+	}
+
 	if err := r.migrate.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Err(err).Msg("database migration failed")
+		log.Err(err).Msgf("database migration failed%s", schemaInfo)
 		return err
 	}
-	log.Info().Msg("database migration ran successfully")
+	log.Info().Msgf("database migration ran successfully%s", schemaInfo)
 	return nil
 }
 
 func (r *Runner) down(toRevertCount int) error {
+	schemaInfo := ""
+	if r.schemaSearchParam != "" {
+		schemaInfo = fmt.Sprintf(" for schema '%s'", r.schemaSearchParam)
+	}
+
 	var err error
 	if toRevertCount == 0 {
 		err = r.migrate.Down()
@@ -64,10 +114,10 @@ func (r *Runner) down(toRevertCount int) error {
 	}
 
 	if err != nil && err != migrate.ErrNoChange {
-		log.Err(err).Msg("database miration rollback ran failed")
+		log.Err(err).Msgf("database migration rollback failed%s", schemaInfo)
 		return err
 	}
-	log.Info().Msg("database miration rollback ran successfully")
+	log.Info().Msgf("database migration rollback ran successfully%s", schemaInfo)
 	return nil
 }
 
