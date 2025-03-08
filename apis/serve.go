@@ -18,9 +18,14 @@ import (
 )
 
 func Endpoints(app core.App, endpoints config.Endpoints) {
-	router := app.Router().Group("")
+	router := app.Router()
+
+	// Add request logger middleware
+	router.Use(RequestLogger(app))
+
+	routerGroup := router.Group("")
 	if endpoints.AuthEnabled {
-		BindAuthApi(app, router, false)
+		BindAuthApi(app, routerGroup, false)
 	}
 }
 
