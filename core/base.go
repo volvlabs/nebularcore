@@ -279,7 +279,9 @@ func (b *BaseApp) SchemaName(tenantId string) string {
 	derivedKey := make([]byte, 32)
 	io.ReadFull(hkdf, derivedKey)
 
-	return "schema_" + hex.EncodeToString(derivedKey)
+	// Take only the first 20 bytes of the derived key to make the hex string shorter
+	// This will result in a 40-character hex string + 7 characters for "schema_" = 47 characters total
+	return "schema_" + hex.EncodeToString(derivedKey[:20])
 }
 
 func (b *BaseApp) DBSessionFromContext(ctx context.Context) *gorm.DB {
