@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-playground/assert/v2"
+	"github.com/google/uuid"
 )
 
 func TestOtp(t *testing.T) {
@@ -12,6 +13,7 @@ func TestOtp(t *testing.T) {
 		name     string
 		opts     OtpOptions
 		otpValid bool
+		secret   string
 	}{
 		{
 			name: "should successfully generate and validate OTP",
@@ -20,6 +22,7 @@ func TestOtp(t *testing.T) {
 				Secret: "secret",
 			},
 			otpValid: true,
+			secret:   GenerateUniqueOtpSecret(uuid.New()),
 		},
 		{
 			name: "should generate OTP but fail to validate expired OTP",
@@ -28,19 +31,20 @@ func TestOtp(t *testing.T) {
 				Secret: "secret",
 			},
 			otpValid: false,
+			secret:   GenerateUniqueOtpSecret(uuid.New()),
 		},
 	}
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
 			otp := NewOtp(scenario.opts)
-			passcode, err := otp.Generate()
+			passcode, err := otp.Generate(scenario.secret)
 
 			assert.Equal(t, err, nil)
 			assert.NotEqual(t, passcode, "")
 
 			time.Sleep(1 * time.Second)
 
-			isValid := otp.Validate(passcode)
+			isValid := otp.Validate(passcode, scenario.secret)
 
 			assert.Equal(t, scenario.otpValid, isValid)
 		})

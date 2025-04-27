@@ -10,6 +10,7 @@ import (
 
 func (a *Auth) Create(identity, password, userTableName string, role types.Role, userId uuid.UUID) error {
 	hashedPassword, err := security.HashPassword(password)
+	// secret, err := security.GenerateUniqueOtpSecret()
 	if err != nil {
 		log.Err(err).Msgf("AuthCreate: could not hash password")
 		return err

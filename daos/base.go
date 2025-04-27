@@ -2,17 +2,28 @@ package daos
 
 import (
 	"gitlab.com/jideobs/nebularcore/entities"
+	"gitlab.com/jideobs/nebularcore/models/config"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 
 	"gorm.io/gorm"
 )
 
 type Dao struct {
-	dbConn *gorm.DB
+	dbConn         *gorm.DB
+	tenantConfig   *config.TenantConfig
+	databaseConfig *config.DatabaseConfig
 }
 
-func New(dbConn *gorm.DB) *Dao {
-	return &Dao{dbConn}
+func New(
+	dbConn *gorm.DB,
+	tenantConfig *config.TenantConfig,
+	databaseConfig *config.DatabaseConfig,
+) *Dao {
+	return &Dao{
+		dbConn: dbConn, 
+		tenantConfig: tenantConfig,
+		databaseConfig: databaseConfig,
+	}
 }
 
 func (d *Dao) DB() *gorm.DB {
