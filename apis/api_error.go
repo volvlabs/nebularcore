@@ -12,7 +12,7 @@ type ApiError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 	Errors  any    `json:"errors"`
-}
+} // @name ApiError
 
 func (e *ApiError) Error() string {
 	return e.Message

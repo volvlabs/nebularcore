@@ -1,8 +1,10 @@
 package daos_test
 
 import (
-	"gitlab.com/jideobs/nebularcore/entities"
 	"testing"
+
+	"gitlab.com/jideobs/nebularcore/entities"
+	"gitlab.com/jideobs/nebularcore/models/config"
 
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/jideobs/nebularcore/daos"
@@ -34,7 +36,7 @@ func TestDao_Save(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 			defer tearDownMigration(t)
-			d := daos.New(app.Dao().DB())
+			d := daos.New(app.Dao().DB(), &config.TenantConfig{}, &config.DatabaseConfig{})
 			if err := d.Save(tt.model); (err != nil) != tt.wantErr {
 				t.Errorf("Dao.Save() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -47,7 +49,7 @@ func TestDao_SaveExistingRecordEntry(t *testing.T) {
 
 	tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 	defer tearDownMigration(t)
-	d := daos.New(app.Dao().DB())
+	d := daos.New(app.Dao().DB(), &config.TenantConfig{}, &config.DatabaseConfig{})
 
 	admin := &entities.Admin{
 		UserBase: entities.UserBase{
@@ -104,7 +106,7 @@ func TestDao_FindRecord(t *testing.T) {
 	}
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
-			d := daos.New(app.Dao().DB())
+			d := daos.New(app.Dao().DB(), &config.TenantConfig{}, &config.DatabaseConfig{})
 			tearDownMigration := test.RunMigration(t, filesystem.GetRootDir("../"), app.DataDir())
 			defer tearDownMigration(t)
 

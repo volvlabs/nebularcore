@@ -38,6 +38,7 @@ func New(cfg *config.AppConfig) core.App {
 		IsDev:          cfg.IsDev,
 		EnforceAcl:     cfg.EnforceAcl,
 		DatabaseConfig: cfg.Database,
+		TenantConfig:   cfg.TenantConfig,
 		MigrationsDir:  cfg.MigrationsDir,
 	})}
 

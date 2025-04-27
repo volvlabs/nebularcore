@@ -1,7 +1,11 @@
 package core
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -9,6 +13,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/daos"
 	"gitlab.com/jideobs/nebularcore/models"
 	"gitlab.com/jideobs/nebularcore/models/config"
+	"gitlab.com/jideobs/nebularcore/tools"
 	"gitlab.com/jideobs/nebularcore/tools/auth"
 	"gitlab.com/jideobs/nebularcore/tools/aws"
 	"gitlab.com/jideobs/nebularcore/tools/aws/scheduler"
@@ -18,6 +23,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/tools/security"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gitlab.com/jideobs/nebularcore/tools/validation"
+	"golang.org/x/crypto/hkdf"
 
 	"gorm.io/gorm"
 )
@@ -47,6 +53,8 @@ type BaseApp struct {
 	scheduler   scheduler.Client
 
 	fs *filesystem.System
+
+	tenantConfig config.TenantConfig
 }
 
 type BaseAppConfig struct {
@@ -56,6 +64,7 @@ type BaseAppConfig struct {
 	DataDir        string
 	MigrationsDir  string
 	DatabaseConfig config.DatabaseConfig
+	TenantConfig   config.TenantConfig
 }
 
 func NewBaseApp(config BaseAppConfig) *BaseApp {
@@ -66,6 +75,7 @@ func NewBaseApp(config BaseAppConfig) *BaseApp {
 		dataDir:        config.DataDir,
 		migrationsDir:  config.MigrationsDir,
 		databaseConfig: config.DatabaseConfig,
+		tenantConfig:   config.TenantConfig,
 		settings:       models.NewSettings(),
 		validator:      validation.New(),
 		router:         gin.Default(),
@@ -99,7 +109,7 @@ func (app *BaseApp) initDataDB() error {
 		dbConn = dbConn.Debug()
 	}
 
-	app.dao = daos.New(dbConn)
+	app.dao = daos.New(dbConn, &app.tenantConfig, &app.databaseConfig)
 
 	return nil
 }
@@ -225,6 +235,17 @@ func (b *BaseApp) EventClient() eventclient.Client {
 				log.Err(err).Msgf("failed to initialize gcloud pubsub client")
 			}
 			b.eventClient = eventClient
+		case types.AWSSQSClient:
+			eventClient, err := aws.NewSqsClient(
+				settings.Aws.AccessKeyID,
+				settings.Aws.SecretAccessKey,
+				settings.Aws.Region,
+				settings.Aws.SQS.QueueUrl,
+			)
+			if err != nil {
+				log.Err(err).Msgf("failed to initialize aws sqs client")
+			}
+			b.eventClient = eventClient
 		}
 	}
 
@@ -246,4 +267,32 @@ func (b *BaseApp) Scheduler() scheduler.Client {
 	}
 
 	return b.scheduler
+}
+
+func (b *BaseApp) SchemaName(tenantId string) string {
+	hkdf := hkdf.New(
+		sha256.New,
+		[]byte(tenantId),
+		[]byte(b.tenantConfig.SchemaSalt),
+		[]byte(b.tenantConfig.SchemaDerivation),
+	)
+	derivedKey := make([]byte, 32)
+	io.ReadFull(hkdf, derivedKey)
+
+	// Take only the first 20 bytes of the derived key to make the hex string shorter
+	// This will result in a 40-character hex string + 7 characters for "schema_" = 47 characters total
+	return "schema_" + hex.EncodeToString(derivedKey[:20])
+}
+
+func (b *BaseApp) DBSessionFromContext(ctx context.Context) *gorm.DB {
+	dbSession := ctx.Value(tools.ContextDBSessionKey)
+	if dbSession == nil {
+		return nil
+	}
+
+	return dbSession.(*gorm.DB)
+}
+
+func (b *BaseApp) RegisterEventClient(client eventclient.Client) {
+	b.eventClient = client
 }
