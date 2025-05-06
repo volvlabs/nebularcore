@@ -1,44 +1,140 @@
 package main
 
 import (
-	"log"
-	"path/filepath"
+	"context"
+	"time"
 
+	"github.com/gin-gonic/gin"
 	"gitlab.com/jideobs/nebularcore"
-	"gitlab.com/jideobs/nebularcore/apis"
-	"gitlab.com/jideobs/nebularcore/models/config"
-	"gitlab.com/jideobs/nebularcore/tools/auth"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"gitlab.com/jideobs/nebularcore/core"
+	"gitlab.com/jideobs/nebularcore/examples/models"
+	"gitlab.com/jideobs/nebularcore/modules/auth"
+	"gitlab.com/jideobs/nebularcore/modules/auth/repositories"
+	"gitlab.com/jideobs/nebularcore/modules/event"
+	"gitlab.com/jideobs/nebularcore/modules/storage"
+	"golang.org/x/crypto/bcrypt"
 )
 
+// ExampleSettings demonstrates project-specific settings
+type ExampleSettings struct {
+	App struct {
+	} `yaml:"app"`
+
+	Metrics struct {
+	} `yaml:"metrics"`
+}
+
+// Implement Settings interface
+func (s ExampleSettings) Validate() error {
+	return nil
+}
+
+func (s ExampleSettings) IsProduction() bool {
+	return false
+}
+
 func main() {
-	cfg, err := config.New("config.yml")
-	if err != nil {
-		log.Fatalf("error setting up config: %v", err)
-	}
-
-	cfg.Env = "development"
-	cfg.IsDev = true
-	cfg.EnforceAcl = true
-	cfg.Server.AllowedOrigins = "*"
-	app := nebularcore.New(cfg).(*nebularcore.NebularCore)
-
-	// routes
-	r := app.Router()
-	rg := r.Group("/api")
-	apis.BindHealthApi(rg)
-
-	// Register roles
-	policyPath := filepath.Join(filesystem.GetRootDir(""), "test/data/policy.csv")
-	confPath := filepath.Join(filesystem.GetRootDir(""), "test/data/conf.csv")
-	app.Acm().RegisterAll([]auth.AclConfig{
-		{Role: "superAdmin", PolicyPath: policyPath, ConfPath: confPath},
-		{Role: "admin", PolicyPath: policyPath, ConfPath: confPath},
-		{Role: "user", PolicyPath: policyPath, ConfPath: confPath},
-		{Role: "developers", PolicyPath: policyPath, ConfPath: confPath},
+	app := nebularcore.New(core.Options[ExampleSettings]{
+		ConfigPath: "./config.yml",
+		EnvPrefix:  "NEBULAR",
 	})
 
-	if err := app.Start(); err != nil {
-		log.Fatal(err)
+	userFactory := models.NewCustomUserFactory()
+	userRepo := repositories.NewUserRepository(app.DB(), userFactory)
+
+	eventBus, err := event.New()
+	if err != nil {
+		panic(err)
+	}
+
+	if err := app.RegisterModule(eventBus); err != nil {
+		panic(err)
+	}
+
+	authModule := auth.New(eventBus).WithUserRepository(userRepo)
+	if err := app.RegisterModule(authModule); err != nil {
+		panic(err)
+	}
+
+	storageModule := storage.New()
+
+	if err := app.RegisterModule(storageModule); err != nil {
+		panic(err)
+	}
+
+	if err := app.Bootstrap(context.Background()); err != nil {
+		panic(err)
+	}
+
+	app.Router().Group("").POST("/register", func(c *gin.Context) {
+		type RegisterRequest struct {
+			Email       string     `json:"email" binding:"required,email"`
+			Username    string     `json:"username" binding:"required"`
+			Password    string     `json:"password" binding:"required"`
+			PhoneNumber string     `json:"phone_number"`
+			FirstName   string     `json:"first_name" binding:"required"`
+			LastName    string     `json:"last_name" binding:"required"`
+			CompanyName string     `json:"company_name"`
+			Department  string     `json:"department"`
+			Role        string     `json:"role"`
+			Address     string     `json:"address"`
+			DateOfBirth *time.Time `json:"date_of_birth"`
+		}
+
+		var req RegisterRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Hash password
+		passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to hash password"})
+			return
+		}
+
+		// Create user data
+		userData := map[string]any{
+			"email":         req.Email,
+			"username":      req.Username,
+			"password":      string(passwordHash),
+			"phone_number":  req.PhoneNumber,
+			"first_name":    req.FirstName,
+			"last_name":     req.LastName,
+			"company_name":  req.CompanyName,
+			"department":    req.Department,
+			"role":          req.Role,
+			"address":       req.Address,
+			"date_of_birth": req.DateOfBirth,
+			"active":        true,
+		}
+
+		// Create user
+		user, err := userRepo.Create(c.Request.Context(), userData)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Type assert to get custom user methods
+		if customUser, ok := user.(*models.CustomUser); ok {
+			c.JSON(201, gin.H{
+				"id":        customUser.GetID(),
+				"email":     customUser.GetEmail(),
+				"username":  customUser.GetUsername(),
+				"full_name": customUser.GetFullName(),
+				"company_info": gin.H{
+					"company":    customUser.CompanyName,
+					"department": customUser.Department,
+				},
+			})
+		} else {
+			c.JSON(201, user)
+		}
+	})
+
+	if err := app.Start(context.Background()); err != nil {
+		panic(err)
 	}
 }

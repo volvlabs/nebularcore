@@ -1,6 +1,7 @@
 package nebularcore
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -9,54 +10,44 @@ import (
 
 	"gitlab.com/jideobs/nebularcore/cmd"
 	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/models/config"
+	"gitlab.com/jideobs/nebularcore/core/config"
 
 	"github.com/spf13/cobra"
 )
 
-type appWrapper struct {
-	core.App
+type appWrapper[T config.Settings] struct {
+	core.App[T]
 }
 
-type NebularCore struct {
-	*appWrapper
-
-	cfg     *config.AppConfig
+type NebularCore[T config.Settings] struct {
+	appWrapper[T]
 	RootCmd *cobra.Command
 }
 
-func New(cfg *config.AppConfig) core.App {
-	backendApp := &NebularCore{
-		cfg: cfg,
+func New[T config.Settings](options core.Options[T]) *NebularCore[T] {
+	backendApp := &NebularCore[T]{
 		RootCmd: &cobra.Command{
 			Use:   fmt.Sprintf("%s [configfilepath]", filepath.Base(os.Args[0])),
 			Short: "Backend CLI",
 		},
 	}
-	backendApp.appWrapper = &appWrapper{core.NewBaseApp(core.BaseAppConfig{
-		Env:            cfg.Env,
-		IsDev:          cfg.IsDev,
-		EnforceAcl:     cfg.EnforceAcl,
-		DatabaseConfig: cfg.Database,
-		TenantConfig:   cfg.TenantConfig,
-		MigrationsDir:  cfg.MigrationsDir,
-	})}
+	app, err := core.New(options)
+	if err != nil {
+		panic(err)
+	}
+	backendApp.appWrapper = appWrapper[T]{app}
 
 	return backendApp
 }
 
-func (n *NebularCore) Start() error {
-	n.RootCmd.AddCommand(cmd.NewServeCommand(n, n.cfg.Endpoints, n.cfg.Server))
-	n.RootCmd.AddCommand(cmd.NewMigrateCommand(n, n.cfg.Database))
+func (n *NebularCore[T]) Start(ctx context.Context) error {
+	n.RootCmd.AddCommand(cmd.NewServeCommand(n))
+	n.RootCmd.AddCommand(cmd.NewMigrateCommand(n, n.Config().Database))
 
-	return n.Execute()
+	return n.Execute(ctx)
 }
 
-func (n *NebularCore) Execute() error {
-	if err := n.appWrapper.Bootstrap(); err != nil {
-		return err
-	}
-
+func (n *NebularCore[T]) Execute(ctx context.Context) error {
 	done := make(chan bool, 1)
 
 	// listen for signal interrupt.
@@ -76,5 +67,5 @@ func (n *NebularCore) Execute() error {
 
 	<-done
 
-	return n.Terminate()
+	return n.appWrapper.Shutdown(ctx)
 }

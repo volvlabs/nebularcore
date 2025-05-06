@@ -48,7 +48,7 @@ func (v *Validator) GetValidate() *validator.Validate {
 	return v.validate
 }
 
-func (v *Validator) Validate(i any) ([]types.FieldError, error) {
+func (v *Validator) Validate(i any) error {
 	err := v.validate.Struct(i)
 	if err != nil {
 		errs := []types.FieldError{}
@@ -58,8 +58,8 @@ func (v *Validator) Validate(i any) ([]types.FieldError, error) {
 				Message: err.Translate(v.translator),
 			})
 		}
-		return errs, err
+		return types.NewValidationError("Validation failed. Please check the provided values and try again.", errs)
 	}
 
-	return nil, nil
+	return nil
 }
