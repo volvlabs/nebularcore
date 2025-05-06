@@ -3,16 +3,22 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"time"
+	"strconv"
+	"strings"
 
+	"github.com/golang-migrate/migrate/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/volvlabs/nebularcore/core"
 	"github.com/volvlabs/nebularcore/models/config"
 	"github.com/volvlabs/nebularcore/tools/migrate"
+	migrationRunner "github.com/vovlabs/nebularcore/tools/migrate/runner"
 )
 
-func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command {
+func NewMigrateCommand[T config.Settings](
+	app core.App[T],
+	dbCfg config.DatabaseConfig,
+) *cobra.Command {
 	const cmdDesc = `Supported commands are:
 - up			- runs migrations
 - down [number]		- revert last [number] of migrations, or all if omitted
@@ -22,7 +28,7 @@ func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command
 - all-tenants [command] [args]     - runs migrations for all tenant schemas`
 	command := &cobra.Command{
 		Use:       "migrate",
-		Short:     "Execute app DB migration scripts",
+		Short:     "All DB migration commands",
 		Long:      cmdDesc,
 		ValidArgs: []string{"up", "down", "goto", "create", "tenant", "all-tenants"},
 		RunE: func(command *cobra.Command, args []string) error {
@@ -32,15 +38,50 @@ func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command
 			}
 			switch cmd {
 			case "create":
-				if len(args) < 2 {
-					return fmt.Errorf("migration name is required")
+				if len(args) < 3 {
+					return fmt.Errorf("module and migration name is required")
 				}
-				if err := createMigrationFileHandler(app.MigrationsDir(), args[1]); err != nil {
+				module, ok := app.GetModule(args[1])
+				if !ok {
+					return fmt.Errorf("module %s not found", args[1])
+				}
+				if !module.ProvidesMigrations() {
+					return fmt.Errorf("module %s does not provide migrations", args[1])
+				}
+
+				directory := fmt.Sprintf("%s/modules/%s/%s",
+					app.Config().ProjectRoot, module.Name(), module.MigrationsDir())
+				if err := createMigrationFileHandler(directory, args[2]); err != nil {
 					return err
 				}
-			case "tenant":
-				if len(args) < 2 {
-					return fmt.Errorf("schema name is required")
+			case "up":
+				dbString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+					dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode)
+				for _, om := range app.GetModulesInOrder(module.PublicNamespace) {
+					if !om.Module.ProvidesMigrations() {
+						continue
+					}
+
+					projectRoot := app.Config().ProjectRoot
+					sources := om.Module.GetMigrationSources(projectRoot)
+					runner, err := migrationRunner.New(
+						sources,
+						dbString,
+						fmt.Sprintf("schema_migrations_%s", om.Name),
+					)
+					if err != nil {
+						log.Err(err).Msg("error creating migration runner")
+						return err
+					}
+					if err := runner.Up(); err != nil {
+						if err == migrate.ErrNoChange || err == migrate.ErrNilVersion {
+							log.Err(err).Msgf("no migrations to run for module %s", om.Name)
+							continue
+						}
+						return err
+					}
+
+					log.Info().Msgf("migration for module %s ran successfully", om.Name)
 				}
 
 				schemaName := args[1]
@@ -79,14 +120,7 @@ func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command
 				// Run migrations for all tenants, passing any sub-command and args
 				return dao.AutoMigrateSchemas(args[1:]...)
 			default:
-				runner, err := migrate.NewRunner(
-					fmt.Sprintf("file:///%s", app.MigrationsDir()),
-					fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-						dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode))
-				if err != nil {
-					return err
-				}
-				return runner.Run(args...)
+				return fmt.Errorf("unknown command %s", cmd)
 			}
 			return nil
 		},
@@ -96,10 +130,30 @@ func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command
 }
 
 func createMigrationFileHandler(migrationsDir, name string) error {
-	timestamp := time.Now().Unix()
+	entries, err := os.ReadDir(migrationsDir)
+	if err != nil {
+		return err
+	}
 
-	upFileName := fmt.Sprintf("%s/%d_%s.up.sql", migrationsDir, timestamp, name)
-	downFileName := fmt.Sprintf("%s/%d_%s.down.sql", migrationsDir, timestamp, name)
+	highestVersion := 0
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") {
+			parts := strings.Split(entry.Name(), "_")
+			if len(parts) > 0 {
+				if version, err := strconv.Atoi(parts[0]); err == nil {
+					if version > highestVersion {
+						highestVersion = version
+					}
+				}
+			}
+		}
+	}
+
+	newVersion := highestVersion + 1
+	versionPrefix := fmt.Sprintf("%06d", newVersion)
+
+	upFileName := fmt.Sprintf("%s/%s_%s.up.sql", migrationsDir, versionPrefix, name)
+	downFileName := fmt.Sprintf("%s/%s_%s.down.sql", migrationsDir, versionPrefix, name)
 
 	upFile, err := os.Create(upFileName)
 	if err != nil {
