@@ -1,18 +1,43 @@
-env: "development"
-isDev: true
-enforceAcl: false
-autoMigrate: true
-migrationsDir: "/Users/jideobs/Projects/go/src/gitlab.com/jideobs/tunu/migrations"
-database:
-  type: 0
-  host: "localhost"
-  username: "flippay"
-  password: "password"
-  name: "flippay"
-  port: "5432"
-  sslmode: "disable"
-server:
-  port: "8888"
-  host: "localhost"
-  shutdownTimeout: 5
-  allowedOrigins: "*"
+core:
+  environment: development
+  database:
+    driver: postgres
+    host: localhost
+    username: postgres
+    password: password
+    name: nebularcore
+    port: "5432"
+    sslmode: disable
+  server:
+    port: "8888"
+    host: localhost
+    shutdownTimeout: 5s
+    allowedOrigins: "*"
+modules:
+  auth:
+    userMigrationScriptPath: "./migrations"
+    backends:
+      - local
+    jwt:
+      secret: this-is-a-sample-secret
+      expiry: 24h
+      refreshExpiry: 720h
+    passwordPolicy:
+      minLength: 8
+      requireUpper: true
+      requireLower: true
+      requireNumber: true
+      requireSpecial: true
+    apiKey:
+      length: 32
+      expiryTime: 8760h
+      rateLimit:
+        enabled: true
+        requests: 1000
+        period: 1h
+    social:
+      enabled: false
+    clerk:
+      apiKey: ""
+      apiEndpoint: ""
+      frontendAPI: ""

@@ -2,297 +2,283 @@ package core
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
-	"path/filepath"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/daos"
-	"gitlab.com/jideobs/nebularcore/models"
-	"gitlab.com/jideobs/nebularcore/models/config"
-	"gitlab.com/jideobs/nebularcore/tools"
-	"gitlab.com/jideobs/nebularcore/tools/auth"
-	"gitlab.com/jideobs/nebularcore/tools/aws"
-	"gitlab.com/jideobs/nebularcore/tools/aws/scheduler"
-	"gitlab.com/jideobs/nebularcore/tools/eventclient"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
-	"gitlab.com/jideobs/nebularcore/tools/gcloud"
-	"gitlab.com/jideobs/nebularcore/tools/security"
-	"gitlab.com/jideobs/nebularcore/tools/types"
-	"gitlab.com/jideobs/nebularcore/tools/validation"
-	"golang.org/x/crypto/hkdf"
-
+	"gitlab.com/jideobs/nebularcore/core/config"
+	"gitlab.com/jideobs/nebularcore/core/module"
+	"gitlab.com/jideobs/nebularcore/core/utils"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-const LocalStorageDirName string = "storage"
-
-type BaseApp struct {
-	Env           string
-	isDev         bool
-	enforceAcl    bool
-	dataDir       string
-	migrationsDir string
-
-	onTerminateHandler TerminateHandler
-	databaseConfig     config.DatabaseConfig
-
-	aclManager *auth.AccessControlManager
-	validator  *validation.Validator
-	dao        *daos.Dao
-
-	settings *models.Settings
+// baseApp provides the default implementation of the App interface
+type baseApp[T config.Settings] struct {
+	opts     Options[T]
+	ctx      context.Context
+	cancel   context.CancelFunc
+	config   *config.CoreConfig
+	settings T
+	registry *module.Registry
 	router   *gin.Engine
+	db       *gorm.DB
 
-	otp *security.Otp
+	bootstraped bool
 
-	eventClient eventclient.Client
-	scheduler   scheduler.Client
-
-	fs *filesystem.System
-
-	tenantConfig config.TenantConfig
+	loader *config.ConfigLoader[T]
 }
 
-type BaseAppConfig struct {
-	Env            string
-	IsDev          bool
-	EnforceAcl     bool
-	DataDir        string
-	MigrationsDir  string
-	DatabaseConfig config.DatabaseConfig
-	TenantConfig   config.TenantConfig
+// Options for creating a new application
+type Options[T config.Settings] struct {
+	ConfigPath string
+	EnvPrefix  string
 }
 
-func NewBaseApp(config BaseAppConfig) *BaseApp {
-	baseApp := &BaseApp{
-		Env:            config.Env,
-		isDev:          config.IsDev,
-		enforceAcl:     config.EnforceAcl,
-		dataDir:        config.DataDir,
-		migrationsDir:  config.MigrationsDir,
-		databaseConfig: config.DatabaseConfig,
-		tenantConfig:   config.TenantConfig,
-		settings:       models.NewSettings(),
-		validator:      validation.New(),
-		router:         gin.Default(),
+// New creates a new application instance
+func New[T config.Settings](opts Options[T]) (*baseApp[T], error) {
+	// Create config loader
+	loader := config.NewConfigLoader[T]()
+	if err := loader.LoadFromFile(opts.ConfigPath); err != nil {
+		return nil, err
 	}
 
-	if config.EnforceAcl {
-		baseApp.aclManager = auth.NewAccessControlManager()
+	// Validate all configurations
+	if errors := loader.ValidateAll(); len(errors) > 0 {
+		return nil, fmt.Errorf("configuration validation failed: %v", errors)
 	}
 
-	return baseApp
-}
-
-func (app *BaseApp) IsDev() bool {
-	return app.isDev
-}
-
-func (app *BaseApp) initDataDB() error {
-	var dbConn *gorm.DB
-	var err error
-	if app.Env == "test" {
-		dbConn, err = connectSqliteDB(filepath.Join(app.DataDir(), "data.db"))
-	} else {
-		dbConn, err = connectPostgresDB(app.databaseConfig)
-	}
-
+	// Get project root
+	projectRoot, err := utils.GetProjectRoot()
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to determine project root: %w", err)
 	}
 
-	if app.IsDev() {
-		dbConn = dbConn.Debug()
+	// Create base application
+	app := &baseApp[T]{
+		opts:     opts,
+		config:   loader.GetCore(),
+		settings: loader.GetProject(),
+		registry: module.NewRegistry(),
+		loader:   loader,
 	}
 
-	app.dao = daos.New(dbConn, &app.tenantConfig, &app.databaseConfig)
+	// Set project root in core config
+	app.config.ProjectRoot = projectRoot
 
-	return nil
+	return app, nil
 }
 
-func (app *BaseApp) Bootstrap() error {
-	if err := app.initDataDB(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (b *BaseApp) OnTerminate(handler TerminateHandler) {
-	b.onTerminateHandler = handler
-}
-
-func (b *BaseApp) Terminate() error {
-	if b.onTerminateHandler != nil {
-		return b.onTerminateHandler()
-	}
-
-	return nil
-}
-
-func (b *BaseApp) IsACLEnforced() bool {
-	return b.enforceAcl
-}
-
-func (b *BaseApp) Acm() *auth.AccessControlManager {
-	return b.aclManager
-}
-
-func (b *BaseApp) Settings() *models.Settings {
-	return b.settings
-}
-
-func (b *BaseApp) DataDir() string {
-	return b.dataDir
-}
-
-func (b *BaseApp) MigrationsDir() string {
-	return b.migrationsDir
-}
-
-func (b *BaseApp) Dao() *daos.Dao {
-	return b.dao
-}
-
-func (b *BaseApp) Validator() *validation.Validator {
-	return b.validator
-}
-
-func (b *BaseApp) Router() *gin.Engine {
-	return b.router
-}
-
-func (b *BaseApp) Otp() *security.Otp {
-	if b.otp == nil {
-		b.otp = security.NewOtp(security.OtpOptions{
-			Secret: b.Settings().OtpGenerationSecret,
-			Period: b.Settings().OtpPeriod,
-		})
-	}
-	return b.otp
-}
-
-func (b *BaseApp) NewFileSystem() (*filesystem.System, error) {
-	if b.fs != nil && !b.fs.IsBucketClosed {
-		return b.fs, nil
-	}
-
-	settings := b.Settings()
-	var err error
-	if settings.S3.Enabled {
-		b.fs, err = filesystem.NewWithS3(
-			settings.S3.Bucket,
-			settings.Aws.Region,
-			settings.Aws.AccessKeyID,
-			settings.Aws.SecretAccessKey,
-		)
-	} else if settings.Glcoud.Storage.Enabled {
-		b.fs, err = filesystem.NewWithGoogleCloudStorage(
-			settings.Glcoud.Storage.Bucket,
-			settings.Glcoud.Storage.CredfileLocation,
-		)
-	} else if b.Env == "test" || settings.InMemory.Enabled {
-		b.fs, err = filesystem.NewMemory()
-	} else {
-		b.fs, err = filesystem.NewLocal(filepath.Join(b.DataDir(), LocalStorageDirName))
-	}
-
-	return b.fs, err
-}
-
-func (b *BaseApp) GetFileURL(key string) string {
-	settings := b.Settings()
-	if settings.S3.Enabled {
-		cloudFrontConfig := settings.CloudFront
-		return fmt.Sprintf("%s/%s", cloudFrontConfig.Domain, key)
-	}
-
-	return fmt.Sprintf("%s/files?key=%s", settings.Domain, key)
-}
-
-func (b *BaseApp) EventClient() eventclient.Client {
-	if b.eventClient == nil {
-		settings := b.Settings()
-		switch settings.EventClient {
-		case types.AWSEventBridgeClient:
-			eventClient, err := aws.NewEventClient(
-				settings.Aws.AccessKeyID,
-				settings.Aws.SecretAccessKey,
-				settings.Aws.Region,
-				settings.EventBridge.EventBus,
-			)
-			if err != nil {
-				log.Err(err).Msgf("failed to initialize event bridge client")
-			}
-			b.eventClient = eventClient
-		case types.GcloudPubSubClient:
-			eventClient, err := gcloud.NewEventClient(settings.Glcoud)
-			if err != nil {
-				log.Err(err).Msgf("failed to initialize gcloud pubsub client")
-			}
-			b.eventClient = eventClient
-		case types.AWSSQSClient:
-			eventClient, err := aws.NewSqsClient(
-				settings.Aws.AccessKeyID,
-				settings.Aws.SecretAccessKey,
-				settings.Aws.Region,
-				settings.Aws.SQS.QueueUrl,
-			)
-			if err != nil {
-				log.Err(err).Msgf("failed to initialize aws sqs client")
-			}
-			b.eventClient = eventClient
-		}
-	}
-
-	return b.eventClient
-}
-
-func (b *BaseApp) Scheduler() scheduler.Client {
-	if b.scheduler == nil {
-		settings := b.Settings()
-		scheduler, err := scheduler.New(
-			settings.Aws.AccessKeyID,
-			settings.Aws.SecretAccessKey,
-			settings.Aws.Region,
-		)
-		if err != nil {
-			log.Err(err).Msgf("failed to initialize scheduler client")
-		}
-		b.scheduler = scheduler
-	}
-
-	return b.scheduler
-}
-
-func (b *BaseApp) SchemaName(tenantId string) string {
-	hkdf := hkdf.New(
-		sha256.New,
-		[]byte(tenantId),
-		[]byte(b.tenantConfig.SchemaSalt),
-		[]byte(b.tenantConfig.SchemaDerivation),
-	)
-	derivedKey := make([]byte, 32)
-	io.ReadFull(hkdf, derivedKey)
-
-	// Take only the first 20 bytes of the derived key to make the hex string shorter
-	// This will result in a 40-character hex string + 7 characters for "schema_" = 47 characters total
-	return "schema_" + hex.EncodeToString(derivedKey[:20])
-}
-
-func (b *BaseApp) DBSessionFromContext(ctx context.Context) *gorm.DB {
-	dbSession := ctx.Value(tools.ContextDBSessionKey)
-	if dbSession == nil {
+// Bootstrap initializes the application and all registered modules
+func (a *baseApp[T]) Bootstrap(ctx context.Context) error {
+	if a.bootstraped {
 		return nil
 	}
+	a.ctx, a.cancel = context.WithCancel(ctx)
+	if err := a.configureModules(); err != nil {
+		return err
+	}
 
-	return dbSession.(*gorm.DB)
+	// Initialize database
+	if err := a.initDB(); err != nil {
+		return fmt.Errorf("initializing database: %w", err)
+	}
+
+	// Initialize modules in dependency order
+	for _, name := range a.registry.InitOrder() {
+		module, _ := a.registry.Get(name)
+		if err := module.Initialize(a.ctx, a.db, a.Router()); err != nil {
+			return fmt.Errorf("initializing module %s: %w", name, err)
+		}
+	}
+
+	a.bootstraped = true
+	return nil
 }
 
-func (b *BaseApp) RegisterEventClient(client eventclient.Client) {
-	b.eventClient = client
+// Shutdown gracefully shuts down the application
+func (a *baseApp[T]) Shutdown(ctx context.Context) error {
+	// Shutdown modules in reverse order
+	order := a.registry.InitOrder()
+	for i := len(order) - 1; i >= 0; i-- {
+		module, _ := a.registry.Get(order[i])
+		if err := module.Shutdown(ctx); err != nil {
+			return fmt.Errorf("shutting down module %s: %w", order[i], err)
+		}
+	}
+
+	// Close database connection
+	if a.db != nil {
+		db, err := a.db.DB()
+		if err != nil {
+			return fmt.Errorf("getting database instance: %w", err)
+		}
+		if err := db.Close(); err != nil {
+			return fmt.Errorf("closing database connection: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (a *baseApp[T]) configureModules() error {
+	for _, name := range a.registry.InitOrder() {
+		log.Debug().Msgf("configuring module %s", name)
+		module, _ := a.registry.Get(name)
+		moduleConfig := module.NewConfig()
+		if moduleConfig == nil {
+			continue
+		}
+
+		err := a.loader.GetModuleConfig(name, moduleConfig)
+		if err != nil {
+			log.Err(err).Msgf("error getting module %s config", name)
+			return fmt.Errorf("error getting module %s config: %w", name, err)
+		}
+
+		if err := module.Configure(moduleConfig); err != nil {
+			log.Err(err).Msgf("error configuring module %s", name)
+			return fmt.Errorf("error configuring module %s: %w", name, err)
+		}
+	}
+	return nil
+}
+
+// Run starts the application
+func (a *baseApp[T]) Run(ctx context.Context) error {
+	server := &http.Server{
+		Addr:         fmt.Sprintf("%s:%s", a.config.Server.Host, a.config.Server.Port),
+		Handler:      a.Router(),
+		ReadTimeout:  a.config.Server.ReadTimeout,
+		WriteTimeout: a.config.Server.WriteTimeout,
+	}
+
+	// Create error channel for server errors
+	errChan := make(chan error, 1)
+
+	// Start server
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errChan <- fmt.Errorf("server error: %w", err)
+		}
+	}()
+
+	// Wait for shutdown signal or server error
+	select {
+	case <-ctx.Done():
+		// Normal shutdown
+	case err := <-errChan:
+		// Server error
+		return err
+	}
+
+	// Create shutdown context
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), a.config.Server.ShutdownTimeout)
+	defer cancel()
+
+	// First shutdown the HTTP server
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("error shutting down server: %w", err)
+	}
+
+	// Then perform application shutdown
+	if err := a.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("error during application shutdown: %w", err)
+	}
+
+	return nil
+}
+
+// RegisterModule registers a new module with the application
+func (a *baseApp[T]) RegisterModule(m module.Module) error {
+	return a.registry.Register(m)
+}
+
+// GetModules retrieves all registered modules
+func (a *baseApp[T]) GetModules() map[string]module.Module {
+	return a.registry.GetModules()
+}
+
+func (a *baseApp[T]) GetModulesByNamespace(namespace module.ModuleNamespace) map[string]module.Module {
+	return a.registry.GetModulesByNamespace(namespace)
+}
+
+// GetModule retrieves a registered module by name
+func (a *baseApp[T]) GetModule(name string) (module.Module, bool) {
+	return a.registry.Get(name)
+}
+
+// Config returns the core configuration
+func (a *baseApp[T]) Config() *config.CoreConfig {
+	return a.config
+}
+
+// Settings returns the project settings
+func (a *baseApp[T]) Settings() T {
+	return a.settings
+}
+
+// Router returns the Gin router instance
+func (a *baseApp[T]) Router() *gin.Engine {
+	if a.router == nil {
+		a.router = gin.Default()
+	}
+	return a.router
+}
+
+// DB returns the database instance
+func (a *baseApp[T]) DB() *gorm.DB {
+	return a.db
+}
+
+// initDB initializes the database connection
+func (a *baseApp[T]) initDB() error {
+	var err error
+	switch a.config.Database.Driver {
+	case "postgres":
+		a.db, err = a.initPostgresDB()
+	case "sqlite":
+		a.db, err = a.initSqliteDB()
+	case "cloudsqlpostgres":
+		a.db, err = a.initGoogleCloudSQL(a.config.Database)
+	default:
+		return fmt.Errorf("unsupported database type: %s", a.config.Database.Driver)
+	}
+	return err
+}
+
+func (a *baseApp[T]) initPostgresDB() (*gorm.DB, error) {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=UTC",
+		a.config.Database.Host,
+		a.config.Database.Username,
+		a.config.Database.Password,
+		a.config.Database.Name,
+		a.config.Database.Port,
+		a.config.Database.SSLMode,
+	)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		SkipDefaultTransaction: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return db.Debug(), nil
+}
+
+func (a *baseApp[T]) initSqliteDB() (*gorm.DB, error) {
+	return gorm.Open(sqlite.Open(a.config.Database.Name), &gorm.Config{
+		SkipDefaultTransaction: true,
+	})
+}
+
+func (a *baseApp[T]) initGoogleCloudSQL(config config.DatabaseConfig) (*gorm.DB, error) {
+	return gorm.Open(postgres.New(postgres.Config{
+		DriverName: "cloudsqlpostgres",
+		DSN: fmt.Sprintf("host=%s user=%s dbname=%s password=%s sslmode=%s TimeZone=UTC",
+			config.Host, config.Username, config.Name, config.Password, config.SSLMode),
+	}))
 }

@@ -3,27 +3,29 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"time"
+	"strconv"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/models/config"
-	"gitlab.com/jideobs/nebularcore/tools/migrate"
+	"gitlab.com/jideobs/nebularcore/core/config"
+	migrationRunner "gitlab.com/jideobs/nebularcore/core/migration_runner"
+	"gitlab.com/jideobs/nebularcore/core/module"
 )
 
-func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command {
+func NewMigrateCommand[T config.Settings](
+	app core.App[T],
+	dbCfg config.DatabaseConfig,
+) *cobra.Command {
 	const cmdDesc = `Supported commands are:
-- up			- runs migrtations
-- down [number] - revert last number of migrations
-- create [name] - creates new blank migration file
-- tenant [schema] [command] - runs migrations for a specific tenant schema
-- all-tenants   - runs migrations for all tenant schemas`
+- create [module] [name] - creates new blank migration file
+- up - runs all pending migrations`
 	command := &cobra.Command{
 		Use:       "migrate",
-		Short:     "Execute app DB migration scripts",
+		Short:     "All DB migration commands",
 		Long:      cmdDesc,
-		ValidArgs: []string{"up", "down", "create", "tenant", "all-tenants"},
+		ValidArgs: []string{"create", "up"},
 		RunE: func(command *cobra.Command, args []string) error {
 			cmd := ""
 			if len(args) > 0 {
@@ -31,61 +33,49 @@ func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command
 			}
 			switch cmd {
 			case "create":
-				if len(args) < 2 {
-					return fmt.Errorf("migration name is required")
+				if len(args) < 3 {
+					return fmt.Errorf("module and migration name is required")
 				}
-				if err := createMigrationFileHandler(app.MigrationsDir(), args[1]); err != nil {
+				module, ok := app.GetModule(args[1])
+				if !ok {
+					return fmt.Errorf("module %s not found", args[1])
+				}
+				if !module.ProvidesMigrations() {
+					return fmt.Errorf("module %s does not provide migrations", args[1])
+				}
+
+				directory := fmt.Sprintf("%s/modules/%s/%s",
+					app.Config().ProjectRoot, module.Name(), module.MigrationsDir())
+				if err := createMigrationFileHandler(directory, args[2]); err != nil {
 					return err
 				}
-			case "tenant":
-				if len(args) < 2 {
-					return fmt.Errorf("schema name is required")
+			case "up":
+				dbString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+					dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode)
+				for name, module := range app.GetModulesByNamespace(module.PublicNamespace) {
+					if !module.ProvidesMigrations() {
+						continue
+					}
+
+					projectRoot := app.Config().ProjectRoot
+					sources := module.GetMigrationSources(projectRoot)
+					runner, err := migrationRunner.New(
+						sources,
+						dbString,
+						fmt.Sprintf("schema_migrations_%s", name),
+					)
+					if err != nil {
+						log.Err(err).Msg("error creating migration runner")
+						return err
+					}
+					if err := runner.Up(); err != nil {
+						return err
+					}
+
+					log.Info().Msgf("migration for module %s ran successfully", name)
 				}
-
-				schemaName := args[1]
-
-				// Create a new migration runner
-				runner, err := migrate.NewRunner(
-					fmt.Sprintf("file:///%s", app.MigrationsDir()),
-					fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-						dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode))
-				if err != nil {
-					return err
-				}
-
-				// Create a schema-specific runner
-				schemaRunner, err := runner.WithSchema(schemaName)
-				if err != nil {
-					return err
-				}
-
-				// Run the migration with the remaining args
-				var migrationArgs []string
-				if len(args) > 2 {
-					migrationArgs = args[2:]
-				} else {
-					migrationArgs = []string{"up"}
-				}
-
-				return schemaRunner.Run(migrationArgs...)
-			case "all-tenants":
-				// Create a DAO to access the database
-				dao := app.Dao()
-				if dao == nil {
-					return fmt.Errorf("database access is not available")
-				}
-
-				// Run migrations for all tenants
-				return dao.AutoMigrateSchemas()
 			default:
-				runner, err := migrate.NewRunner(
-					fmt.Sprintf("file:///%s", app.MigrationsDir()),
-					fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-						dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode))
-				if err != nil {
-					return err
-				}
-				return runner.Run(args...)
+				return fmt.Errorf("unknown command %s", cmd)
 			}
 			return nil
 		},
@@ -95,10 +85,34 @@ func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command
 }
 
 func createMigrationFileHandler(migrationsDir, name string) error {
-	timestamp := time.Now().Unix()
+	// Read all files in migrations directory
+	entries, err := os.ReadDir(migrationsDir)
+	if err != nil {
+		return err
+	}
 
-	upFileName := fmt.Sprintf("%s/%d_%s.up.sql", migrationsDir, timestamp, name)
-	downFileName := fmt.Sprintf("%s/%d_%s.down.sql", migrationsDir, timestamp, name)
+	// Find highest version number
+	highestVersion := 0
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") {
+			// Extract version number from filename (e.g., "000001" from "000001_init.up.sql")
+			parts := strings.Split(entry.Name(), "_")
+			if len(parts) > 0 {
+				if version, err := strconv.Atoi(parts[0]); err == nil {
+					if version > highestVersion {
+						highestVersion = version
+					}
+				}
+			}
+		}
+	}
+
+	// Generate new version number
+	newVersion := highestVersion + 1
+	versionPrefix := fmt.Sprintf("%06d", newVersion) // Format as 000001, 000002, etc.
+
+	upFileName := fmt.Sprintf("%s/%s_%s.up.sql", migrationsDir, versionPrefix, name)
+	downFileName := fmt.Sprintf("%s/%s_%s.down.sql", migrationsDir, versionPrefix, name)
 
 	upFile, err := os.Create(upFileName)
 	if err != nil {

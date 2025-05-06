@@ -1,26 +1,30 @@
 package cmd
 
 import (
-	"errors"
+	"context"
 	"log"
-	"net/http"
 
-	"gitlab.com/jideobs/nebularcore/apis"
 	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/models/config"
+	"gitlab.com/jideobs/nebularcore/core/config"
 
 	"github.com/spf13/cobra"
 )
 
-func NewServeCommand(app core.App, endpointsConfig config.Endpoints, serveConfig config.ServeConfig) *cobra.Command {
+func NewServeCommand[T config.Settings](app core.App[T]) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "serve",
 		Args:  cobra.ArbitraryArgs,
-		Short: "",
+		Short: "Bootstrap and start the application",
 		Run: func(cmd *cobra.Command, args []string) {
-			apis.Endpoints(app, endpointsConfig)
-			err := apis.Serve(app, serveConfig)
-			if !errors.Is(err, http.ErrServerClosed) {
+			if cmd.Name() != "serve" {
+				return
+			}
+
+			if err := app.Bootstrap(context.Background()); err != nil {
+				log.Fatalln(err)
+			}
+
+			if err := app.Run(context.Background()); err != nil {
 				log.Fatalln(err)
 			}
 		},
