@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"embed"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,9 @@ import (
 	"gitlab.com/jideobs/nebularcore/modules/auth/state"
 	"gorm.io/gorm"
 )
+
+//go:embed migrations/*.sql
+var migrations embed.FS
 
 // Module implements the NebularCore module interface for authentication
 type Module struct {
@@ -181,7 +185,8 @@ func (m *Module) GetMigrationSources(projectRoot string) []migrationRunner.Sourc
 		})
 		// Add default auth migrations excluding the default user migration
 		sources = append(sources, migrationRunner.Source{
-			Path:     fmt.Sprintf("file://%s/modules/auth/%s", projectRoot, m.MigrationsDir()),
+			FS:       migrations,
+			Path:     "migrations",
 			Priority: 50,
 			Exclude: []string{
 				"000001_init_auth.up.sql",
@@ -194,7 +199,8 @@ func (m *Module) GetMigrationSources(projectRoot string) []migrationRunner.Sourc
 
 	// Add default auth migrations
 	sources = append(sources, migrationRunner.Source{
-		Path:     fmt.Sprintf("file://%s/modules/auth/%s", projectRoot, m.MigrationsDir()),
+		FS:       migrations,
+		Path:     "migrations",
 		Priority: 50,
 		Exclude:  []string{},
 	})

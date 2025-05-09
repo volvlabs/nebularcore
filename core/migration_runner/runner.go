@@ -3,6 +3,7 @@ package migration_runner
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"sort"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -19,6 +20,7 @@ type Source struct {
 	Path     string
 	Priority int
 	Exclude  []string
+	FS       fs.FS
 }
 
 func New(sources []Source, connectionString, tableName string) (*Runner, error) {
@@ -60,15 +62,23 @@ func processSources(sources []Source) (source.Driver, error) {
 	// Chain sources together
 	var sourceDriver source.Driver
 	for _, src := range sources {
-		// Create file source
-		fileSource, err := (&file.File{}).Open(src.Path)
-		if err != nil {
-			return nil, fmt.Errorf("open file source: %w", err)
+		var srcDriver source.Driver
+		var err error
+
+		// Create source driver based on whether we have an embedded filesystem
+		if src.FS != nil {
+			srcDriver = NewEmbedSource(src.FS, src.Path)
+		} else {
+			// Create file source
+			srcDriver, err = (&file.File{}).Open(src.Path)
+			if err != nil {
+				return nil, fmt.Errorf("open file source: %w", err)
+			}
 		}
 
 		// Filter out excluded files
 		filteredSource := &filteredSource{
-			Driver:  fileSource,
+			Driver:  srcDriver,
 			exclude: src.Exclude,
 		}
 
