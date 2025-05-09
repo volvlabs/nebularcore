@@ -7,24 +7,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"gitlab.com/jideobs/nebularcore"
 	"gitlab.com/jideobs/nebularcore/core"
+	"gitlab.com/jideobs/nebularcore/examples/models"
 	"gitlab.com/jideobs/nebularcore/modules/auth"
 	"gitlab.com/jideobs/nebularcore/modules/auth/repositories"
-	"gitlab.com/jideobs/nebularcore/modules/health"
-	"gitlab.com/jideobs/nebularcore/examples/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // ExampleSettings demonstrates project-specific settings
 type ExampleSettings struct {
 	App struct {
-		Name        string        `yaml:"name" validate:"required"`
-		Description string        `yaml:"description"`
-		Timeout     time.Duration `yaml:"timeout" validate:"required"`
 	} `yaml:"app"`
 
 	Metrics struct {
-		Enabled bool   `yaml:"enabled"`
-		Path    string `yaml:"path"`
 	} `yaml:"metrics"`
 }
 
@@ -45,10 +39,10 @@ func main() {
 	})
 
 	// Create and register health module
-	healthModule := health.New()
-	if err := app.RegisterModule(healthModule); err != nil {
-		panic(err)
-	}
+	// healthModule := health.New()
+	// if err := app.RegisterModule(healthModule); err != nil {
+	// 	panic(err)
+	// }
 
 	// Initialize user repository with custom user model
 	userFactory := models.NewCustomUserFactory()
@@ -75,7 +69,7 @@ func main() {
 			LastName    string     `json:"last_name" binding:"required"`
 			CompanyName string     `json:"company_name"`
 			Department  string     `json:"department"`
-			Role       string     `json:"role"`
+			Role        string     `json:"role"`
 			Address     string     `json:"address"`
 			DateOfBirth *time.Time `json:"date_of_birth"`
 		}
@@ -95,18 +89,18 @@ func main() {
 
 		// Create user data
 		userData := map[string]any{
-			"email":        req.Email,
-			"username":     req.Username,
-			"password":     string(passwordHash),
-			"phone_number": req.PhoneNumber,
-			"first_name":   req.FirstName,
-			"last_name":    req.LastName,
-			"company_name": req.CompanyName,
-			"department":   req.Department,
-			"role":        req.Role,
-			"address":     req.Address,
+			"email":         req.Email,
+			"username":      req.Username,
+			"password":      string(passwordHash),
+			"phone_number":  req.PhoneNumber,
+			"first_name":    req.FirstName,
+			"last_name":     req.LastName,
+			"company_name":  req.CompanyName,
+			"department":    req.Department,
+			"role":          req.Role,
+			"address":       req.Address,
 			"date_of_birth": req.DateOfBirth,
-			"active":       true,
+			"active":        true,
 		}
 
 		// Create user
@@ -119,10 +113,10 @@ func main() {
 		// Type assert to get custom user methods
 		if customUser, ok := user.(*models.CustomUser); ok {
 			c.JSON(201, gin.H{
-				"id":           customUser.GetID(),
-				"email":        customUser.GetEmail(),
-				"username":     customUser.GetUsername(),
-				"full_name":    customUser.GetFullName(),
+				"id":        customUser.GetID(),
+				"email":     customUser.GetEmail(),
+				"username":  customUser.GetUsername(),
+				"full_name": customUser.GetFullName(),
 				"company_info": gin.H{
 					"company":    customUser.CompanyName,
 					"department": customUser.Department,

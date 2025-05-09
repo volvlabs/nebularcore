@@ -98,9 +98,6 @@ func (m *Module) initializeDefaults() error {
 	if m.authHandler == nil {
 		m.authHandler = handlers.NewAuthHandler(m.authManager, m.tokenIssuer, m.config)
 	}
-	if m.passwordHandler == nil {
-		m.passwordHandler = handlers.NewPasswordHandler(m.userRepository, m.authManager, m.authMiddleware, m.config)
-	}
 	if m.authMiddleware == nil {
 		var err error
 		m.authMiddleware, err = middleware.NewAuthMiddleware(m.authManager, &m.config.MiddlewareConfig)
@@ -108,6 +105,10 @@ func (m *Module) initializeDefaults() error {
 			return err
 		}
 	}
+	if m.passwordHandler == nil {
+		m.passwordHandler = handlers.NewPasswordHandler(m.userRepository, m.authManager, m.authMiddleware, m.config)
+	}
+
 	return nil
 }
 

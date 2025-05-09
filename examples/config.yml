@@ -19,9 +19,10 @@ modules:
     backends:
       - local
     jwt:
-      secret: this-is-a-sample-secret
-      expiry: 24h
-      refreshExpiry: 720h
+      accessTokenSecret: this-is-a-sample-secret
+      refreshTokenSecret: this-is-a-sample-secret
+      accessTokenExpiry: 24h
+      refreshTokenExpiry: 720h
     passwordPolicy:
       minLength: 8
       requireUpper: true
