@@ -23,6 +23,13 @@ func NewAuthMiddleware(
 	authManager backends.AuthenticationManager,
 	config *config.MiddlewareConfig,
 ) (*AuthMiddleware, error) {
+	if !config.AuthorizationEnabled {
+		return &AuthMiddleware{
+			authManager: authManager,
+			config:      config,
+		}, nil
+	}
+
 	enforcer, err := casbin.NewEnforcer(config.PermissionModelPath, config.PermissionPolicyPath)
 	if err != nil {
 		return nil, err
@@ -124,7 +131,6 @@ func (m *AuthMiddleware) Optional() gin.HandlerFunc {
 // RequireAuth returns middleware that requires authentication using any method
 func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Try JWT first
 		token := extractBearerToken(c.GetHeader("Authorization"))
 		if token != "" {
 			if user, err := m.authManager.ValidateToken(c.Request.Context(), token); err == nil {
@@ -134,7 +140,6 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 			}
 		}
 
-		// Try API key
 		apiKey := c.GetHeader("X-API-Key")
 		apiSecret := c.GetHeader("X-API-Secret")
 		if apiKey != "" && apiSecret != "" {
@@ -148,7 +153,6 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 			}
 		}
 
-		// No valid authentication found
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 			"error": "authentication required",
 		})
@@ -157,6 +161,12 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 
 // RequireRole returns middleware that requires a specific role
 func (m *AuthMiddleware) RequireRole(role string) gin.HandlerFunc {
+	if !m.config.AuthorizationEnabled {
+		return func(c *gin.Context) {
+			c.Next()
+		}
+	}
+
 	return func(c *gin.Context) {
 		user, exists := c.Get("user")
 		if !exists {
@@ -180,6 +190,12 @@ func (m *AuthMiddleware) RequireRole(role string) gin.HandlerFunc {
 
 // RequirePermission returns middleware that requires a specific permission
 func (m *AuthMiddleware) RequirePermission(resource, action string) gin.HandlerFunc {
+	if !m.config.AuthorizationEnabled {
+		return func(c *gin.Context) {
+			c.Next()
+		}
+	}
+
 	return func(c *gin.Context) {
 		user, exists := c.Get("user")
 		if !exists {
