@@ -176,17 +176,16 @@ func (m *Module) ProvidesMigrations() bool {
 func (m *Module) GetMigrationSources(projectRoot string) []migrationRunner.Source {
 	sources := []migrationRunner.Source{}
 
-	// Check if there are custom migrations
 	if m.config.UserMigrationScriptPath != "" {
 		sources = append(sources, migrationRunner.Source{
 			Path:     fmt.Sprintf("file://%s", m.config.UserMigrationScriptPath),
 			Priority: 100,
 			Exclude:  []string{},
 		})
-		// Add default auth migrations excluding the default user migration
+
 		sources = append(sources, migrationRunner.Source{
 			FS:       migrations,
-			Path:     "migrations",
+			Path:     fmt.Sprintf("file://%s/modules/auth/migrations", projectRoot),
 			Priority: 50,
 			Exclude: []string{
 				"000001_init_auth.up.sql",
@@ -197,10 +196,9 @@ func (m *Module) GetMigrationSources(projectRoot string) []migrationRunner.Sourc
 		return sources
 	}
 
-	// Add default auth migrations
 	sources = append(sources, migrationRunner.Source{
 		FS:       migrations,
-		Path:     "migrations",
+		Path:     fmt.Sprintf("file://%s/modules/auth/migrations", projectRoot),
 		Priority: 50,
 		Exclude:  []string{},
 	})
