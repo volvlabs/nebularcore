@@ -185,7 +185,7 @@ func (m *Module) GetMigrationSources(projectRoot string) []migrationRunner.Sourc
 
 		sources = append(sources, migrationRunner.Source{
 			FS:       migrations,
-			Path:     fmt.Sprintf("file://%s/modules/auth/migrations", projectRoot),
+			Path:     "migrations",
 			Priority: 50,
 			Exclude: []string{
 				"000001_init_auth.up.sql",
@@ -198,7 +198,7 @@ func (m *Module) GetMigrationSources(projectRoot string) []migrationRunner.Sourc
 
 	sources = append(sources, migrationRunner.Source{
 		FS:       migrations,
-		Path:     fmt.Sprintf("file://%s/modules/auth/migrations", projectRoot),
+		Path:     "migrations",
 		Priority: 50,
 		Exclude:  []string{},
 	})

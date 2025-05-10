@@ -8,10 +8,10 @@ import (
 )
 
 //go:embed testdata/migrations/*.sql
-var testMigrations embed.FS
+var theTestMigrations embed.FS
 
 func TestEmbedSource_First(t *testing.T) {
-	source := NewEmbedSource(testMigrations, "testdata/migrations")
+	source := NewEmbedSource(theTestMigrations, "testdata/migrations")
 
 	version, err := source.First()
 	assert.NoError(t, err)
@@ -19,7 +19,7 @@ func TestEmbedSource_First(t *testing.T) {
 }
 
 func TestEmbedSource_Next(t *testing.T) {
-	source := NewEmbedSource(testMigrations, "testdata/migrations")
+	source := NewEmbedSource(theTestMigrations, "testdata/migrations")
 
 	version, err := source.Next(1)
 	assert.NoError(t, err)
@@ -30,7 +30,7 @@ func TestEmbedSource_Next(t *testing.T) {
 }
 
 func TestEmbedSource_Prev(t *testing.T) {
-	source := NewEmbedSource(testMigrations, "testdata/migrations")
+	source := NewEmbedSource(theTestMigrations, "testdata/migrations")
 
 	version, err := source.Prev(2)
 	assert.NoError(t, err)
@@ -41,11 +41,11 @@ func TestEmbedSource_Prev(t *testing.T) {
 }
 
 func TestEmbedSource_ReadUp(t *testing.T) {
-	source := NewEmbedSource(testMigrations, "testdata/migrations")
+	source := NewEmbedSource(theTestMigrations, "testdata/migrations")
 
 	reader, identifier, err := source.ReadUp(1)
 	assert.NoError(t, err)
-	assert.Equal(t, "1.up.sql", identifier)
+	assert.Equal(t, "000001.up.sql", identifier)
 	assert.NotNil(t, reader)
 	reader.Close()
 
@@ -54,11 +54,11 @@ func TestEmbedSource_ReadUp(t *testing.T) {
 }
 
 func TestEmbedSource_ReadDown(t *testing.T) {
-	source := NewEmbedSource(testMigrations, "testdata/migrations")
+	source := NewEmbedSource(theTestMigrations, "testdata/migrations")
 
 	reader, identifier, err := source.ReadDown(1)
 	assert.NoError(t, err)
-	assert.Equal(t, "1.down.sql", identifier)
+	assert.Equal(t, "000001.down.sql", identifier)
 	assert.NotNil(t, reader)
 	reader.Close()
 
@@ -67,7 +67,7 @@ func TestEmbedSource_ReadDown(t *testing.T) {
 }
 
 func TestEmbedSource_Open(t *testing.T) {
-	source := NewEmbedSource(testMigrations, "testdata/migrations")
+	source := NewEmbedSource(theTestMigrations, "testdata/migrations")
 
 	driver, err := source.Open("test-url")
 	assert.NoError(t, err)
@@ -75,7 +75,7 @@ func TestEmbedSource_Open(t *testing.T) {
 }
 
 func TestEmbedSource_Close(t *testing.T) {
-	source := NewEmbedSource(testMigrations, "testdata/migrations")
+	source := NewEmbedSource(theTestMigrations, "testdata/migrations")
 
 	err := source.Close()
 	assert.NoError(t, err)

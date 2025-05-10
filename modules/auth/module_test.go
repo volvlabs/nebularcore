@@ -238,7 +238,7 @@ func TestModuleMigrations(t *testing.T) {
 			projectRoot: "/project/root",
 			expectedSources: func(t *testing.T, sources []migrationRunner.Source) {
 				assert.Len(t, sources, 1)
-				assert.Equal(t, "file:///project/root/modules/auth/migrations", sources[0].Path)
+				assert.Equal(t, "migrations", sources[0].Path)
 				assert.Equal(t, 50, sources[0].Priority)
 				assert.Empty(t, sources[0].Exclude)
 			},
@@ -259,7 +259,7 @@ func TestModuleMigrations(t *testing.T) {
 				assert.Equal(t, 100, sources[0].Priority)
 				assert.Empty(t, sources[0].Exclude)
 
-				assert.Equal(t, "file:///project/root/modules/auth/migrations", sources[1].Path)
+				assert.Equal(t, "migrations", sources[1].Path)
 				assert.Equal(t, 50, sources[1].Priority)
 				assert.Contains(t, sources[1].Exclude, "000001_init_auth.up.sql")
 				assert.Contains(t, sources[1].Exclude, "000001_init_auth.down.sql")
