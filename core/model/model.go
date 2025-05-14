@@ -1,8 +1,6 @@
 package model
 
 import (
-	"fmt"
-
 	"github.com/google/uuid"
 	"gitlab.com/jideobs/nebularcore/tools/types"
 	"gorm.io/gorm"
@@ -35,7 +33,6 @@ func (m *Model) SetId(id uuid.UUID) {
 func (m *Model) BeforeCreate(tx *gorm.DB) error {
 	m.ID = uuid.New()
 	m.CreatedAt = types.NowDateTime()
-	fmt.Print(m.CreatedAt)
 	return nil
 }
 
