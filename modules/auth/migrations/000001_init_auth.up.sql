@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     active BOOLEAN DEFAULT true,
     password_reset_token TEXT,
     token TEXT,
+    role VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_login_at TIMESTAMP WITH TIME ZONE,
