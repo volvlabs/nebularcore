@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/golang-migrate/migrate/v4/source"
@@ -78,13 +79,23 @@ func (e *embedSource) ReadUp(version uint) (r io.ReadCloser, identifier string, 
 		return nil, "", &fs.PathError{Op: "read", Path: e.path, Err: fs.ErrNotExist}
 	}
 
-	identifier = fmt.Sprintf("%06d.up.sql", version)
-	file, err := e.fs.Open(path.Join(e.path, identifier))
+	entries, err := fs.ReadDir(e.fs, e.path)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return file.(io.ReadCloser), identifier, nil
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), fmt.Sprintf("%06d_", version)) && strings.HasSuffix(entry.Name(), ".up.sql") {
+			file, err := e.fs.Open(path.Join(e.path, entry.Name()))
+			if err != nil {
+				return nil, "", err
+			}
+			return file.(io.ReadCloser), entry.Name(), nil
+		}
+	}
+
+	return nil, "", &fs.PathError{Op: "read", Path: e.path, Err: fs.ErrNotExist}
+
 }
 
 func (e *embedSource) ReadDown(version uint) (r io.ReadCloser, identifier string, err error) {
@@ -96,13 +107,23 @@ func (e *embedSource) ReadDown(version uint) (r io.ReadCloser, identifier string
 		return nil, "", &fs.PathError{Op: "read", Path: e.path, Err: fs.ErrNotExist}
 	}
 
-	identifier = fmt.Sprintf("%06d.down.sql", version)
-	file, err := e.fs.Open(path.Join(e.path, identifier))
+	entries, err := fs.ReadDir(e.fs, e.path)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return file.(io.ReadCloser), identifier, nil
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), fmt.Sprintf("%06d_", version)) && strings.HasSuffix(entry.Name(), ".down.sql") {
+			file, err := e.fs.Open(path.Join(e.path, entry.Name()))
+			if err != nil {
+				return nil, "", err
+			}
+			return file.(io.ReadCloser), entry.Name(), nil
+		}
+	}
+
+	return nil, "", &fs.PathError{Op: "read", Path: e.path, Err: fs.ErrNotExist}
+
 }
 
 func (e *embedSource) loadVersions() error {
@@ -127,21 +148,16 @@ func (e *embedSource) loadVersions() error {
 		}
 
 		var version uint
-		if _, err := fmt.Sscanf(entry.Name(), "%06d.up.sql", &version); err != nil {
+		if _, err := fmt.Sscanf(entry.Name(), "%06d_", &version); err != nil {
 			continue
 		}
 
 		e.versions = append(e.versions, version)
 	}
 
-	// Sort versions descending
-	for i := 0; i < len(e.versions)-1; i++ {
-		for j := i + 1; j < len(e.versions); j++ {
-			if e.versions[i] < e.versions[j] {
-				e.versions[i], e.versions[j] = e.versions[j], e.versions[i]
-			}
-		}
-	}
+	sort.Slice(e.versions, func(i, j int) bool {
+		return e.versions[i] < e.versions[j]
+	})
 
 	return nil
 }

@@ -55,8 +55,9 @@ func (f *filteredSource) Next(version uint) (nextVersion uint, err error) {
 
 // isExcluded checks if a version should be excluded
 func (f *filteredSource) isExcluded(version uint) bool {
+	versionStr := fmt.Sprintf("%06d_", version)
 	for _, exclude := range f.exclude {
-		if strings.HasPrefix(exclude, fmt.Sprintf("%06d", version)) {
+		if strings.HasPrefix(exclude, versionStr) {
 			return true
 		}
 	}
@@ -71,12 +72,10 @@ func (f *filteredSource) Close() error {
 // Prev implements source.Driver
 func (f *filteredSource) Prev(version uint) (prevVersion uint, err error) {
 	for {
-		fmt.Println("Version ", version)
 		prevVersion, err = f.Driver.Prev(version)
 		if err != nil {
 			return 0, err
 		}
-		fmt.Println("PrevVersion ", prevVersion)
 		if !f.isExcluded(prevVersion) {
 			return prevVersion, nil
 		}

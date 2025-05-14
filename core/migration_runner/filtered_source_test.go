@@ -36,7 +36,7 @@ func TestFilteredSource_First(t *testing.T) {
 		},
 		{
 			name:           "skip excluded version",
-			exclude:        []string{"000001"},
+			exclude:        []string{"000001_"},
 			mockResponses:  []uint{1, 2},
 			mockErrors:     []error{nil, nil},
 			expectedResult: 2,
@@ -82,7 +82,7 @@ func TestFilteredSource_Next(t *testing.T) {
 		},
 		{
 			name:           "skip excluded version",
-			exclude:        []string{"000002"},
+			exclude:        []string{"000002_"},
 			startVersion:   1,
 			mockResponses:  []uint{2, 3},
 			mockErrors:     []error{nil, nil},
@@ -133,7 +133,7 @@ func TestFilteredSource_Prev(t *testing.T) {
 		},
 		{
 			name:           "skip excluded version",
-			exclude:        []string{"000002"},
+			exclude:        []string{"000002_"},
 			startVersion:   3,
 			mockResponses:  []uint{2, 1, 0},
 			mockErrors:     []error{nil, nil, nil},

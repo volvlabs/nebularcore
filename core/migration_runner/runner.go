@@ -39,7 +39,7 @@ func New(sources []Source, connectionString, tableName string) (*Runner, error) 
 	}
 
 	// Process migration sources
-	sourceDriver, err := processSources(sources)
+	sourceDriver, err := processSources(sources, connectionString, tableName)
 	if err != nil {
 		return nil, fmt.Errorf("process sources: %w", err)
 	}
@@ -53,36 +53,31 @@ func New(sources []Source, connectionString, tableName string) (*Runner, error) 
 	return &Runner{migrate: m}, nil
 }
 
-func processSources(sources []Source) (source.Driver, error) {
+func processSources(sources []Source, connectionString, tableName string) (source.Driver, error) {
 	// Sort sources by priority (highest first)
 	sort.Slice(sources, func(i, j int) bool {
 		return sources[i].Priority > sources[j].Priority
 	})
 
-	// Chain sources together
 	var sourceDriver source.Driver
 	for _, src := range sources {
 		var srcDriver source.Driver
 		var err error
 
-		// Create source driver based on whether we have an embedded filesystem
 		if src.FS != nil {
 			srcDriver = NewEmbedSource(src.FS, src.Path)
 		} else {
-			// Create file source
 			srcDriver, err = (&file.File{}).Open(src.Path)
 			if err != nil {
 				return nil, fmt.Errorf("open file source: %w", err)
 			}
 		}
 
-		// Filter out excluded files
 		filteredSource := &filteredSource{
 			Driver:  srcDriver,
 			exclude: src.Exclude,
 		}
 
-		// Chain sources
 		if sourceDriver == nil {
 			sourceDriver = filteredSource
 		} else {
