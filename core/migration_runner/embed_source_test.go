@@ -15,7 +15,7 @@ func TestEmbedSource_First(t *testing.T) {
 
 	version, err := source.First()
 	assert.NoError(t, err)
-	assert.Equal(t, uint(2), version)
+	assert.Equal(t, uint(1), version)
 }
 
 func TestEmbedSource_Next(t *testing.T) {

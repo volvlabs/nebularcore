@@ -50,11 +50,11 @@ func (e *embedSource) Prev(version uint) (prevVersion uint, err error) {
 	}
 
 	pos := e.findPos(version)
-	if pos == -1 || pos == len(e.versions)-1 {
+	if pos == -1 || pos == 0 {
 		return 0, &fs.PathError{Op: "prev", Path: e.path, Err: fs.ErrNotExist}
 	}
 
-	return e.versions[pos+1], nil
+	return e.versions[pos-1], nil
 }
 
 func (e *embedSource) Next(version uint) (nextVersion uint, err error) {
@@ -63,11 +63,11 @@ func (e *embedSource) Next(version uint) (nextVersion uint, err error) {
 	}
 
 	pos := e.findPos(version)
-	if pos == -1 || pos == 0 {
+	if pos == -1 || pos == len(e.versions)-1 {
 		return 0, &fs.PathError{Op: "next", Path: e.path, Err: fs.ErrNotExist}
 	}
 
-	return e.versions[pos-1], nil
+	return e.versions[pos+1], nil
 }
 
 func (e *embedSource) ReadUp(version uint) (r io.ReadCloser, identifier string, err error) {
