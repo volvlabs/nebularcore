@@ -1,9 +1,9 @@
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username VARCHAR(255) UNIQUE,
-    email VARCHAR(255) UNIQUE,
-    phone_number VARCHAR(50) UNIQUE,
+    username VARCHAR(255),
+    email VARCHAR(255),
+    phone_number VARCHAR(50),
     password TEXT,
     metadata JSONB,
     active BOOLEAN DEFAULT true,
@@ -53,9 +53,9 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 );
 
 -- Create indexes
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username) WHERE username IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number) WHERE phone_number IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(COALESCE(NULLIF(TRIM(email), ''), NULL));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(COALESCE(NULLIF(TRIM(username), ''), NULL));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(COALESCE(NULLIF(TRIM(phone_number), ''), NULL));
 CREATE INDEX IF NOT EXISTS idx_users_status ON users(active);
 CREATE INDEX IF NOT EXISTS idx_social_accounts_user ON social_accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_api_credentials_user ON api_credentials(user_id);
