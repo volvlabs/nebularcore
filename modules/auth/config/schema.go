@@ -12,7 +12,7 @@ type Config struct {
 	APIKey                  APIKeyConfig                 `yaml:"apiKey"`
 	Social                  SocialConfig                 `yaml:"social"`
 	Clerk                   ClerkConfig                  `yaml:"clerk"`
-	MiddlewareConfig        MiddlewareConfig             `yaml:"-"`
+	MiddlewareConfig        MiddlewareConfig             `yaml:"middlewareConfig"`
 	Providers               map[string]map[string]string `yaml:"providers"`
 	UserMigrationScriptPath string                       `yaml:"userMigrationScriptPath"`
 }
