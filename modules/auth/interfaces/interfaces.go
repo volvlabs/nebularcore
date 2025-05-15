@@ -11,7 +11,7 @@ import (
 
 // User represents the interface that all user models must implement
 type User interface {
-	GetID() string
+	GetID() uuid.UUID
 	GetUsername() string
 	GetEmail() string
 	GetPhoneNumber() string

@@ -26,8 +26,8 @@ type User struct {
 	Role               string
 }
 
-func (u *User) GetID() string {
-	return u.ID.String()
+func (u *User) GetID() uuid.UUID {
+	return u.ID
 }
 
 func (u *User) GetUsername() string {

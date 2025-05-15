@@ -205,7 +205,7 @@ func (m *AuthMiddleware) RequirePermission(resource, action string) gin.HandlerF
 			return
 		}
 
-		allowed, err := m.enforcer.Enforce(user.(interfaces.User).GetID(), resource, action)
+		allowed, err := m.enforcer.Enforce(user.(interfaces.User).GetID().String(), resource, action)
 		if err != nil || !allowed {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"error": "insufficient permissions",

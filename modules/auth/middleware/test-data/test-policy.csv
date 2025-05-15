@@ -6,7 +6,7 @@ p, user, /api/resources/:id, GET
 p, user, /api/resources/:id, PUT
 p, user, /api/users/:id, GET
 p, guest, /api/resources, GET
-p, jade, /test, GET
+p, 98d99bae-7daa-430b-a0f9-a8e79b3ac1f6, /test, GET
 g, alice, admin
 g, bob, user
 g, charlie, guest

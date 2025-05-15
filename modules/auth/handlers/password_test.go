@@ -17,14 +17,12 @@ import (
 )
 
 func TestPasswordHandlerScenarios(t *testing.T) {
-	// Common setup
 	userRepo := mocks.NewUserRepository(t)
 	authManager := backendMocks.NewAuthenticationManager(t)
 	authMiddleware := mocks.NewAuthMiddleware(t)
 	config := &config.Config{}
 	handler := handlers.NewPasswordHandler(userRepo, authManager, authMiddleware, config)
 
-	// Test scenarios
 	scenarios := []test.ApiScenario{
 		{
 			Name:   "Request Password Reset - Valid Email",
@@ -41,9 +39,7 @@ func TestPasswordHandlerScenarios(t *testing.T) {
 				mockUser.On("SetPasswordResetAt", mock.AnythingOfType("*time.Time")).Return(nil)
 				authMiddleware.On("RequireAuth").Return(func() gin.HandlerFunc {
 					return func(c *gin.Context) {
-						c.Set("user", map[string]any{
-							"sub": uuid.New().String(),
-						})
+						c.Set("user", mockUser)
 						c.Next()
 					}
 				})
@@ -66,9 +62,8 @@ func TestPasswordHandlerScenarios(t *testing.T) {
 			BeforeTestFunc: func(t *testing.T, router *gin.Engine) {
 				authMiddleware.On("RequireAuth").Return(func() gin.HandlerFunc {
 					return func(c *gin.Context) {
-						c.Set("user", map[string]any{
-							"sub": uuid.New().String(),
-						})
+						mockUser := mocks.NewUser(t)
+						c.Set("user", mockUser)
 						c.Next()
 					}
 				})
@@ -98,9 +93,7 @@ func TestPasswordHandlerScenarios(t *testing.T) {
 
 				authMiddleware.On("RequireAuth").Return(func() gin.HandlerFunc {
 					return func(c *gin.Context) {
-						c.Set("user", map[string]any{
-							"sub": uuid.New().String(),
-						})
+						c.Set("user", mockUser)
 						c.Next()
 					}
 				})
@@ -127,15 +120,13 @@ func TestPasswordHandlerScenarios(t *testing.T) {
 			BeforeTestFunc: func(t *testing.T, router *gin.Engine) {
 				userID := uuid.New()
 				mockUser := mocks.NewUser(t)
+				mockUser.On("GetID").Return(userID)
 				mockUser.On("GetPasswordHash").Return("$2y$10$rdZHiX3UnEJ8LPTy5VzI9OHl6MdX5E.PYnjkSM25xZ9aFMBt5Qu.e")
 				mockUser.On("SetPassword", mock.AnythingOfType("string")).Return(nil)
 
-				// Setup auth middleware mock
 				authMiddleware.On("RequireAuth").Return(func() gin.HandlerFunc {
 					return func(c *gin.Context) {
-						c.Set("user", map[string]any{
-							"sub": userID.String(),
-						})
+						c.Set("user", mockUser)
 						c.Next()
 					}
 				})
@@ -153,21 +144,14 @@ func TestPasswordHandlerScenarios(t *testing.T) {
 		},
 	}
 
-	// Run scenarios
 	for _, scenario := range scenarios {
 		t.Run(scenario.Name, func(t *testing.T) {
-			// Reset mock expectations for each test
 			userRepo.ExpectedCalls = nil
 			userRepo.Calls = nil
 			authMiddleware.ExpectedCalls = nil
 			authMiddleware.Calls = nil
 
-			// Run the test scenario
 			scenario.Test(t)
 		})
 	}
-}
-
-func stringPtr(s string) *string {
-	return &s
 }

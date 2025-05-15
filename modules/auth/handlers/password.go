@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/jideobs/nebularcore/modules/auth/backends"
 	"gitlab.com/jideobs/nebularcore/modules/auth/config"
@@ -106,7 +105,6 @@ func (h *PasswordHandler) VerifyPasswordReset(c *gin.Context) {
 		return
 	}
 
-	// Find user by reset token
 	user, err := h.userRepo.FindByResetToken(c.Request.Context(), req.Token)
 	if err != nil {
 		log.Error().Err(err).Msg("Error finding user by reset token")
@@ -119,7 +117,6 @@ func (h *PasswordHandler) VerifyPasswordReset(c *gin.Context) {
 		return
 	}
 
-	// Check if token is expired (24 hours)
 	resetAt := user.GetPasswordResetAt()
 	if resetAt == nil || time.Since(*resetAt) > 24*time.Hour {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Reset token has expired"})
@@ -134,7 +131,6 @@ func (h *PasswordHandler) VerifyPasswordReset(c *gin.Context) {
 		return
 	}
 
-	// Update password and clear reset token
 	user.SetPassword(string(hashedPassword))
 	user.SetPasswordResetToken(nil)
 	user.SetPasswordResetAt(nil)
@@ -162,42 +158,26 @@ func (h *PasswordHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	// Get current user from context
 	userInfo, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	userMap := userInfo.(map[string]any)
-	userID, ok := userMap["sub"]
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
+	userMap := userInfo.(interfaces.User)
+	userID := userMap.GetID()
 
-	// Convert string ID to UUID
-	uuid, err := uuid.Parse(userID.(string))
-	if err != nil {
-		log.Error().Err(err).Msg("Error parsing user ID")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process request"})
-		return
-	}
-
-	// Get user from database
-	user, err := h.userRepo.FindByID(c.Request.Context(), uuid)
+	user, err := h.userRepo.FindByID(c.Request.Context(), userID)
 	if err != nil {
 		log.Error().Err(err).Msg("Error finding user")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process request"})
 		return
 	}
 
-	// Verify current password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.GetPasswordHash()), []byte(req.CurrentPassword)); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Current password is incorrect"})
 		return
 	}
 
-	// Hash new password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
 		log.Error().Err(err).Msg("Error hashing password")
@@ -205,7 +185,6 @@ func (h *PasswordHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	// Update password
 	user.SetPassword(string(hashedPassword))
 	updates := map[string]any{
 		"password": string(hashedPassword),

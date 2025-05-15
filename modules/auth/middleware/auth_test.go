@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	backendMocks "gitlab.com/jideobs/nebularcore/modules/auth/backends/mocks"
@@ -233,8 +234,9 @@ func TestRequirePermissionMiddleware(t *testing.T) {
 				c.JSON(http.StatusOK, gin.H{"status": "success"})
 			})
 
+			userId := "98d99bae-7daa-430b-a0f9-a8e79b3ac1f6"
 			mockUser := mocks.NewUser(t)
-			mockUser.On("GetID").Return("jade")
+			mockUser.On("GetID").Return(uuid.MustParse(userId))
 			authManager.On("ValidateToken", mock.Anything, "valid.jwt.token").Return(mockUser, nil)
 
 			w := httptest.NewRecorder()

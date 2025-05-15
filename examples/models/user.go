@@ -3,24 +3,25 @@ package models
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gitlab.com/jideobs/nebularcore/modules/auth/models"
 )
 
 // CustomUser extends the base user model with additional fields
 type CustomUser struct {
-	models.User        // Embed base user model
-	FirstName    string
-	LastName     string
-	DateOfBirth  *time.Time
-	Address      string
-	CompanyName  string
-	Department   string
-	Role         string
+	models.User // Embed base user model
+	FirstName   string
+	LastName    string
+	DateOfBirth *time.Time
+	Address     string
+	CompanyName string
+	Department  string
+	Role        string
 }
 
 // GetID implements interfaces.User
-func (u *CustomUser) GetID() string {
-	return u.ID.String()
+func (u *CustomUser) GetID() uuid.UUID {
+	return u.ID
 }
 
 // GetUsername implements interfaces.User

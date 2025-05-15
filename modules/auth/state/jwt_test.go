@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gitlab.com/jideobs/nebularcore/modules/auth/config"
@@ -14,10 +15,18 @@ import (
 type mockUser struct {
 	mock.Mock
 	interfaces.User
+
+	userId uuid.UUID
 }
 
-func (m *mockUser) GetID() string {
-	return "test-user-id"
+func NewMockUser() *mockUser {
+	return &mockUser{
+		userId: uuid.New(),
+	}
+}
+
+func (m *mockUser) GetID() uuid.UUID {
+	return m.userId
 }
 
 func (m *mockUser) GetUsername() string {
@@ -44,7 +53,7 @@ func TestJWTTokenIssuer(t *testing.T) {
 		issuer := state.NewJWTTokenIssuer(cfg)
 
 		// Test
-		user := &mockUser{}
+		user := NewMockUser()
 		response, err := issuer.IssueToken(user)
 
 		// Assert
@@ -65,7 +74,7 @@ func TestJWTTokenIssuer(t *testing.T) {
 		issuer := state.NewJWTTokenIssuer(cfg)
 
 		// Create a token first
-		user := &mockUser{}
+		user := NewMockUser()
 		response, err := issuer.IssueToken(user)
 		assert.NoError(t, err)
 
@@ -105,7 +114,7 @@ func TestJWTTokenIssuer(t *testing.T) {
 		issuer := state.NewJWTTokenIssuer(cfg)
 
 		// Create initial tokens
-		user := &mockUser{}
+		user := NewMockUser()
 		initialResponse, err := issuer.IssueToken(user)
 		assert.NoError(t, err)
 
@@ -121,7 +130,7 @@ func TestJWTTokenIssuer(t *testing.T) {
 		// Validate new token claims
 		newClaims, err := issuer.ValidateToken(refreshedResponse.AccessToken)
 		assert.NoError(t, err)
-		assert.Equal(t, "test-user-id", newClaims["sub"])
+		assert.Equal(t, user.GetID().String(), newClaims["sub"])
 		assert.Equal(t, "test-user", newClaims["username"])
 		assert.Equal(t, "test@example.com", newClaims["email"])
 		assert.NotNil(t, newClaims["iat"])
