@@ -10,9 +10,11 @@ import (
 	"gitlab.com/jideobs/nebularcore/core/module"
 	"gitlab.com/jideobs/nebularcore/modules/auth/backends"
 	"gitlab.com/jideobs/nebularcore/modules/auth/config"
+	"gitlab.com/jideobs/nebularcore/modules/auth/factories"
 	"gitlab.com/jideobs/nebularcore/modules/auth/handlers"
 	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
 	"gitlab.com/jideobs/nebularcore/modules/auth/middleware"
+	"gitlab.com/jideobs/nebularcore/modules/auth/repositories"
 	"gitlab.com/jideobs/nebularcore/modules/auth/state"
 	"gorm.io/gorm"
 )
@@ -67,7 +69,7 @@ func (m *Module) Initialize(
 	db *gorm.DB,
 	router *gin.Engine,
 ) error {
-	if err := m.initializeDefaults(); err != nil {
+	if err := m.initializeDefaults(db); err != nil {
 		return err
 	}
 
@@ -92,9 +94,12 @@ func (m *Module) Initialize(
 	return nil
 }
 
-func (m *Module) initializeDefaults() error {
+func (m *Module) initializeDefaults(db *gorm.DB) error {
 	if m.authManager == nil {
 		m.authManager = backends.NewAuthenticationManager()
+	}
+	if m.userRepository == nil {
+		m.userRepository = repositories.NewUserRepository(db, factories.NewDefaultUserFactory())
 	}
 	if m.tokenIssuer == nil {
 		m.tokenIssuer = state.NewJWTTokenIssuer(m.config.JWT)
