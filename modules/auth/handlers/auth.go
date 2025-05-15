@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"gitlab.com/jideobs/nebularcore/modules/auth/backends"
 	"gitlab.com/jideobs/nebularcore/modules/auth/config"
 	autherrors "gitlab.com/jideobs/nebularcore/modules/auth/errors"
@@ -50,9 +49,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	log.Info().Msgf("Authenticating user with credentials: %v", credentials)
 	user, err := h.authManager.Authenticate(c.Request.Context(), credentials)
-	log.Info().Msgf("User %v err %v", user, err)
 	if err != nil {
 		if authErr, ok := err.(*autherrors.AuthError); ok {
 			c.JSON(http.StatusBadRequest, gin.H{"error": authErr.Message})

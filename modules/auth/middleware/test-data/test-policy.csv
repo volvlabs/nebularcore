@@ -1,4 +1,4 @@
-p, admin, *, *
+p, admin, /test, *
 p, admin, /api/*, *
 p, admin, /users/*, *
 p, user, /api/resources, GET

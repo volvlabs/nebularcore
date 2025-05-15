@@ -197,7 +197,7 @@ func TestModuleInitialization(t *testing.T) {
 				cfg := config.Default()
 				cfg.JWT.AccessTokenSecret = "test-secret"
 				cfg.JWT.RefreshTokenSecret = "test-refresh-secret"
-				cfg.MiddlewareConfig = config.MiddlewareConfig{
+				cfg.Middleware = config.MiddlewareConfig{
 					AuthorizationEnabled: true,
 					PermissionModelPath:  "./middleware/test-data/test-model.conf",
 					PermissionPolicyPath: "./middleware/test-data/test-policy.csv",

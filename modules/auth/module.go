@@ -109,7 +109,7 @@ func (m *Module) initializeDefaults(db *gorm.DB) error {
 	}
 	if m.authMiddleware == nil {
 		var err error
-		m.authMiddleware, err = middleware.NewAuthMiddleware(m.authManager, &m.config.MiddlewareConfig)
+		m.authMiddleware, err = middleware.NewAuthMiddleware(m.authManager, &m.config.Middleware)
 		if err != nil {
 			return err
 		}

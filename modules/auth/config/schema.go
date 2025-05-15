@@ -12,15 +12,15 @@ type Config struct {
 	APIKey                  APIKeyConfig                 `yaml:"apiKey"`
 	Social                  SocialConfig                 `yaml:"social"`
 	Clerk                   ClerkConfig                  `yaml:"clerk"`
-	MiddlewareConfig        MiddlewareConfig             `yaml:"middlewareConfig"`
+	Middleware              MiddlewareConfig             `yaml:"middleware"`
 	Providers               map[string]map[string]string `yaml:"providers"`
 	UserMigrationScriptPath string                       `yaml:"userMigrationScriptPath"`
 }
 
 type MiddlewareConfig struct {
 	AuthorizationEnabled bool   `yaml:"authorizationEnabled"`
-	PermissionModelPath  string `yaml:"permissionModelPath"`
-	PermissionPolicyPath string `yaml:"permissionPolicyPath"`
+	PermissionModelPath  string `yaml:"permissionModelPath" validate:"required_with=AuthorizationEnabled"`
+	PermissionPolicyPath string `yaml:"permissionPolicyPath" validate:"required_with=AuthorizationEnabled"`
 }
 
 // JWTConfig represents JWT configuration

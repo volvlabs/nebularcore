@@ -176,7 +176,7 @@ func (m *AuthMiddleware) RequireRole(role string) gin.HandlerFunc {
 			return
 		}
 
-		allowed, err := m.enforcer.Enforce(user.(interfaces.User).GetRole(), "*", "*")
+		allowed, err := m.enforcer.Enforce(user.(interfaces.User).GetRole(), c.Request.URL.Path, "*")
 		if err != nil || !allowed {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"error": "insufficient permissions",
