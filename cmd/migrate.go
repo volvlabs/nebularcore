@@ -90,17 +90,14 @@ func NewMigrateCommand[T config.Settings](
 }
 
 func createMigrationFileHandler(migrationsDir, name string) error {
-	// Read all files in migrations directory
 	entries, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		return err
 	}
 
-	// Find highest version number
 	highestVersion := 0
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") {
-			// Extract version number from filename (e.g., "000001" from "000001_init.up.sql")
 			parts := strings.Split(entry.Name(), "_")
 			if len(parts) > 0 {
 				if version, err := strconv.Atoi(parts[0]); err == nil {
@@ -112,9 +109,8 @@ func createMigrationFileHandler(migrationsDir, name string) error {
 		}
 	}
 
-	// Generate new version number
 	newVersion := highestVersion + 1
-	versionPrefix := fmt.Sprintf("%06d", newVersion) // Format as 000001, 000002, etc.
+	versionPrefix := fmt.Sprintf("%06d", newVersion)
 
 	upFileName := fmt.Sprintf("%s/%s_%s.up.sql", migrationsDir, versionPrefix, name)
 	downFileName := fmt.Sprintf("%s/%s_%s.down.sql", migrationsDir, versionPrefix, name)

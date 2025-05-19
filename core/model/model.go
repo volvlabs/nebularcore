@@ -13,9 +13,9 @@ type TenantBound interface {
 
 type Model struct {
 	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primarykey;default:gen_random_uuid()"`
-	CreatedAt types.DateTime `json:"created_at" gorm:"type:timestamp with time zone;default:current_timestamp"`
-	UpdatedAt types.DateTime `json:"updated_at" gorm:"type:timestamp with time zone;default:current_timestamp"`
-	DeletedAt types.DateTime `json:"deleted_at" gorm:"type:timestamp with time zone"`
+	CreatedAt types.DateTime `json:"createdAt" gorm:"type:timestamp with time zone;default:current_timestamp"`
+	UpdatedAt types.DateTime `json:"updatedAt" gorm:"type:timestamp with time zone;default:current_timestamp"`
+	DeletedAt types.DateTime `json:"deletedAt" gorm:"type:timestamp with time zone"`
 }
 
 func (m *Model) HasId() bool {
@@ -31,7 +31,9 @@ func (m *Model) SetId(id uuid.UUID) {
 }
 
 func (m *Model) BeforeCreate(tx *gorm.DB) error {
-	m.ID = uuid.New()
+	if !m.HasId() {
+		m.ID = uuid.New()
+	}
 	m.CreatedAt = types.NowDateTime()
 	return nil
 }

@@ -20,24 +20,20 @@ func NewRegistry() *Registry {
 }
 
 func (r *Registry) Register(m Module) error {
-	// Get the appropriate module map based on namespace
 	moduleMap := r.getModuleMap(m.Namespace())
 	if _, exists := moduleMap[m.Name()]; exists {
 		return fmt.Errorf("module already registered in %s namespace: %s", m.Namespace(), m.Name())
 	}
 
-	// Register the module in its namespace
 	moduleMap[m.Name()] = m
 	return r.updateInitOrder(m.Namespace())
 }
 
 // Get retrieves a module by name from either namespace
 func (r *Registry) Get(name string) (Module, bool) {
-	// Try public namespace first
 	if m, ok := r.publicModules[name]; ok {
 		return m, true
 	}
-	// Try tenant namespace
 	m, ok := r.tenantModules[name]
 	return m, ok
 }
@@ -57,23 +53,20 @@ func (r *Registry) getModuleMap(namespace ModuleNamespace) map[string]Module {
 	case TenantNamespace:
 		return r.tenantModules
 	default:
-		return r.publicModules // Default to public for safety
+		return r.publicModules
 	}
 }
 
 func (r *Registry) InitOrder() []string {
-	// Combine both orders, with public modules first
 	return append(r.publicOrder, r.tenantOrder...)
 }
 
 // GetModules returns all modules from both namespaces
 func (r *Registry) GetModules() map[string]Module {
 	all := make(map[string]Module)
-	// Add public modules
 	for k, v := range r.publicModules {
 		all[k] = v
 	}
-	// Add tenant modules
 	for k, v := range r.tenantModules {
 		all[k] = v
 	}
@@ -87,7 +80,6 @@ func (r *Registry) GetModulesByNamespace(namespace ModuleNamespace) map[string]M
 
 // updateInitOrder updates the initialization order based on dependencies for a specific namespace
 func (r *Registry) updateInitOrder(namespace ModuleNamespace) error {
-	// Get the appropriate module map and order slice
 	moduleMap := r.getModuleMap(namespace)
 	var order *[]string
 	switch namespace {
@@ -99,14 +91,11 @@ func (r *Registry) updateInitOrder(namespace ModuleNamespace) error {
 		return fmt.Errorf("invalid namespace: %s", namespace)
 	}
 
-	// Reset order for this namespace
 	*order = nil
 
-	// Track visited and temp marks for cycle detection
 	visited := make(map[string]bool)
 	temp := make(map[string]bool)
 
-	// Visit all modules in this namespace
 	for name := range moduleMap {
 		if !visited[name] {
 			if err := r.visitInNamespace(name, namespace, visited, temp, order); err != nil {
@@ -129,11 +118,9 @@ func (r *Registry) visitInNamespace(name string, namespace ModuleNamespace, visi
 
 	temp[name] = true
 
-	// Visit dependencies
 	moduleMap := r.getModuleMap(namespace)
 	module := moduleMap[name]
 	for _, dep := range module.Dependencies() {
-		// Check if dependency exists in the same namespace
 		if _, ok := moduleMap[dep]; !ok {
 			return fmt.Errorf("module %s in namespace %s depends on missing module %s", name, namespace, dep)
 		}

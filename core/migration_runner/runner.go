@@ -24,13 +24,10 @@ type Source struct {
 }
 
 func New(sources []Source, connectionString, tableName string) (*Runner, error) {
-	// Create database driver
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
-
-	// Create database instance
 	driver, err := postgres.WithInstance(db, &postgres.Config{
 		MigrationsTable: tableName,
 	})
@@ -38,13 +35,10 @@ func New(sources []Source, connectionString, tableName string) (*Runner, error) 
 		return nil, fmt.Errorf("create driver: %w", err)
 	}
 
-	// Process migration sources
 	sourceDriver, err := processSources(sources, connectionString, tableName)
 	if err != nil {
 		return nil, fmt.Errorf("process sources: %w", err)
 	}
-
-	// Create migrate instance with first source path as identifier
 	m, err := migrate.NewWithInstance(sources[0].Path, sourceDriver, "postgres", driver)
 	if err != nil {
 		return nil, fmt.Errorf("migration runner: %w", err)
@@ -54,7 +48,6 @@ func New(sources []Source, connectionString, tableName string) (*Runner, error) 
 }
 
 func processSources(sources []Source, connectionString, tableName string) (source.Driver, error) {
-	// Sort sources by priority (highest first)
 	sort.Slice(sources, func(i, j int) bool {
 		return sources[i].Priority > sources[j].Priority
 	})

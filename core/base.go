@@ -39,24 +39,20 @@ type Options[T config.Settings] struct {
 
 // New creates a new application instance
 func New[T config.Settings](opts Options[T]) (*baseApp[T], error) {
-	// Create config loader
 	loader := config.NewConfigLoader[T]()
 	if err := loader.LoadFromFile(opts.ConfigPath); err != nil {
 		return nil, err
 	}
 
-	// Validate all configurations
 	if errors := loader.ValidateAll(); len(errors) > 0 {
 		return nil, fmt.Errorf("configuration validation failed: %v", errors)
 	}
 
-	// Get project root
 	projectRoot, err := utils.GetProjectRoot()
 	if err != nil {
 		return nil, fmt.Errorf("failed to determine project root: %w", err)
 	}
 
-	// Create base application
 	app := &baseApp[T]{
 		opts:     opts,
 		config:   loader.GetCore(),
@@ -65,7 +61,6 @@ func New[T config.Settings](opts Options[T]) (*baseApp[T], error) {
 		loader:   loader,
 	}
 
-	// Set project root in core config
 	app.config.ProjectRoot = projectRoot
 
 	return app, nil
@@ -81,12 +76,9 @@ func (a *baseApp[T]) Bootstrap(ctx context.Context) error {
 		return err
 	}
 
-	// Initialize database
 	if err := a.initDB(); err != nil {
 		return fmt.Errorf("initializing database: %w", err)
 	}
-
-	// Initialize modules in dependency order
 	for _, name := range a.registry.InitOrder() {
 		module, _ := a.registry.Get(name)
 		if err := module.Initialize(a.ctx, a.db, a.Router()); err != nil {
@@ -100,7 +92,6 @@ func (a *baseApp[T]) Bootstrap(ctx context.Context) error {
 
 // Shutdown gracefully shuts down the application
 func (a *baseApp[T]) Shutdown(ctx context.Context) error {
-	// Shutdown modules in reverse order
 	order := a.registry.InitOrder()
 	for i := len(order) - 1; i >= 0; i-- {
 		module, _ := a.registry.Get(order[i])
@@ -109,7 +100,6 @@ func (a *baseApp[T]) Shutdown(ctx context.Context) error {
 		}
 	}
 
-	// Close database connection
 	if a.db != nil {
 		db, err := a.db.DB()
 		if err != nil {
@@ -155,35 +145,27 @@ func (a *baseApp[T]) Run(ctx context.Context) error {
 		WriteTimeout: a.config.Server.WriteTimeout,
 	}
 
-	// Create error channel for server errors
 	errChan := make(chan error, 1)
 
-	// Start server
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errChan <- fmt.Errorf("server error: %w", err)
 		}
 	}()
 
-	// Wait for shutdown signal or server error
 	select {
 	case <-ctx.Done():
-		// Normal shutdown
 	case err := <-errChan:
-		// Server error
 		return err
 	}
 
-	// Create shutdown context
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), a.config.Server.ShutdownTimeout)
 	defer cancel()
 
-	// First shutdown the HTTP server
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("error shutting down server: %w", err)
 	}
 
-	// Then perform application shutdown
 	if err := a.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("error during application shutdown: %w", err)
 	}
