@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/golang-migrate/migrate/v4"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"gitlab.com/jideobs/nebularcore/core"
@@ -69,6 +70,10 @@ func NewMigrateCommand[T config.Settings](
 						return err
 					}
 					if err := runner.Up(); err != nil {
+						if err == migrate.ErrNoChange || err == migrate.ErrNilVersion {
+							log.Err(err).Msgf("no migrations to run for module %s", name)
+							continue
+						}
 						return err
 					}
 
