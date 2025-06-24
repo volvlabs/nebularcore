@@ -34,7 +34,7 @@ func TestAuthHandler_Login(t *testing.T) {
 				"password": "testpass"
 			}`),
 			ExpectedStatus:  200,
-			ExpectedContent: []string{"access_token", "refresh_token"},
+			ExpectedContent: []string{"accessToken", "test-token"},
 			BeforeTestFunc: func(t *testing.T, router *gin.Engine) {
 				handler, authManager, tokenIssuer := setupAuthHandler(t)
 
@@ -81,16 +81,16 @@ func TestAuthHandler_RefreshToken(t *testing.T) {
 			Url:    "/api/v1/auth/refresh",
 			Method: "POST",
 			Body: strings.NewReader(`{
-				"refresh_token": "valid-refresh-token"
+				"refreshToken": "valid-refresh-token"
 			}`),
 			ExpectedStatus:  200,
-			ExpectedContent: []string{"access_token", "refresh_token"},
+			ExpectedContent: []string{"test-token", "test-refresh"},
 			BeforeTestFunc: func(t *testing.T, router *gin.Engine) {
 				handler, _, tokenIssuer := setupAuthHandler(t)
 
 				tokenIssuer.On("RefreshToken", "valid-refresh-token").Return(&responses.TokenResponse{
-					AccessToken:  "new-token",
-					RefreshToken: "new-refresh",
+					AccessToken:  "test-token",
+					RefreshToken: "test-refresh",
 				}, nil)
 
 				api := router.Group("/api/v1")
@@ -102,7 +102,7 @@ func TestAuthHandler_RefreshToken(t *testing.T) {
 			Url:    "/api/v1/auth/refresh",
 			Method: "POST",
 			Body: strings.NewReader(`{
-				"refresh_token": "invalid-token"
+				"refreshToken": "invalid-token"
 			}`),
 			ExpectedStatus:  401,
 			ExpectedContent: []string{"invalid refresh token"},

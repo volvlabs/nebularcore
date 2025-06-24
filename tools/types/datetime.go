@@ -50,6 +50,18 @@ func (d *DateTime) Scan(value any) error {
 			}
 			d.t = t
 		}
+	case int:
+		t := time.UnixMilli(int64(v))
+		d.t = t
+	case int64:
+		t := time.UnixMilli(v)
+		d.t = t
+	case float32:
+		t := time.UnixMilli(int64(v))
+		d.t = t
+	case float64:
+		t := time.UnixMilli(int64(v))
+		d.t = t
 	default:
 		str := cast.ToString(v)
 		if str == "" {

@@ -2,168 +2,185 @@ package authorization
 
 import (
 	"context"
-	"fmt"
-	"time"
 
-	"github.com/casbin/casbin/v2"
-	gormadapter "github.com/casbin/gorm-adapter/v3"
+	"github.com/google/uuid"
+
+	"gitlab.com/jideobs/nebularcore/modules/auth/models"
+	"gitlab.com/jideobs/nebularcore/modules/auth/models/requests"
 	"gitlab.com/jideobs/nebularcore/modules/auth/repositories"
-	"gorm.io/gorm"
+	"gitlab.com/jideobs/nebularcore/tools/validation"
 )
 
-// AuthorizationManager handles role and permission management
-type AuthorizationManager struct {
-	enforcer *casbin.Enforcer
-	roleRepo *repositories.RoleRepository
-	db       *gorm.DB
+// Manager handles role and permission management
+type Manager interface {
+	// HasPermission checks if a user has a specific permission
+	HasPermission(ctx context.Context, userID uuid.UUID, resource, action string) (bool, error)
+
+	// HasRole checks if a user has a specific role
+	HasRole(ctx context.Context, userID uuid.UUID, roleName string) (bool, error)
+
+	CreateRole(ctx context.Context, payload *requests.CreateRolePayload) error
+
+	// AssignRole assigns a role to a user
+	AssignRole(ctx context.Context, userID, roleID uuid.UUID, roleName string) error
+
+	// UnassignRole removes a role from a user
+	UnassignRole(ctx context.Context, userID, roleID uuid.UUID, roleName string) error
+
+	CreatePermission(ctx context.Context, payload *requests.CreatePermissionPayload) (*models.Permission, error)
+
+	// GrantRolePermission grants a permission to a role
+	GrantRolePermission(ctx context.Context, roleID, permissionID, grantedByID uuid.UUID, roleName string) error
+
+	// RevokeRolePermission revokes a permission from a role
+	RevokeRolePermission(ctx context.Context, roleID, permissionID uuid.UUID, roleName string) error
+
+	// GrantUserPermission grants a permission directly to a user
+	GrantUserPermission(ctx context.Context, userID, permissionID, grantedByID uuid.UUID) error
+
+	// RevokeUserPermission revokes a direct permission from a user
+	RevokeUserPermission(ctx context.Context, userID, permissionID uuid.UUID) error
+
+	// GetUserRoles gets all roles assigned to a user
+	GetUserRoles(ctx context.Context, userID uuid.UUID) ([]*models.Role, error)
+
+	// GetUserDirectPermissions gets all direct permissions assigned to a user
+	GetUserDirectPermissions(ctx context.Context, userID uuid.UUID) ([]*models.Permission, error)
+
+	// GetRolePermissions gets all permissions assigned to a role
+	GetRolePermissions(ctx context.Context, roleID uuid.UUID) ([]*models.Permission, error)
+}
+
+// manager handles role and permission management
+type manager struct {
+	roleRepo       repositories.RoleRepository
+	permissionRepo repositories.PermissionRepository
+	validator      *validation.Validator
 }
 
 // NewAuthorizationManager creates a new authorization manager
-func NewAuthorizationManager(db *gorm.DB) (*AuthorizationManager, error) {
-	// Initialize Casbin adapter
-	adapter, err := gormadapter.NewAdapterByDB(db)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Casbin adapter: %w", err)
+func NewAuthorizationManager(
+	roleRepository repositories.RoleRepository,
+	permissionRepository repositories.PermissionRepository,
+) Manager {
+	return &manager{
+		roleRepo:       roleRepository,
+		permissionRepo: permissionRepository,
+		validator:      validation.New(),
 	}
-
-	// Initialize enforcer with RBAC model
-	enforcer, err := casbin.NewEnforcer("auth_model.conf", adapter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Casbin enforcer: %w", err)
-	}
-
-	// Load RBAC model
-	err = enforcer.LoadModel()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load RBAC model: %w", err)
-	}
-
-	// Initialize role repository
-	roleRepo := repositories.NewRoleRepository(db)
-
-	return &AuthorizationManager{
-		enforcer: enforcer,
-		roleRepo: roleRepo,
-		db:       db,
-	}, nil
 }
 
 // CreateRole creates a new role
-func (m *AuthorizationManager) CreateRole(ctx context.Context, name, description string, metadata map[string]interface{}) error {
-	_, err := m.roleRepo.CreateRole(ctx, map[string]interface{}{
-		"name":        name,
-		"description": description,
-		"metadata":    metadata,
-	})
+func (m *manager) CreateRole(
+	ctx context.Context,
+	payload *requests.CreateRolePayload,
+) error {
+	if err := m.validator.Validate(payload); err != nil {
+		return err
+	}
+
+	role := &models.Role{
+		Name:        payload.Name,
+		Description: payload.Description,
+		Metadata:    payload.Metadata,
+	}
+	_, err := m.roleRepo.CreateRole(ctx, role)
+
 	return err
 }
 
 // AssignRole assigns a role to a user
-func (m *AuthorizationManager) AssignRole(ctx context.Context, userID, roleName string, duration *time.Duration) error {
-	// Start transaction
-	tx := m.db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	// Find role
-	var role repositories.Role
-	if err := tx.Where("name = ?", roleName).First(&role).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// Calculate expiry if duration is provided
-	var expiresAt *time.Time
-	if duration != nil {
-		t := time.Now().Add(*duration)
-		expiresAt = &t
-	}
-
-	// Assign role in database
-	if err := m.roleRepo.AssignRole(ctx, userID, role.ID, expiresAt); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// Add role to Casbin
-	if _, err := m.enforcer.AddRoleForUser(userID, roleName); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	return tx.Commit().Error
+func (m *manager) AssignRole(
+	ctx context.Context,
+	userID, roleID uuid.UUID,
+	roleName string,
+) error {
+	return m.roleRepo.AssignRole(ctx, userID, roleID, roleName)
 }
 
 // UnassignRole removes a role from a user
-func (m *AuthorizationManager) UnassignRole(ctx context.Context, userID, roleName string) error {
-	// Start transaction
-	tx := m.db.Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	// Find role
-	var role repositories.Role
-	if err := tx.Where("name = ?", roleName).First(&role).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// Remove role assignment from database
-	if err := m.roleRepo.UnassignRole(ctx, userID, role.ID); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// Remove role from Casbin
-	if _, err := m.enforcer.DeleteRoleForUser(userID, roleName); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	return tx.Commit().Error
+func (m *manager) UnassignRole(
+	ctx context.Context,
+	userID, roleID uuid.UUID,
+	roleName string,
+) error {
+	return m.roleRepo.UnassignRole(ctx, userID, roleID, roleName)
 }
 
-// GrantPermission grants a permission to a role
-func (m *AuthorizationManager) GrantPermission(ctx context.Context, roleName, resource, action string) error {
-	_, err := m.enforcer.AddPolicy(roleName, resource, action)
-	return err
+func (m *manager) CreatePermission(
+	ctx context.Context,
+	payload *requests.CreatePermissionPayload,
+) (*models.Permission, error) {
+	if err := m.validator.Validate(payload); err != nil {
+		return nil, err
+	}
+
+	permission := &models.Permission{
+		Name:        payload.Name,
+		ResourceID:  payload.ResourceID,
+		Action:      payload.Action,
+		Description: payload.Description,
+		Metadata:    payload.Metadata,
+	}
+	return m.permissionRepo.CreatePermission(ctx, permission)
 }
 
-// RevokePermission revokes a permission from a role
-func (m *AuthorizationManager) RevokePermission(ctx context.Context, roleName, resource, action string) error {
-	_, err := m.enforcer.RemovePolicy(roleName, resource, action)
-	return err
+// GrantRolePermission grants a permission to a role
+func (m *manager) GrantRolePermission(
+	ctx context.Context,
+	roleID, permissionID, grantedByID uuid.UUID,
+	roleName string,
+) error {
+	return m.permissionRepo.AssignPermissionToRole(
+		ctx, roleID, permissionID, grantedByID, roleName)
 }
 
-// HasPermission checks if a user has a specific permission
-func (m *AuthorizationManager) HasPermission(ctx context.Context, userID, resource, action string) (bool, error) {
-	return m.enforcer.Enforce(userID, resource, action)
+// RevokeRolePermission revokes a permission from a role
+func (m *manager) RevokeRolePermission(
+	ctx context.Context,
+	roleID, permissionID uuid.UUID,
+	roleName string,
+) error {
+	return m.permissionRepo.RevokePermissionToRole(ctx, roleID, permissionID, roleName)
+}
+
+// GrantUserPermission grants a permission directly to a user
+func (m *manager) GrantUserPermission(
+	ctx context.Context,
+	userID, permissionID, grantedByID uuid.UUID,
+) error {
+	return m.permissionRepo.AssignPermissionToUser(ctx, userID, permissionID, grantedByID)
+}
+
+// RevokeUserPermission revokes a direct permission from a user
+func (m *manager) RevokeUserPermission(
+	ctx context.Context,
+	userID, permissionID uuid.UUID,
+) error {
+	return m.permissionRepo.RevokePermissionToUser(ctx, userID, permissionID)
 }
 
 // GetUserRoles gets all roles assigned to a user
-func (m *AuthorizationManager) GetUserRoles(ctx context.Context, userID string) ([]*repositories.Role, error) {
+func (m *manager) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]*models.Role, error) {
 	return m.roleRepo.GetUserRoles(ctx, userID)
 }
 
 // GetRolePermissions gets all permissions assigned to a role
-func (m *AuthorizationManager) GetRolePermissions(ctx context.Context, roleName string) ([][]string, error) {
-	permissions, err := m.enforcer.GetPermissionsForUser(roleName)
-	return permissions, err
+func (m *manager) GetRolePermissions(ctx context.Context, roleID uuid.UUID) ([]*models.Permission, error) {
+	return m.permissionRepo.GetRolePermissions(ctx, roleID)
+}
+
+// GetUserDirectPermissions gets all direct permissions assigned to a user
+func (m *manager) GetUserDirectPermissions(ctx context.Context, userID uuid.UUID) ([]*models.Permission, error) {
+	return m.permissionRepo.GetUserPermissions(ctx, userID)
 }
 
 // HasRole checks if a user has a specific role
-func (m *AuthorizationManager) HasRole(ctx context.Context, userID, roleName string) (bool, error) {
+func (m *manager) HasRole(ctx context.Context, userID uuid.UUID, roleName string) (bool, error) {
 	return m.roleRepo.HasRole(ctx, userID, roleName)
+}
+
+// HasPermission checks if a subject has a specific permission
+func (m *manager) HasPermission(ctx context.Context, userID uuid.UUID, resource, action string) (bool, error) {
+	return m.permissionRepo.HasPermission(ctx, userID, resource, action)
 }

@@ -4,57 +4,52 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gitlab.com/jideobs/nebularcore/core/model"
 	"gorm.io/gorm"
 )
 
 // Permission represents a permission in the system
 type Permission struct {
-	ID          string `gorm:"primaryKey"`
-	Name        string `gorm:"index"`
-	Resource    string `gorm:"index"`
-	Action      string `gorm:"index"`
-	Description string
-	Metadata    map[string]any `gorm:"type:jsonb"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
+	model.Model
+	Name        string         `json:"name" gorm:"index"`
+	ResourceID  uuid.UUID      `json:"resourceId"`
+	Resource    string         `json:"resource" gorm:"foreignKey:ModuleResource;references:ID"`
+	Action      string         `json:"action" gorm:"index"`
+	Description string         `json:"description"`
+	Metadata    map[string]any `json:"metadata" gorm:"type:jsonb"`
 }
 
 // PermissionGroup represents a group of permissions
 type PermissionGroup struct {
-	ID          uuid.UUID `gorm:"primaryKey"`
-	Name        string    `gorm:"uniqueIndex:idx_permission_groups_name"`
+	model.Model
+	Name        string `gorm:"uniqueIndex:idx_permission_groups_name"`
 	Description string
-	Metadata    map[string]interface{} `gorm:"type:jsonb"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	Metadata    map[string]any `gorm:"type:jsonb"`
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
 // UserPermission represents a direct permission assignment to a user
 type UserPermission struct {
-	ID           uuid.UUID `gorm:"primaryKey"`
+	model.Model
 	UserID       uuid.UUID `gorm:"index:idx_user_permissions_user_perm"`
 	PermissionID uuid.UUID `gorm:"index:idx_user_permissions_user_perm"`
-	CreatedAt    time.Time
-	ExpiresAt    *time.Time
 	GrantedBy    *uuid.UUID
+	ExpiresAt    *time.Time
 }
 
 // RolePermission represents a permission assignment to a role
 type RolePermission struct {
-	ID           uuid.UUID `gorm:"primaryKey"`
+	model.Model
 	RoleID       uuid.UUID `gorm:"index:idx_role_permissions_role_perm"`
 	PermissionID uuid.UUID `gorm:"index:idx_role_permissions_role_perm"`
-	CreatedAt    time.Time
+	GrantedByID  uuid.UUID
 	ExpiresAt    *time.Time
 }
 
 // GroupPermission represents a permission assignment to a group
 type GroupPermission struct {
-	ID           uuid.UUID `gorm:"primaryKey"`
+	model.Model
 	GroupID      uuid.UUID `gorm:"index:idx_group_permissions_group_perm"`
 	PermissionID uuid.UUID `gorm:"index:idx_group_permissions_group_perm"`
-	CreatedAt    time.Time
 	ExpiresAt    *time.Time
 }

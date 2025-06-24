@@ -10,31 +10,51 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	authorizationMocks "gitlab.com/jideobs/nebularcore/modules/auth/authorization/mocks"
 	backendMocks "gitlab.com/jideobs/nebularcore/modules/auth/backends/mocks"
 	"gitlab.com/jideobs/nebularcore/modules/auth/config"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces/mocks"
 	"gitlab.com/jideobs/nebularcore/modules/auth/middleware"
+	"gitlab.com/jideobs/nebularcore/modules/auth/models"
 )
 
-func setupTest(t *testing.T) (*gin.Engine, *middleware.AuthMiddleware, *backendMocks.AuthenticationManager) {
+func setupTest(t *testing.T) (*gin.Engine, *middleware.AuthMiddleware, *backendMocks.AuthenticationManager, *authorizationMocks.Manager) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
 	authManager := backendMocks.NewAuthenticationManager(t)
+	authzManager := authorizationMocks.NewManager(t)
 
 	cfg := &config.MiddlewareConfig{
 		AuthorizationEnabled: true,
-		PermissionModelPath:  "test-data/test-model.conf",
-		PermissionPolicyPath: "test-data/test-policy.csv",
 	}
 
-	authMiddleware, err := middleware.NewAuthMiddleware(authManager, cfg)
+	authMiddleware, err := middleware.NewAuthMiddleware(authManager, authzManager, cfg)
 	assert.NoError(t, err)
 
-	return r, authMiddleware, authManager
+	return r, authMiddleware, authManager, authzManager
+}
+
+func TestNewAuthMiddleware(t *testing.T) {
+	authManager := backendMocks.NewAuthenticationManager(t)
+	authzManager := authorizationMocks.NewManager(t)
+
+	middlewareConfig := &config.MiddlewareConfig{
+		AuthorizationEnabled: true,
+	}
+
+	middleware, err := middleware.NewAuthMiddleware(authManager, authzManager, middlewareConfig)
+	assert.NoError(t, err)
+	assert.NotNil(t, middleware)
 }
 
 func TestJWTMiddleware(t *testing.T) {
+	r, authMiddleware, authManager, _ := setupTest(t)
+
+	r.GET("/test", authMiddleware.JWT(), func(c *gin.Context) {
+		c.String(http.StatusOK, "success")
+	})
+
 	tests := []struct {
 		name      string
 		token     string
@@ -42,51 +62,43 @@ func TestJWTMiddleware(t *testing.T) {
 		wantCode  int
 	}{
 		{
-			name:  "valid token",
-			token: "valid.jwt.token",
+			name:  "missing token",
+			token: "",
 			setupMock: func(m *backendMocks.AuthenticationManager) {
-				mockUser := mocks.NewUser(t)
-				m.On("ValidateToken", mock.Anything, "valid.jwt.token").Return(mockUser, nil)
+				// No setup needed
 			},
-			wantCode: http.StatusOK,
+			wantCode: http.StatusUnauthorized,
 		},
 		{
 			name:  "invalid token",
 			token: "invalid.jwt.token",
 			setupMock: func(m *backendMocks.AuthenticationManager) {
-				m.On("ValidateToken", mock.Anything, "invalid.jwt.token").Return(nil, errors.New("invalid token"))
+				m.On("ValidateToken", mock.Anything, "invalid.jwt.token").
+					Return(nil, errors.New("invalid token"))
 			},
 			wantCode: http.StatusUnauthorized,
 		},
 		{
-			name:      "missing token",
-			token:     "",
-			setupMock: func(m *backendMocks.AuthenticationManager) {},
-			wantCode:  http.StatusUnauthorized,
+			name:  "valid token",
+			token: "valid.jwt.token",
+			setupMock: func(m *backendMocks.AuthenticationManager) {
+				m.On("ValidateToken", mock.Anything, "valid.jwt.token").
+					Return(&models.User{}, nil)
+			},
+			wantCode: http.StatusOK,
 		},
 	}
 
 	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			r, authMiddleware, authManager := setupTest(t)
-			tt.setupMock(authManager)
+		tt.setupMock(authManager)
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		if tt.token != "" {
+			req.Header.Set("Authorization", "Bearer "+tt.token)
+		}
 
-			r.Use(authMiddleware.JWT())
-			r.GET("/test", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{"status": "success"})
-			})
-
-			w := httptest.NewRecorder()
-			req, _ := http.NewRequest("GET", "/test", nil)
-			if tt.token != "" {
-				req.Header.Set("Authorization", "Bearer "+tt.token)
-			}
-
-			r.ServeHTTP(w, req)
-
-			assert.Equal(t, tt.wantCode, w.Code)
-		})
+		r.ServeHTTP(w, req)
+		assert.Equal(t, tt.wantCode, w.Code)
 	}
 }
 
@@ -104,8 +116,14 @@ func TestAPIKeyMiddleware(t *testing.T) {
 			apiKey:    "valid-key",
 			apiSecret: "valid-secret",
 			setupMock: func(m *backendMocks.AuthenticationManager) {
-				mockUser := mocks.NewUser(t)
-				m.On("Authenticate", mock.Anything, mock.Anything).Return(mockUser, nil)
+				m.On("Authenticate", mock.Anything, map[string]interface{}{
+					"api_key":    "valid-key",
+					"api_secret": "valid-secret",
+				}).Return(&models.User{
+					ID:       uuid.New(),
+					Email:    "user123@example.com",
+					Password: "password",
+				}, nil)
 			},
 			expectedResponse: []string{"status", "success"},
 			wantCode:         http.StatusOK,
@@ -115,7 +133,10 @@ func TestAPIKeyMiddleware(t *testing.T) {
 			apiKey:    "invalid-key",
 			apiSecret: "invalid-secret",
 			setupMock: func(m *backendMocks.AuthenticationManager) {
-				m.On("Authenticate", mock.Anything, mock.Anything).Return(nil, errors.New("invalid credentials"))
+				m.On("Authenticate", mock.Anything, map[string]interface{}{
+					"api_key":    "invalid-key",
+					"api_secret": "invalid-secret",
+				}).Return(nil, errors.New("invalid credentials"))
 			},
 			wantCode: http.StatusUnauthorized,
 		},
@@ -131,11 +152,11 @@ func TestAPIKeyMiddleware(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			r, authMiddleware, authManager := setupTest(t)
+			r, authMiddleware, authManager, _ := setupTest(t)
+
 			tt.setupMock(authManager)
 
-			r.Use(authMiddleware.APIKey())
-			r.GET("/test", func(c *gin.Context) {
+			r.GET("/test", authMiddleware.APIKey(), func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"status": "success"})
 			})
 
@@ -178,18 +199,19 @@ func TestAuthMiddleware_RequireRole(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r, authMiddleware, authManager := setupTest(t)
+			r, authMiddleware, authManager, authorizationManager := setupTest(t)
 
-			r.Use(authMiddleware.JWT())
-			r.Use(authMiddleware.RequireRole(tt.role))
-			r.GET("/test", func(c *gin.Context) {
+			r.GET("/test", authMiddleware.JWT(), authMiddleware.RequireRole(tt.role), func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"status": "success"})
 			})
 
-			mockUser := mocks.NewUser(t)
-			mockUser.On("GetRole").Return(tt.role)
-			authManager.On("ValidateToken", mock.Anything, "valid.jwt.token").
-				Return(mockUser, nil)
+			user := &models.User{
+				ID:       uuid.New(),
+				Email:    "user123@example.com",
+				Password: "password",
+			}
+			authManager.On("ValidateToken", mock.Anything, "valid.jwt.token").Return(user, nil)
+			authorizationManager.On("HasRole", mock.Anything, user.ID, tt.role).Return(tt.role == "admin", nil)
 
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", "/test", nil)
@@ -226,18 +248,19 @@ func TestRequirePermissionMiddleware(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			r, authMiddleware, authManager := setupTest(t)
+			r, authMiddleware, authManager, authzManager := setupTest(t)
 
-			r.Use(authMiddleware.JWT())
-			r.Use(authMiddleware.RequirePermission(tt.resource, tt.action))
-			r.GET("/test", func(c *gin.Context) {
+			r.GET("/test", authMiddleware.JWT(), authMiddleware.RequirePermission(tt.resource, tt.action), func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"status": "success"})
 			})
 
-			userId := "98d99bae-7daa-430b-a0f9-a8e79b3ac1f6"
-			mockUser := mocks.NewUser(t)
-			mockUser.On("GetID").Return(uuid.MustParse(userId))
-			authManager.On("ValidateToken", mock.Anything, "valid.jwt.token").Return(mockUser, nil)
+			user := &models.User{
+				ID:       uuid.New(),
+				Email:    "user123@example.com",
+				Password: "password",
+			}
+			authManager.On("ValidateToken", mock.Anything, "valid.jwt.token").Return(user, nil)
+			authzManager.On("HasPermission", mock.Anything, user.ID, tt.resource, tt.action).Return(tt.action == "GET", nil)
 
 			w := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", "/test", nil)

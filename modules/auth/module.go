@@ -5,9 +5,11 @@ import (
 	"embed"
 	"fmt"
 
+	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
 	migrationRunner "gitlab.com/jideobs/nebularcore/core/migration_runner"
 	"gitlab.com/jideobs/nebularcore/core/module"
+	"gitlab.com/jideobs/nebularcore/modules/auth/authorization"
 	"gitlab.com/jideobs/nebularcore/modules/auth/backends"
 	"gitlab.com/jideobs/nebularcore/modules/auth/config"
 	"gitlab.com/jideobs/nebularcore/modules/auth/factories"
@@ -15,6 +17,7 @@ import (
 	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
 	"gitlab.com/jideobs/nebularcore/modules/auth/middleware"
 	"gitlab.com/jideobs/nebularcore/modules/auth/repositories"
+	"gitlab.com/jideobs/nebularcore/modules/auth/resource"
 	"gitlab.com/jideobs/nebularcore/modules/auth/state"
 	"gorm.io/gorm"
 )
@@ -24,15 +27,23 @@ var migrations embed.FS
 
 // Module implements the NebularCore module interface for authentication
 type Module struct {
-	name            string
-	version         string
-	config          *config.Config
-	authManager     backends.AuthenticationManager
-	authHandler     interfaces.AuthHandler
-	passwordHandler interfaces.PasswordHandler
-	authMiddleware  interfaces.AuthMiddleware
-	tokenIssuer     interfaces.TokenIssuer
-	userRepository  interfaces.UserRepository
+	name         string
+	version      string
+	config       *config.Config
+	authManager  backends.AuthenticationManager
+	authzManager authorization.Manager
+
+	// handlers
+	authHandler          interfaces.AuthHandler
+	passwordHandler      interfaces.PasswordHandler
+	authorizationHandler *handlers.AuthorizationManager
+	resourceHandler      *handlers.ResourceHandler
+
+	// middleware
+	authMiddleware interfaces.AuthMiddleware
+
+	tokenIssuer    interfaces.TokenIssuer
+	userRepository interfaces.UserRepository
 }
 
 // New creates a new authentication module
@@ -90,8 +101,17 @@ func (m *Module) Initialize(
 	apiGroup := router.Group("")
 	m.authHandler.RegisterRoutes(apiGroup)
 	m.passwordHandler.RegisterRoutes(apiGroup)
+	m.authorizationHandler.RegisterRoutes(apiGroup)
+	m.resourceHandler.RegisterRoutes(apiGroup)
 
 	return nil
+}
+
+func (m *Module) createEnforcer() (*casbin.Enforcer, error) {
+	return casbin.NewEnforcer(
+		"config/rbac_model.conf",
+		"config/rbac_policy.csv",
+	)
 }
 
 func (m *Module) initializeDefaults(db *gorm.DB) error {
@@ -104,12 +124,28 @@ func (m *Module) initializeDefaults(db *gorm.DB) error {
 	if m.tokenIssuer == nil {
 		m.tokenIssuer = state.NewJWTTokenIssuer(m.config.JWT)
 	}
+	if m.authzManager == nil {
+		enforcer, err := m.createEnforcer()
+		if err != nil {
+			return err
+		}
+		m.authzManager = authorization.NewAuthorizationManager(
+			repositories.NewRoleRepository(db, enforcer),
+			repositories.NewPermissionRepository(db, enforcer),
+		)
+	}
 	if m.authHandler == nil {
 		m.authHandler = handlers.NewAuthHandler(m.authManager, m.tokenIssuer, m.config)
 	}
+	if m.authorizationHandler == nil {
+		m.authorizationHandler = handlers.NewAuthorizationManager(m.authzManager)
+	}
+	if m.resourceHandler == nil {
+		m.resourceHandler = handlers.NewResourceHandler(resource.NewManager(repositories.NewResourceRepository(db)))
+	}
 	if m.authMiddleware == nil {
 		var err error
-		m.authMiddleware, err = middleware.NewAuthMiddleware(m.authManager, &m.config.Middleware)
+		m.authMiddleware, err = middleware.NewAuthMiddleware(m.authManager, m.authzManager, &m.config.Middleware)
 		if err != nil {
 			return err
 		}
@@ -245,4 +281,14 @@ func (m *Module) WithAuthHandler(handler interfaces.AuthHandler) *Module {
 func (m *Module) WithAuthMiddleware(middleware interfaces.AuthMiddleware) *Module {
 	m.authMiddleware = middleware
 	return m
+}
+
+// /test [GET, POST, PUT, DELETE]
+// /test/{id} [GET, PUT, DELETE]
+// /test/{id}/actions/{action} [GET, POST, PUT, DELETE]
+func (m *Module) AddResource([]struct {
+	resource string
+	actions  []string
+}) error {
+	return nil
 }

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
+	"gitlab.com/jideobs/nebularcore/modules/auth/authorization"
 	"gitlab.com/jideobs/nebularcore/modules/auth/backends"
 	"gitlab.com/jideobs/nebularcore/modules/auth/config"
 	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
@@ -13,31 +13,29 @@ import (
 
 // AuthMiddleware provides authentication middleware for Gin
 type AuthMiddleware struct {
-	authManager backends.AuthenticationManager
-	enforcer    *casbin.Enforcer
-	config      *config.MiddlewareConfig
+	authManager          backends.AuthenticationManager
+	authorizationManager authorization.Manager
+	config               *config.MiddlewareConfig
 }
 
 // NewAuthMiddleware creates a new authentication middleware
 func NewAuthMiddleware(
 	authManager backends.AuthenticationManager,
+	authzManager authorization.Manager,
 	config *config.MiddlewareConfig,
 ) (*AuthMiddleware, error) {
 	if !config.AuthorizationEnabled {
 		return &AuthMiddleware{
-			authManager: authManager,
-			config:      config,
+			authManager:          authManager,
+			authorizationManager: authzManager,
+			config:               config,
 		}, nil
 	}
 
-	enforcer, err := casbin.NewEnforcer(config.PermissionModelPath, config.PermissionPolicyPath)
-	if err != nil {
-		return nil, err
-	}
 	return &AuthMiddleware{
-		authManager: authManager,
-		enforcer:    enforcer,
-		config:      config,
+		authManager:          authManager,
+		authorizationManager: authzManager,
+		config:               config,
 	}, nil
 }
 
@@ -176,7 +174,7 @@ func (m *AuthMiddleware) RequireRole(role string) gin.HandlerFunc {
 			return
 		}
 
-		allowed, err := m.enforcer.Enforce(user.(interfaces.User).GetRole(), c.Request.URL.Path, "*")
+		allowed, err := m.authorizationManager.HasRole(c.Request.Context(), user.(interfaces.User).GetID(), role)
 		if err != nil || !allowed {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"error": "insufficient permissions",
@@ -205,7 +203,7 @@ func (m *AuthMiddleware) RequirePermission(resource, action string) gin.HandlerF
 			return
 		}
 
-		allowed, err := m.enforcer.Enforce(user.(interfaces.User).GetID().String(), resource, action)
+		allowed, err := m.authorizationManager.HasPermission(c.Request.Context(), user.(interfaces.User).GetID(), resource, action)
 		if err != nil || !allowed {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"error": "insufficient permissions",

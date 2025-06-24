@@ -9,21 +9,21 @@ import (
 
 // User represents a user in the system
 type User struct {
-	ID                 uuid.UUID `gorm:"primaryKey"`
-	Email              string    `gorm:"uniqueIndex"`
-	PhoneNumber        string    `gorm:"uniqueIndex"`
-	Username           string    `gorm:"uniqueIndex"`
-	Password           string
-	Metadata           map[string]any `gorm:"type:jsonb"`
-	Active             bool           `gorm:"default:true"`
-	PasswordResetToken *string
-	Token              *string
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
-	LastLoginAt        *time.Time
-	PasswordResetAt    *time.Time
-	DeletedAt          gorm.DeletedAt `gorm:"index"`
-	Role               string
+	ID                 uuid.UUID      `json:"id" gorm:"primaryKey"`
+	Email              string         `json:"email" gorm:"uniqueIndex"`
+	PhoneNumber        string         `json:"phoneNumber" gorm:"uniqueIndex"`
+	Username           string         `json:"username" gorm:"uniqueIndex"`
+	Password           string         `json:"-"`
+	Metadata           map[string]any `json:"metadata" gorm:"type:jsonb"`
+	Active             bool           `json:"active" gorm:"default:true"`
+	PasswordResetToken *string        `json:"-"`
+	Token              *string        `json:"-"`
+	CreatedAt          time.Time      `json:"createdAt"`
+	UpdatedAt          time.Time      `json:"updatedAt"`
+	LastLoginAt        *time.Time     `json:"lastLoginAt"`
+	PasswordResetAt    *time.Time     `json:"passwordResetAt"`
+	DeletedAt          gorm.DeletedAt `json:"deletedAt" gorm:"index"`
+	Role               string         `json:"role"`
 }
 
 func (u *User) GetID() uuid.UUID {

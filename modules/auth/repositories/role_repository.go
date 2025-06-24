@@ -4,68 +4,83 @@ import (
 	"context"
 	"time"
 
+	"github.com/casbin/casbin/v2"
+	"github.com/google/uuid"
+	"gitlab.com/jideobs/nebularcore/modules/auth/models"
 	"gorm.io/gorm"
 )
 
-// Role represents a role in the system
-type Role struct {
-	ID          string `gorm:"primaryKey"`
-	Name        string `gorm:"uniqueIndex:idx_roles_name_tenant"`
-	Description string
-	Metadata    map[string]interface{} `gorm:"type:jsonb"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
+// RoleRepository defines the interface for role repository
+type RoleRepository interface {
+	CreateRole(ctx context.Context, role *models.Role) (*models.Role, error)
+	AssignRole(ctx context.Context, userID, roleID uuid.UUID, roleName string) error
+	UnassignRole(ctx context.Context, userID, roleID uuid.UUID, roleName string) error
+	GetUserRoles(ctx context.Context, userID uuid.UUID) ([]*models.Role, error)
+	GetRoleUsers(ctx context.Context, roleID uuid.UUID) ([]string, error)
+	HasRole(ctx context.Context, userID uuid.UUID, roleName string) (bool, error)
 }
 
-// RoleAssignment represents a user-role assignment
-type RoleAssignment struct {
-	ID        string `gorm:"primaryKey"`
-	UserID    string `gorm:"index:idx_role_assignments_user_role"`
-	RoleID    string `gorm:"index:idx_role_assignments_user_role"`
-	CreatedAt time.Time
-	ExpiresAt *time.Time
-}
-
-// RoleRepository handles role-related database operations
-type RoleRepository struct {
-	db *gorm.DB
+// roleRepository handles role-related database operations
+type roleRepository struct {
+	db       *gorm.DB
+	enforcer *casbin.Enforcer
 }
 
 // NewRoleRepository creates a new role repository
-func NewRoleRepository(db *gorm.DB) *RoleRepository {
-	return &RoleRepository{
-		db: db,
+func NewRoleRepository(db *gorm.DB, enforcer *casbin.Enforcer) RoleRepository {
+	return &roleRepository{
+		db:       db,
+		enforcer: enforcer,
 	}
 }
 
 // CreateRole creates a new role
-func (r *RoleRepository) CreateRole(ctx context.Context, data map[string]interface{}) (*Role, error) {
-	role := &Role{}
-	if err := r.db.WithContext(ctx).Model(role).Create(data).Error; err != nil {
+func (r *roleRepository) CreateRole(ctx context.Context, role *models.Role) (*models.Role, error) {
+	if err := r.db.WithContext(ctx).Create(role).Error; err != nil {
 		return nil, err
 	}
 	return role, nil
 }
 
 // AssignRole assigns a role to a user
-func (r *RoleRepository) AssignRole(ctx context.Context, userID, roleID string, expiresAt *time.Time) error {
-	assignment := &RoleAssignment{
-		UserID:    userID,
-		RoleID:    roleID,
-		ExpiresAt: expiresAt,
+func (r *roleRepository) AssignRole(
+	ctx context.Context,
+	userID, roleID uuid.UUID,
+	roleName string,
+) error {
+	if _, err := r.enforcer.AddRoleForUser(userID.String(), roleName); err != nil {
+		return err
 	}
-	return r.db.WithContext(ctx).Create(assignment).Error
+	assignment := &models.RoleAssignment{
+		UserID: userID,
+		RoleID: roleID,
+	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(assignment).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 // UnassignRole removes a role from a user
-func (r *RoleRepository) UnassignRole(ctx context.Context, userID, roleID string) error {
-	return r.db.WithContext(ctx).Delete(&RoleAssignment{}, "user_id = ? AND role_id = ?", userID, roleID).Error
+func (r *roleRepository) UnassignRole(
+	ctx context.Context,
+	userID, roleID uuid.UUID,
+	roleName string,
+) error {
+	if _, err := r.enforcer.DeleteRoleForUser(userID.String(), roleName); err != nil {
+		return err
+	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		return tx.WithContext(ctx).
+			Delete(&models.RoleAssignment{}, "user_id = ? AND role_id = ?", userID, roleID).Error
+	})
 }
 
 // GetUserRoles gets all roles assigned to a user
-func (r *RoleRepository) GetUserRoles(ctx context.Context, userID string) ([]*Role, error) {
-	var roles []*Role
+func (r *roleRepository) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]*models.Role, error) {
+	var roles []*models.Role
 	err := r.db.WithContext(ctx).
 		Joins("JOIN role_assignments ON roles.id = role_assignments.role_id").
 		Where("role_assignments.user_id = ? AND (role_assignments.expires_at IS NULL OR role_assignments.expires_at > ?)",
@@ -75,10 +90,10 @@ func (r *RoleRepository) GetUserRoles(ctx context.Context, userID string) ([]*Ro
 }
 
 // GetRoleUsers gets all users assigned to a role
-func (r *RoleRepository) GetRoleUsers(ctx context.Context, roleID string) ([]string, error) {
+func (r *roleRepository) GetRoleUsers(ctx context.Context, roleID uuid.UUID) ([]string, error) {
 	var userIDs []string
 	err := r.db.WithContext(ctx).
-		Model(&RoleAssignment{}).
+		Model(&models.RoleAssignment{}).
 		Where("role_id = ? AND (expires_at IS NULL OR expires_at > ?)",
 			roleID, time.Now()).
 		Pluck("user_id", &userIDs).Error
@@ -86,10 +101,10 @@ func (r *RoleRepository) GetRoleUsers(ctx context.Context, roleID string) ([]str
 }
 
 // HasRole checks if a user has a specific role
-func (r *RoleRepository) HasRole(ctx context.Context, userID, roleName string) (bool, error) {
+func (r *roleRepository) HasRole(ctx context.Context, userID uuid.UUID, roleName string) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).
-		Model(&RoleAssignment{}).
+		Model(&models.RoleAssignment{}).
 		Joins("JOIN roles ON role_assignments.role_id = roles.id").
 		Where("role_assignments.user_id = ? AND roles.name = ? AND (role_assignments.expires_at IS NULL OR role_assignments.expires_at > ?)",
 			userID, roleName, time.Now()).

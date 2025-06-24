@@ -4,25 +4,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"gitlab.com/jideobs/nebularcore/core/model"
 )
 
 // Role represents a role in the system
 type Role struct {
-	ID          uuid.UUID `gorm:"primaryKey"`
-	Name        string    `gorm:"uniqueIndex:idx_roles_name_tenant"`
-	Description string
-	Metadata    map[string]interface{} `gorm:"type:jsonb"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
+	model.Model
+	Name        string                 `json:"name" gorm:"uniqueIndex:idx_roles_name_tenant"`
+	Description string                 `json:"description"`
+	Metadata    map[string]interface{} `json:"metadata" gorm:"type:jsonb"`
 }
 
 // RoleAssignment represents a role assignment to a user
 type RoleAssignment struct {
-	ID        uuid.UUID `gorm:"primaryKey"`
-	UserID    uuid.UUID `gorm:"index:idx_role_assignments_user_role"`
-	RoleID    uuid.UUID `gorm:"index:idx_role_assignments_user_role"`
-	CreatedAt time.Time
-	ExpiresAt *time.Time
+	model.Model
+	UserID    uuid.UUID  `json:"userId" gorm:"index:idx_role_assignments_user_role"`
+	RoleID    uuid.UUID  `json:"roleId" gorm:"index:idx_role_assignments_user_role"`
+	ExpiresAt *time.Time `json:"expiresAt"`
 }

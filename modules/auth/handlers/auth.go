@@ -77,7 +77,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // RefreshToken handles token refresh requests
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	var req struct {
-		RefreshToken string `json:"refresh_token" binding:"required"`
+		RefreshToken string `json:"refreshToken" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
