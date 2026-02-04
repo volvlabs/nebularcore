@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gitlab.com/jideobs/nebularcore/modules/auth/errors"
 	"gitlab.com/jideobs/nebularcore/modules/auth/models"
 	"gitlab.com/jideobs/nebularcore/modules/auth/types"
@@ -32,13 +32,14 @@ func (r *SocialAccountRepository) Create(
 	if err := r.db.WithContext(ctx).
 		Model(account).
 		Create(data).Error; err != nil {
-		if pgErr, ok := err.(*pq.Error); ok && pgErr.Code == "23505" { // unique_violation
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" { // unique_violation
 			switch {
-			case strings.Contains(pgErr.Constraint, "idx_social_accounts_provider_id"):
+			case strings.Contains(pgErr.ConstraintName, "idx_social_accounts_provider_id"):
+			case strings.Contains(pgErr.ConstraintName, "social_accounts_provider_provider_user_id_key"):
 				return nil, errors.ErrProviderUserIDExists
-			case strings.Contains(pgErr.Constraint, "user_id"):
+			case strings.Contains(pgErr.ConstraintName, "user_id"):
 				return nil, errors.ErrUserIDExists
-			case strings.Contains(pgErr.Constraint, "idx_social_accounts_provider_email"):
+			case strings.Contains(pgErr.ConstraintName, "idx_social_accounts_provider_email"):
 				return nil, errors.ErrSocialEmailExists
 			}
 		}

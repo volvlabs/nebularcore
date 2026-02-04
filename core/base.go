@@ -187,6 +187,11 @@ func (a *baseApp[T]) GetModulesByNamespace(namespace module.ModuleNamespace) map
 	return a.registry.GetModulesByNamespace(namespace)
 }
 
+// GetModulesInOrder retrieves modules in initialization order (respecting dependencies and registration order)
+func (a *baseApp[T]) GetModulesInOrder(namespace module.ModuleNamespace) []module.OrderedModule {
+	return a.registry.GetModulesInOrder(namespace)
+}
+
 // GetModule retrieves a registered module by name
 func (a *baseApp[T]) GetModule(name string) (module.Module, bool) {
 	return a.registry.Get(name)

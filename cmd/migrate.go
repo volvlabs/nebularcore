@@ -53,17 +53,17 @@ func NewMigrateCommand[T config.Settings](
 			case "up":
 				dbString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 					dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode)
-				for name, module := range app.GetModulesByNamespace(module.PublicNamespace) {
-					if !module.ProvidesMigrations() {
+				for _, om := range app.GetModulesInOrder(module.PublicNamespace) {
+					if !om.Module.ProvidesMigrations() {
 						continue
 					}
 
 					projectRoot := app.Config().ProjectRoot
-					sources := module.GetMigrationSources(projectRoot)
+					sources := om.Module.GetMigrationSources(projectRoot)
 					runner, err := migrationRunner.New(
 						sources,
 						dbString,
-						fmt.Sprintf("schema_migrations_%s", name),
+						fmt.Sprintf("schema_migrations_%s", om.Name),
 					)
 					if err != nil {
 						log.Err(err).Msg("error creating migration runner")
@@ -71,13 +71,13 @@ func NewMigrateCommand[T config.Settings](
 					}
 					if err := runner.Up(); err != nil {
 						if err == migrate.ErrNoChange || err == migrate.ErrNilVersion {
-							log.Err(err).Msgf("no migrations to run for module %s", name)
+							log.Err(err).Msgf("no migrations to run for module %s", om.Name)
 							continue
 						}
 						return err
 					}
 
-					log.Info().Msgf("migration for module %s ran successfully", name)
+					log.Info().Msgf("migration for module %s ran successfully", om.Name)
 				}
 			default:
 				return fmt.Errorf("unknown command %s", cmd)

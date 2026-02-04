@@ -26,6 +26,7 @@ type App[T config.Settings] interface {
 	RegisterModule(m module.Module) error
 	GetModule(name string) (module.Module, bool)
 	GetModulesByNamespace(namespace module.ModuleNamespace) map[string]module.Module
+	GetModulesInOrder(namespace module.ModuleNamespace) []module.OrderedModule
 
 	// Core services
 	Router() *gin.Engine

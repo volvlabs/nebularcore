@@ -8,6 +8,10 @@ type Registry struct {
 	tenantModules map[string]Module
 	publicOrder   []string
 	tenantOrder   []string
+
+	// Track registration order for stable iteration
+	publicRegistrationOrder []string
+	tenantRegistrationOrder []string
 }
 
 func NewRegistry() *Registry {
@@ -24,6 +28,15 @@ func (r *Registry) Register(m Module) error {
 	}
 
 	moduleMap[m.Name()] = m
+
+	// Track registration order
+	switch m.Namespace() {
+	case PublicNamespace:
+		r.publicRegistrationOrder = append(r.publicRegistrationOrder, m.Name())
+	case TenantNamespace:
+		r.tenantRegistrationOrder = append(r.tenantRegistrationOrder, m.Name())
+	}
+
 	return r.updateInitOrder(m.Namespace())
 }
 
@@ -71,8 +84,26 @@ func (r *Registry) GetModules() map[string]Module {
 	return all
 }
 
-// GetModulesByNamespace returns modules for a specific namespace
+// GetModulesByNamespace returns modules for a specific namespace in registration order
 func (r *Registry) GetModulesByNamespace(namespace ModuleNamespace) map[string]Module {
+	moduleMap := r.getModuleMap(namespace)
+
+	// Create a new map with the same modules
+	orderedModules := make(map[string]Module, len(moduleMap))
+	for k, v := range moduleMap {
+		orderedModules[k] = v
+	}
+	return orderedModules
+}
+
+// OrderedModule represents a module with its registration position
+type OrderedModule struct {
+	Name   string
+	Module Module
+}
+
+// GetModulesInOrder returns modules for a specific namespace in initialization order (respecting dependencies)
+func (r *Registry) GetModulesInOrder(namespace ModuleNamespace) []OrderedModule {
 	moduleMap := r.getModuleMap(namespace)
 	var order []string
 
@@ -81,27 +112,29 @@ func (r *Registry) GetModulesByNamespace(namespace ModuleNamespace) map[string]M
 		order = r.publicOrder
 	case TenantNamespace:
 		order = r.tenantOrder
-	default:
-		return moduleMap
 	}
 
-	// Create a new map with the same modules but in the order of registration
-	orderedModules := make(map[string]Module, len(order))
+	result := make([]OrderedModule, 0, len(order))
 	for _, name := range order {
-		orderedModules[name] = moduleMap[name]
+		if m, ok := moduleMap[name]; ok {
+			result = append(result, OrderedModule{Name: name, Module: m})
+		}
 	}
-	return orderedModules
+	return result
 }
 
 // updateInitOrder updates the initialization order based on dependencies for a specific namespace
 func (r *Registry) updateInitOrder(namespace ModuleNamespace) error {
-	moduleMap := r.getModuleMap(namespace)
 	var order *[]string
+	var registrationOrder []string
+
 	switch namespace {
 	case PublicNamespace:
 		order = &r.publicOrder
+		registrationOrder = r.publicRegistrationOrder
 	case TenantNamespace:
 		order = &r.tenantOrder
+		registrationOrder = r.tenantRegistrationOrder
 	default:
 		return fmt.Errorf("invalid namespace: %s", namespace)
 	}
@@ -111,7 +144,8 @@ func (r *Registry) updateInitOrder(namespace ModuleNamespace) error {
 	visited := make(map[string]bool)
 	temp := make(map[string]bool)
 
-	for name := range moduleMap {
+	// Iterate in registration order for stable, predictable initialization
+	for _, name := range registrationOrder {
 		if !visited[name] {
 			if err := r.visitInNamespace(name, namespace, visited, temp, order); err != nil {
 				return err
