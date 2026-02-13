@@ -39,13 +39,11 @@ func (m *Module) PublishAsync(ctx context.Context, event Message) (<-chan error,
 }
 
 func (m *Module) Subscribe(eventType string, handler Handler) error {
-	m.router.AddHandler(
+	m.router.AddNoPublisherHandler(
 		eventType,
 		eventType,
 		m.subscriber,
-		eventType,
-		m.publisher,
-		func(msg *message.Message) ([]*message.Message, error) {
+		func(msg *message.Message) error {
 			event := Message{
 				Message:   msg,
 				Source:    msg.Metadata.Get("source"),
@@ -64,10 +62,10 @@ func (m *Module) Subscribe(eventType string, handler Handler) error {
 					"event_type": event.EventType,
 					"source":     event.Source,
 				})
-				return nil, err
+				return err
 			}
 
-			return nil, nil
+			return nil
 		},
 	)
 

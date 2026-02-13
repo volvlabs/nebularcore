@@ -27,7 +27,7 @@ func New() (*Module, error) {
 	pubSub := gochannel.NewGoChannel(
 		gochannel.Config{
 			OutputChannelBuffer: 1024,
-			Persistent:          true,
+			Persistent:          false,
 		},
 		logger,
 	)
