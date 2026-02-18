@@ -88,7 +88,6 @@ func (r *Registry) GetModules() map[string]Module {
 func (r *Registry) GetModulesByNamespace(namespace ModuleNamespace) map[string]Module {
 	moduleMap := r.getModuleMap(namespace)
 
-	// Create a new map with the same modules
 	orderedModules := make(map[string]Module, len(moduleMap))
 	for k, v := range moduleMap {
 		orderedModules[k] = v

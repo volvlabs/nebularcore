@@ -1,6 +1,7 @@
 package module_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -208,21 +209,30 @@ func TestRegistry_GetModulesByNamespace_Order(t *testing.T) {
 			r := module.NewRegistry()
 
 			for _, m := range tt.modules {
+				fmt.Println("Registering module:", m.Name(), "test name: ", tt.name)
 				assert.NoError(t, r.Register(m))
 			}
 
-			modules := r.GetModulesByNamespace(tt.namespace)
+			modules := r.GetModulesInOrder(tt.namespace)
 
 			var actualOrder []string
-			for name := range modules {
-				actualOrder = append(actualOrder, name)
+			for _, module := range modules {
+				fmt.Println("Retrieved module:", module.Name, "test name: ", tt.name)
+				actualOrder = append(actualOrder, module.Name)
 			}
 
 			assert.Equal(t, tt.expected, actualOrder, "module order should match registration order")
 
 			assert.Equal(t, len(tt.expected), len(modules), "number of modules should match")
 			for _, name := range tt.expected {
-				_, exists := modules[name]
+				exists := false
+				for _, module := range modules {
+					if module.Name == name {
+						exists = true
+						break
+					}
+				}
+
 				assert.True(t, exists, "module %s should exist", name)
 			}
 		})
