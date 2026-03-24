@@ -36,7 +36,9 @@ func TestManager_RequestPasswordReset(t *testing.T) {
 					return hasToken && hasTime
 				})).Return(nil)
 
-				eventEmitter.On("EmitPasswordResetInitiatedEvent", mock.Anything, mockUser).Return(nil)
+				eventEmitter.On("EmitPasswordResetInitiatedEvent", mock.Anything, mockUser, mock.MatchedBy(func(token string) bool {
+					return token != ""
+				})).Return(nil)
 			},
 			payload: requests.PasswordResetPayload{
 				Email: "test@example.com",

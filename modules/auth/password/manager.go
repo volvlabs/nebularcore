@@ -68,7 +68,7 @@ func (h *manager) RequestPasswordReset(
 		return types.NewSystemError("Failed to process request")
 	}
 
-	h.eventEmitter.EmitPasswordResetInitiatedEvent(ctx, user)
+	h.eventEmitter.EmitPasswordResetInitiatedEvent(ctx, user, resetToken)
 	return nil
 }
 

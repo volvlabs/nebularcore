@@ -106,17 +106,17 @@ func (_m *EventEmitter) EmitPasswordResetEvent(ctx context.Context, user interfa
 	return r0
 }
 
-// EmitPasswordResetInitiatedEvent provides a mock function with given fields: ctx, user
-func (_m *EventEmitter) EmitPasswordResetInitiatedEvent(ctx context.Context, user interfaces.User) error {
-	ret := _m.Called(ctx, user)
+// EmitPasswordResetInitiatedEvent provides a mock function with given fields: ctx, user, resetToken
+func (_m *EventEmitter) EmitPasswordResetInitiatedEvent(ctx context.Context, user interfaces.User, resetToken string) error {
+	ret := _m.Called(ctx, user, resetToken)
 
 	if len(ret) == 0 {
 		panic("no return value specified for EmitPasswordResetInitiatedEvent")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, interfaces.User) error); ok {
-		r0 = rf(ctx, user)
+	if rf, ok := ret.Get(0).(func(context.Context, interfaces.User, string) error); ok {
+		r0 = rf(ctx, user, resetToken)
 	} else {
 		r0 = ret.Error(0)
 	}

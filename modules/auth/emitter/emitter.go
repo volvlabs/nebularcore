@@ -47,6 +47,7 @@ type AuthEventData struct {
 	UserID      string    `json:"user_id"`
 	Email       string    `json:"email"`
 	PhoneNumber string    `json:"phoneNumber"`
+	ResetToken  string    `json:"reset_token,omitempty"`
 	IP          string    `json:"ip"`
 	UserAgent   string    `json:"user_agent"`
 	Timestamp   time.Time `json:"timestamp"`
@@ -60,7 +61,7 @@ type EventEmitter interface {
 	EmitPasswordEvent(ctx context.Context, user interfaces.User, ip, userAgent string, eventType string) error
 	EmitUserEvent(ctx context.Context, user interfaces.User, eventType string) error
 	EmitPasswordResetEvent(ctx context.Context, user interfaces.User) error
-	EmitPasswordResetInitiatedEvent(ctx context.Context, user interfaces.User) error
+	EmitPasswordResetInitiatedEvent(ctx context.Context, user interfaces.User, resetToken string) error
 	EmitPasswordChangedEvent(ctx context.Context, user interfaces.User) error
 }
 
@@ -131,10 +132,11 @@ func (m *eventEmitter) EmitPasswordResetEvent(ctx context.Context, user interfac
 	return m.EmitAuthEvent(ctx, user, data)
 }
 
-func (m *eventEmitter) EmitPasswordResetInitiatedEvent(ctx context.Context, user interfaces.User) error {
+func (m *eventEmitter) EmitPasswordResetInitiatedEvent(ctx context.Context, user interfaces.User, resetToken string) error {
 	data := AuthEventData{
-		Timestamp: time.Now(),
-		EventType: EventPasswordResetInitiated,
+		Timestamp:  time.Now(),
+		EventType:  EventPasswordResetInitiated,
+		ResetToken: resetToken,
 	}
 	return m.EmitAuthEvent(ctx, user, data)
 }
