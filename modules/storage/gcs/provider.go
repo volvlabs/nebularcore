@@ -10,9 +10,9 @@ import (
 
 	"cloud.google.com/go/storage"
 	"gitlab.com/jideobs/nebularcore/modules/storage/models"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"golang.org/x/oauth2/google"
 )
 
 // gcsStorageAPI defines the interface for GCS storage operations
@@ -24,9 +24,9 @@ type gcsStorageAPI interface {
 }
 
 type Config struct {
-	Bucket          string
-	CredentialsFile string
-	CredentialsJSON string
+	Bucket          string `yaml:"bucket" validate:"required"`
+	CredentialsFile string `yaml:"credentialsFile"`
+	CredentialsJSON string `yaml:"credentialsJSON"`
 }
 
 type Provider struct {

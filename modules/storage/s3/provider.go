@@ -32,13 +32,13 @@ type Provider struct {
 }
 
 type Config struct {
-	Bucket          string
-	Region          string
-	AccessKeyID     string
-	SecretAccessKey string
-	SessionToken   string
-	Endpoint       string
-	ForcePathStyle bool
+	Bucket          string `yaml:"bucket" validate:"required"`
+	Region          string `yaml:"region" validate:"required"`
+	AccessKeyID     string `yaml:"accessKeyId" validate:"required_with=SecretAccessKey"`
+	SecretAccessKey string `yaml:"secretAccessKey" validate:"required_with=AccessKeyID"`
+	SessionToken    string `yaml:"sessionToken"`
+	Endpoint        string `yaml:"endpoint"`
+	ForcePathStyle  bool   `yaml:"forcePathStyle"`
 }
 
 func New(cfg Config) (*Provider, error) {
@@ -52,7 +52,7 @@ func New(cfg Config) (*Provider, error) {
 			Value: aws.Credentials{
 				AccessKeyID:     cfg.AccessKeyID,
 				SecretAccessKey: cfg.SecretAccessKey,
-				SessionToken:   cfg.SessionToken,
+				SessionToken:    cfg.SessionToken,
 			},
 		}
 		opts = append(opts, config.WithCredentialsProvider(creds))
