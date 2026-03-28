@@ -75,6 +75,7 @@ func (h *WebSocketHandler) Handle(c *gin.Context) {
 
 	opts := &websocket.AcceptOptions{
 		InsecureSkipVerify: len(h.config.Security.AllowOrigins) == 0,
+		OriginPatterns:     h.config.Security.AllowOrigins,
 	}
 
 	ws, err := websocket.Accept(c.Writer, c.Request, opts)
