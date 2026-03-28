@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NebularCore — How It Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== DESIGN SYSTEM ===== */
+:root {
+  --color-bg:             #FAF7F2;
+  --color-bg-warm:        #F5F0E8;
+  --color-bg-code:        #1E1E2E;
+  --color-text:           #2C2A28;
+  --color-text-secondary: #6B6560;
+  --color-text-muted:     #9E9790;
+  --color-border:         #E5DFD6;
+  --color-border-light:   #EEEBE5;
+  --color-surface:        #FFFFFF;
+  --color-surface-warm:   #FDF9F3;
+  --color-accent:         #2A7B9B;
+  --color-accent-hover:   #1F607A;
+  --color-accent-light:   #E4F2F7;
+  --color-accent-muted:   #5BA0BB;
+  --color-success:        #2D8B55;
+  --color-success-light:  #E8F5EE;
+  --color-error:          #C93B3B;
+  --color-error-light:    #FDE8E8;
+  --color-info:           #2A7B9B;
+  --color-info-light:     #E4F2F7;
+  --color-actor-1:        #2A7B9B;
+  --color-actor-2:        #D94F30;
+  --color-actor-3:        #7B6DAA;
+  --color-actor-4:        #D4A843;
+  --color-actor-5:        #2D8B55;
+  --font-display: 'Bricolage Grotesque', Georgia, serif;
+  --font-body:    'DM Sans', -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-5xl:  3rem;
+  --text-6xl:  3.75rem;
+  --leading-tight:  1.15;
+  --leading-snug:   1.3;
+  --leading-normal: 1.6;
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --content-width: 820px;
+  --content-width-wide: 1040px;
+  --nav-height: 52px;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px rgba(44,42,40,.05);
+  --shadow-md: 0 4px 12px rgba(44,42,40,.08);
+  --shadow-lg: 0 8px 24px rgba(44,42,40,.10);
+  --shadow-xl: 0 16px 48px rgba(44,42,40,.12);
+  --ease-out:    cubic-bezier(0.16,1,0.3,1);
+  --ease-in-out: cubic-bezier(0.65,0,0.35,1);
+  --duration-fast:   150ms;
+  --duration-normal: 300ms;
+  --duration-slow:   500ms;
+  --stagger-delay:   120ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-snap-type: y proximity;
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  line-height: var(--leading-normal);
+  background: var(--color-bg);
+  background-image: radial-gradient(ellipse at 20% 50%, rgba(42,123,155,.03) 0%, transparent 50%);
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: var(--radius-full); }
+
+pre, code { white-space: pre-wrap; word-break: break-word; overflow-x: hidden; }
+.translation-code::-webkit-scrollbar, pre::-webkit-scrollbar { display: none; }
+
+/* NAV */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--nav-height);
+  background: rgba(250,247,242,.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border-light);
+  z-index: 100;
+}
+.progress-bar {
+  position: absolute; top: 0; left: 0; height: 3px;
+  background: var(--color-accent); width: 0%;
+  transition: width 200ms ease;
+}
+.nav-inner {
+  max-width: var(--content-width-wide);
+  margin: 0 auto; padding: 0 var(--space-6);
+  height: 100%; display: flex; align-items: center;
+  justify-content: space-between;
+}
+.nav-title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--text-lg); color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+.nav-dots { display: flex; gap: var(--space-2); align-items: center; }
+.nav-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid var(--color-text-muted);
+  background: transparent; cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out);
+  position: relative;
+}
+.nav-dot:hover { border-color: var(--color-accent); transform: scale(1.2); }
+.nav-dot.visited { background: var(--color-accent); border-color: var(--color-accent); }
+.nav-dot.current {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(42,123,155,.2);
+  transform: scale(1.3);
+}
+.nav-dot-tooltip {
+  position: absolute; bottom: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-text); color: white;
+  padding: 4px 10px; border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: var(--text-xs);
+  white-space: nowrap; pointer-events: none; opacity: 0;
+  transition: opacity var(--duration-fast);
+}
+.nav-dot:hover .nav-dot-tooltip { opacity: 1; }
+
+/* MODULE LAYOUT */
+.module {
+  min-height: 100dvh; min-height: 100vh;
+  scroll-snap-align: start;
+  padding: var(--space-16) var(--space-6);
+  padding-top: calc(var(--nav-height) + var(--space-12));
+}
+.module-content {
+  max-width: var(--content-width); margin: 0 auto;
+}
+.module-content-wide {
+  max-width: var(--content-width-wide); margin: 0 auto;
+}
+.module-header { margin-bottom: var(--space-12); }
+.module-number {
+  display: block;
+  font-family: var(--font-display); font-weight: 800;
+  font-size: var(--text-6xl); color: var(--color-accent);
+  opacity: 0.15; line-height: 1; margin-bottom: var(--space-2);
+  letter-spacing: -0.04em;
+}
+.module-title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--text-4xl); line-height: var(--leading-tight);
+  color: var(--color-text); letter-spacing: -0.02em;
+  margin-bottom: var(--space-3);
+}
+.module-subtitle {
+  font-size: var(--text-lg); color: var(--color-text-secondary);
+  line-height: var(--leading-snug);
+}
+.screen { margin-bottom: var(--space-16); }
+.screen-heading {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: var(--text-2xl); color: var(--color-text);
+  margin-bottom: var(--space-6); letter-spacing: -0.01em;
+}
+.screen p { color: var(--color-text-secondary); margin-bottom: var(--space-4); }
+.screen p strong { color: var(--color-text); }
+
+/* ANIMATE-IN */
+.animate-in {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity var(--duration-slow) var(--ease-out),
+              transform var(--duration-slow) var(--ease-out);
+}
+.animate-in.visible { opacity: 1; transform: translateY(0); }
+.stagger-children > .animate-in {
+  transition-delay: calc(var(--stagger-index, 0) * var(--stagger-delay));
+}
+
+/* CODE TRANSLATION */
+.translation-block {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0; border-radius: var(--radius-md); overflow: visible;
+  box-shadow: var(--shadow-md); margin: var(--space-8) 0;
+  position: relative;
+}
+.translation-code {
+  background: var(--color-bg-code); color: #CDD6F4;
+  padding: var(--space-6); font-family: var(--font-mono);
+  font-size: var(--text-sm); line-height: 1.7;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  overflow-x: hidden; position: relative;
+}
+.translation-code pre, .translation-code code {
+  white-space: pre-wrap; word-break: break-word; overflow-x: hidden;
+}
+.translation-english {
+  background: var(--color-surface-warm); padding: var(--space-6);
+  font-size: var(--text-sm); line-height: 1.7;
+  border-left: 3px solid var(--color-accent);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+.translation-label {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  opacity: 0.5; display: block; margin-bottom: var(--space-3);
+}
+.translation-english .translation-label { color: var(--color-text-muted); }
+.translation-code .translation-label { color: #6C7086; }
+.tl { color: var(--color-text-secondary); margin-bottom: var(--space-3); font-size: var(--text-sm); }
+.tl:last-child { margin-bottom: 0; }
+.code-keyword  { color: #CBA6F7; }
+.code-string   { color: #A6E3A1; }
+.code-function { color: #89B4FA; }
+.code-comment  { color: #6C7086; }
+.code-number   { color: #FAB387; }
+.code-property { color: #F9E2AF; }
+.code-operator { color: #94E2D5; }
+.code-type     { color: #F38BA8; }
+
+/* CALLOUT */
+.callout {
+  display: flex; gap: var(--space-4); padding: var(--space-5);
+  border-radius: var(--radius-md); margin: var(--space-6) 0;
+  border-left: 4px solid;
+}
+.callout-accent { background: var(--color-accent-light); border-color: var(--color-accent); }
+.callout-info   { background: var(--color-info-light);   border-color: var(--color-info); }
+.callout-warning{ background: var(--color-error-light);  border-color: var(--color-error); }
+.callout-icon { font-size: 1.5rem; flex-shrink: 0; }
+.callout-title { font-weight: 600; color: var(--color-text); display: block; margin-bottom: var(--space-1); }
+.callout-content p { color: var(--color-text-secondary); font-size: var(--text-sm); margin: 0; }
+
+/* PATTERN CARDS */
+.pattern-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4); margin: var(--space-8) 0;
+}
+.pattern-card {
+  background: var(--color-surface); border-radius: var(--radius-md);
+  padding: var(--space-6); box-shadow: var(--shadow-sm);
+  transition: transform var(--duration-normal) var(--ease-out), box-shadow var(--duration-normal);
+  border-top: 3px solid transparent;
+}
+.pattern-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.pattern-icon {
+  width: 40px; height: 40px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; margin-bottom: var(--space-3);
+}
+.pattern-title {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: var(--text-base); color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+.pattern-desc { font-size: var(--text-sm); color: var(--color-text-secondary); }
+
+/* FLOW STEPS */
+.flow-steps {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--space-2); margin: var(--space-8) 0;
+}
+.flow-step {
+  background: var(--color-surface); border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-sm); text-align: center;
+  min-width: 120px; flex: 1;
+}
+.flow-step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--color-accent); color: white;
+  font-family: var(--font-display); font-weight: 700;
+  font-size: var(--text-sm);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto var(--space-2);
+}
+.flow-step p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; }
+.flow-arrow { color: var(--color-accent); font-size: 1.5rem; flex-shrink: 0; }
+
+/* QUIZ */
+.quiz-container { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-8); box-shadow: var(--shadow-md); margin: var(--space-8) 0; }
+.quiz-label { font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-accent); margin-bottom: var(--space-6); display: block; }
+.quiz-question-block { margin-bottom: var(--space-8); }
+.quiz-question { font-family: var(--font-display); font-weight: 600; font-size: var(--text-lg); color: var(--color-text); margin-bottom: var(--space-4); line-height: var(--leading-snug); }
+.quiz-options { display: flex; flex-direction: column; gap: var(--space-2); }
+.quiz-option {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-surface-warm); cursor: pointer; width: 100%;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
+  font-family: var(--font-body); font-size: var(--text-sm); text-align: left;
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--color-accent-muted); background: var(--color-accent-light); }
+.quiz-option.selected { border-color: var(--color-accent); background: var(--color-accent-light); }
+.quiz-option.correct  { border-color: var(--color-success); background: var(--color-success-light); }
+.quiz-option.incorrect { border-color: var(--color-error); background: var(--color-error-light); }
+.quiz-option-radio {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--color-border); flex-shrink: 0;
+  transition: all var(--duration-fast);
+}
+.quiz-option.selected .quiz-option-radio { border-color: var(--color-accent); background: var(--color-accent); box-shadow: inset 0 0 0 3px white; }
+.quiz-option.correct  .quiz-option-radio { border-color: var(--color-success); background: var(--color-success); box-shadow: inset 0 0 0 3px white; }
+.quiz-option.incorrect .quiz-option-radio { border-color: var(--color-error); background: var(--color-error); box-shadow: inset 0 0 0 3px white; }
+.quiz-feedback { max-height: 0; overflow: hidden; opacity: 0; transition: max-height var(--duration-normal), opacity var(--duration-normal); font-size: var(--text-sm); border-radius: var(--radius-sm); }
+.quiz-feedback.show { max-height: 200px; opacity: 1; padding: var(--space-3); margin-top: var(--space-2); }
+.quiz-feedback.success { background: var(--color-success-light); color: var(--color-success); }
+.quiz-feedback.error   { background: var(--color-error-light);   color: var(--color-error); }
+.quiz-feedback.warning { background: #FFF9E5; color: #96700B; }
+.quiz-actions { display: flex; gap: var(--space-3); margin-top: var(--space-4); }
+.btn-primary { background: var(--color-accent); color: white; border: none; padding: var(--space-3) var(--space-6); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: var(--text-sm); font-weight: 600; cursor: pointer; transition: background var(--duration-fast); }
+.btn-primary:hover { background: var(--color-accent-hover); }
+.btn-secondary { background: transparent; color: var(--color-text-secondary); border: 2px solid var(--color-border); padding: var(--space-3) var(--space-6); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: var(--text-sm); font-weight: 600; cursor: pointer; transition: all var(--duration-fast); }
+.btn-secondary:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+/* CHAT */
+.chat-window { background: var(--color-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; margin: var(--space-8) 0; }
+.chat-header { background: var(--color-bg-code); padding: var(--space-4) var(--space-6); display: flex; align-items: center; gap: var(--space-3); }
+.chat-header-title { font-family: var(--font-mono); font-size: var(--text-sm); color: #CDD6F4; }
+.chat-dot { width: 12px; height: 12px; border-radius: 50%; }
+.chat-messages { padding: var(--space-6); min-height: 200px; display: flex; flex-direction: column; gap: var(--space-4); }
+.chat-message { display: flex; gap: var(--space-3); align-items: flex-start; animation: fadeSlideUp 0.3s var(--ease-out); }
+.chat-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: var(--text-sm); color: white; flex-shrink: 0; }
+.chat-bubble { background: var(--color-bg); border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md); padding: var(--space-3) var(--space-4); max-width: 80%; }
+.chat-sender { font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600; display: block; margin-bottom: var(--space-1); }
+.chat-bubble p { font-size: var(--text-sm); color: var(--color-text); margin: 0; }
+.chat-typing { display: none; align-items: center; gap: var(--space-3); padding: 0 var(--space-6) var(--space-2); }
+.chat-typing-dots { display: flex; gap: 4px; background: var(--color-bg); padding: var(--space-3); border-radius: var(--radius-md); }
+.typing-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-text-muted); animation: typingBounce 1.4s infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+.chat-controls { padding: var(--space-4) var(--space-6); border-top: 1px solid var(--color-border-light); display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.chat-progress { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); margin-left: auto; }
+
+/* FLOW ANIMATION */
+.flow-animation { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-8); box-shadow: var(--shadow-md); margin: var(--space-8) 0; }
+.flow-actors { display: flex; justify-content: space-around; align-items: center; margin-bottom: var(--space-8); flex-wrap: wrap; gap: var(--space-4); }
+.flow-actor { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); transition: all var(--duration-normal) var(--ease-out); }
+.flow-actor-icon {
+  width: 60px; height: 60px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 800; font-size: var(--text-xl);
+  color: white; transition: all var(--duration-normal) var(--ease-out);
+}
+.flow-actor span { font-size: var(--text-sm); color: var(--color-text-secondary); font-weight: 500; text-align: center; }
+.flow-actor.active .flow-actor-icon { box-shadow: 0 0 0 4px var(--color-accent), 0 0 20px rgba(42,123,155,.25); transform: scale(1.1); }
+.flow-track { position: relative; height: 40px; margin-bottom: var(--space-6); background: var(--color-bg); border-radius: var(--radius-full); overflow: hidden; }
+.flow-packet {
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  background: var(--color-accent); color: white;
+  padding: 4px 12px; border-radius: var(--radius-full);
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  white-space: nowrap; transition: left 0.6s var(--ease-out);
+  pointer-events: none;
+}
+.flow-step-label { text-align: center; font-size: var(--text-sm); color: var(--color-text-secondary); min-height: 2.5em; padding: 0 var(--space-4); margin-bottom: var(--space-4); }
+.flow-controls { display: flex; align-items: center; justify-content: center; gap: var(--space-3); flex-wrap: wrap; }
+.flow-progress { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-muted); }
+
+/* FILE TREE */
+.file-tree { background: var(--color-bg-code); border-radius: var(--radius-md); padding: var(--space-6); margin: var(--space-8) 0; font-family: var(--font-mono); font-size: var(--text-sm); }
+.tree-item { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-1) 0; color: #CDD6F4; }
+.tree-item.dir { color: #89B4FA; }
+.tree-item.highlight { color: #A6E3A1; }
+.tree-indent { padding-left: var(--space-6); }
+.tree-badge { font-size: var(--text-xs); background: rgba(255,255,255,.1); padding: 2px 8px; border-radius: var(--radius-full); color: #CBA6F7; margin-left: auto; white-space: nowrap; }
+
+/* ARCH DIAGRAM */
+.arch-diagram { background: var(--color-surface); border-radius: var(--radius-lg); padding: var(--space-8); box-shadow: var(--shadow-md); margin: var(--space-8) 0; }
+.arch-layers { display: flex; flex-direction: column; gap: var(--space-4); }
+.arch-layer { border-radius: var(--radius-md); padding: var(--space-5); }
+.arch-layer-label { font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-muted); margin-bottom: var(--space-3); }
+.arch-boxes { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.arch-box {
+  padding: var(--space-3) var(--space-5); border-radius: var(--radius-sm);
+  font-size: var(--text-sm); font-weight: 600; cursor: pointer;
+  transition: transform var(--duration-fast), box-shadow var(--duration-fast);
+  border: 2px solid transparent;
+}
+.arch-box:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.arch-description { margin-top: var(--space-6); padding: var(--space-4); background: var(--color-bg); border-radius: var(--radius-sm); font-size: var(--text-sm); color: var(--color-text-secondary); min-height: 48px; border-left: 3px solid var(--color-accent); }
+
+/* SCENARIO */
+.scenario-block { background: var(--color-bg); border-radius: var(--radius-sm); padding: var(--space-4); margin-bottom: var(--space-4); border-left: 3px solid var(--color-accent-muted); }
+.scenario-label { font-family: var(--font-mono); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-accent); display: block; margin-bottom: var(--space-2); }
+.scenario-block p { font-size: var(--text-sm); color: var(--color-text); font-style: italic; margin: 0; }
+
+/* HERO */
+.hero-banner {
+  background: var(--color-bg-code); border-radius: var(--radius-lg);
+  padding: var(--space-12) var(--space-8); text-align: center;
+  margin: var(--space-8) 0; position: relative; overflow: hidden;
+}
+.hero-banner::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 30% 50%, rgba(42,123,155,.2), transparent 60%),
+              radial-gradient(ellipse at 70% 50%, rgba(123,109,170,.15), transparent 60%);
+}
+.hero-banner-content { position: relative; z-index: 1; }
+.hero-banner h2 { font-family: var(--font-display); font-weight: 800; font-size: var(--text-4xl); color: #CDD6F4; margin-bottom: var(--space-4); letter-spacing: -0.02em; }
+.hero-banner p  { font-size: var(--text-lg); color: #6C7086; max-width: 560px; margin: 0 auto; }
+.hero-badges { display: flex; gap: var(--space-3); justify-content: center; flex-wrap: wrap; margin-top: var(--space-6); }
+.hero-badge {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  border: 1px solid rgba(255,255,255,.15); color: #CDD6F4;
+  background: rgba(255,255,255,.05);
+}
+
+/* GLOSSARY TOOLTIP */
+.glossary-term { border-bottom: 2px dashed var(--color-accent-muted); cursor: pointer; }
+.glossary-tooltip {
+  position: fixed; z-index: 9999; pointer-events: none;
+  background: var(--color-text); color: white;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm); max-width: 280px;
+  font-family: var(--font-body); font-size: var(--text-sm);
+  line-height: var(--leading-normal); opacity: 0;
+  transition: opacity var(--duration-fast);
+  box-shadow: var(--shadow-xl);
+}
+.glossary-tooltip.visible { opacity: 1; }
+
+/* ANIMATIONS */
+@keyframes fadeSlideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes typingBounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+@keyframes packetMove { from { left: 0; } to { left: calc(100% - 60px); } }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  :root { --text-4xl: 1.875rem; --text-5xl: 2.25rem; --text-6xl: 3rem; }
+  .translation-block { grid-template-columns: 1fr; }
+  .translation-english { border-left: none; border-top: 3px solid var(--color-accent); border-radius: 0 0 var(--radius-md) var(--radius-md); }
+  .translation-code { border-radius: var(--radius-md) var(--radius-md) 0 0; }
+  .pattern-cards { grid-template-columns: 1fr 1fr; }
+  .flow-steps { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+@media (max-width: 480px) {
+  :root { --text-4xl: 1.5rem; }
+  .module { padding: var(--space-8) var(--space-4); padding-top: calc(var(--nav-height) + var(--space-8)); }
+  .pattern-cards { grid-template-columns: 1fr; }
+}
+
+/* ===== WEBSOCKET SIMULATOR ===== */
+.ws-simulator {
+  background: #1E1E2E;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  border: 1px solid rgba(255,255,255,0.08);
+  margin: var(--space-4) 0;
+}
+.ws-simulator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.ws-status { display: flex; align-items: center; gap: var(--space-2); color: #cdd6f4; font-size: 0.82rem; }
+.ws-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #f38ba8;
+  transition: background 0.3s;
+}
+.ws-status-dot.connected { background: #a6e3a1; }
+.ws-simulator-actions { display: flex; gap: var(--space-2); }
+.ws-subscribe-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-wrap: wrap;
+}
+.ws-input {
+  flex: 1;
+  min-width: 160px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: var(--radius-sm);
+  color: #cdd6f4;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  outline: none;
+}
+.ws-input:focus { border-color: var(--color-accent); }
+.ws-log {
+  min-height: 160px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ws-log-line { color: #cdd6f4; }
+.ws-log-line.success { color: #a6e3a1; }
+.ws-log-line.warn { color: #f9e2af; }
+.ws-log-line.error { color: #f38ba8; }
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav class="nav" id="nav">
+  <div class="progress-bar" id="progress-bar"></div>
+  <div class="nav-inner">
+    <span class="nav-title">NebularCore</span>
+    <div class="nav-dots" role="tablist">
+      <button class="nav-dot" data-target="module-1" data-tooltip="What Is NebularCore?" aria-label="Module 1"></button>
+      <button class="nav-dot" data-target="module-2" data-tooltip="Meet the Cast" aria-label="Module 2"></button>
+      <button class="nav-dot" data-target="module-3" data-tooltip="The Module System" aria-label="Module 3"></button>
+      <button class="nav-dot" data-target="module-4" data-tooltip="Auth &amp; Security" aria-label="Module 4"></button>
+      <button class="nav-dot" data-target="module-5" data-tooltip="Events &amp; Migrations" aria-label="Module 5"></button>
+      <button class="nav-dot" data-target="module-6" data-tooltip="The Big Picture" aria-label="Module 6"></button>
+      <button class="nav-dot" data-target="module-7" data-tooltip="Real-Time WebSockets" aria-label="Module 7"></button>
+    </div>
+  </div>
+</nav>
+
+<!-- TOOLTIP (fixed, appended by JS) -->
+<div class="glossary-tooltip" id="glossary-tooltip" role="tooltip"></div>
+
+<!-- MODULE 1 -->
+<section class="module" id="module-1" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">What is NebularCore?</h1>
+      <p class="module-subtitle">You built an app with AI. Let's see what's actually running underneath.</p>
+    </header>
+
+    <div class="module-body">
+      <!-- Screen 1: Hero -->
+      <section class="screen animate-in">
+        <div class="hero-banner">
+          <div class="hero-banner-content">
+            <h2>Backend in a Box</h2>
+            <p>NebularCore is a ready-made backend framework — a toolkit that gives your app user login, database storage, file uploads, and more, without building those from scratch.</p>
+            <div class="hero-badges">
+              <span class="hero-badge">Go 1.24+</span>
+              <span class="hero-badge">Gin Router</span>
+              <span class="hero-badge">GORM + PostgreSQL</span>
+              <span class="hero-badge">JWT Auth</span>
+              <span class="hero-badge">Event System</span>
+              <span class="hero-badge">Multi-Tenancy</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: The user journey -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Imagine a user logs into your app...</h2>
+        <p>They type their email and password and click <strong>Sign In</strong>. What happens next? Here's the journey that takes about 50 milliseconds:</p>
+        <div class="flow-steps stagger-children">
+          <div class="flow-step animate-in">
+            <div class="flow-step-num">1</div>
+            <p>Browser sends a POST request to <code>/auth/login</code></p>
+          </div>
+          <div class="flow-arrow animate-in">→</div>
+          <div class="flow-step animate-in">
+            <div class="flow-step-num">2</div>
+            <p><span class="glossary-term" data-def="A piece of Go code that handles a specific HTTP route — like a receptionist who takes one kind of request.">Auth Handler</span> validates the request</p>
+          </div>
+          <div class="flow-arrow animate-in">→</div>
+          <div class="flow-step animate-in">
+            <div class="flow-step-num">3</div>
+            <p>Password is checked against the database</p>
+          </div>
+          <div class="flow-arrow animate-in">→</div>
+          <div class="flow-step animate-in">
+            <div class="flow-step-num">4</div>
+            <p>A <span class="glossary-term" data-def="JSON Web Token — a signed string that proves who you are, like a digitally-stamped wristband at a venue. Your app sends it with every request.">JWT token</span> is issued and returned</p>
+          </div>
+        </div>
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why this matters for you</strong>
+            <p>When you tell AI "add social login" or "require authentication for this route," you need to know WHERE in this chain to make changes — and NebularCore makes each step a distinct, swappable piece.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: What it's built on -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The toolkit under the hood</h2>
+        <p>NebularCore is itself built from well-known open-source <span class="glossary-term" data-def="A library is pre-written code you can import and use — like buying pre-made cogs for your machine instead of carving them yourself.">libraries</span>. Think of it as a curated stack of lego pieces, snapped together into a coherent shape.</p>
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-1)">
+            <div class="pattern-icon" style="background:rgba(42,123,155,.1); color:var(--color-actor-1)">🌐</div>
+            <div class="pattern-title">Gin</div>
+            <p class="pattern-desc">The <span class="glossary-term" data-def="An HTTP router decides which code runs when someone visits a URL — like a switchboard operator routing calls.">HTTP router</span>. Every request your app receives passes through Gin first.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-2)">
+            <div class="pattern-icon" style="background:rgba(217,79,48,.1); color:var(--color-actor-2)">🗄️</div>
+            <div class="pattern-title">GORM</div>
+            <p class="pattern-desc">The <span class="glossary-term" data-def="An ORM (Object-Relational Mapper) lets you talk to a database using your programming language instead of raw SQL queries.">ORM</span>. Translates Go code into database operations so you can say 'save this user' instead of writing SQL.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-3)">
+            <div class="pattern-icon" style="background:rgba(123,109,170,.1); color:var(--color-actor-3)">📨</div>
+            <div class="pattern-title">Watermill</div>
+            <p class="pattern-desc">The <span class="glossary-term" data-def="An event bus lets parts of your app send messages to each other without being directly connected — like a company announcement board.">event bus</span>. Lets modules talk to each other without being tangled together.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-4)">
+            <div class="pattern-icon" style="background:rgba(212,168,67,.1); color:var(--color-actor-4)">🔒</div>
+            <div class="pattern-title">Casbin</div>
+            <p class="pattern-desc">The <span class="glossary-term" data-def="Authorization controls who can do what — 'can this user delete this record?' Auth-entication just checks who you are.">authorization</span> engine. Defines rules like "admins can delete, editors can only edit."</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-5)">
+            <div class="pattern-icon" style="background:rgba(45,139,85,.1); color:var(--color-actor-5)">🐍</div>
+            <div class="pattern-title">Cobra</div>
+            <p class="pattern-desc">The <span class="glossary-term" data-def="A CLI (Command-Line Interface) lets you control software by typing commands in a terminal — like 'serve' or 'migrate up'.">CLI</span> framework. Gives you commands like <code>nebularcore serve</code> and <code>nebularcore migrate up</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: The real code — entry point -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Your first 10 lines of NebularCore</h2>
+        <p>Here's what an app that uses NebularCore actually looks like at startup. This is from the <code>examples/main.go</code> file — the front door of the system.</p>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — examples/main.go</span>
+            <pre><code><span class="code-keyword">func</span> <span class="code-function">main</span>() {
+  app := <span class="code-function">nebularcore.New</span>(core.Options[ExampleSettings]{
+    ConfigPath: <span class="code-string">"./config.yml"</span>,
+    EnvPrefix:  <span class="code-string">"NEBULAR"</span>,
+  })
+
+  eventBus, _ := <span class="code-function">event.New</span>()
+  app.<span class="code-function">RegisterModule</span>(eventBus)
+
+  authModule := <span class="code-function">auth.New</span>(eventBus)
+  app.<span class="code-function">RegisterModule</span>(authModule)
+
+  app.<span class="code-function">Bootstrap</span>(context.<span class="code-function">Background</span>())
+  app.<span class="code-function">Start</span>(ctx)
+}</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl"><strong>Create the app</strong> — read the config file and set up everything from it.</p>
+              <p class="tl"><strong>ConfigPath</strong> — the YAML file with database credentials, server port, etc.</p>
+              <p class="tl"><strong>EnvPrefix</strong> — environment variables starting with NEBULAR_ can override config values.</p>
+              <p class="tl"><strong>Create the event bus</strong> — a messaging channel all modules can share.</p>
+              <p class="tl"><strong>RegisterModule</strong> — plug the event system into the app (like installing a plugin).</p>
+              <p class="tl"><strong>Create auth module</strong> — it needs the event bus so it can announce "user logged in."</p>
+              <p class="tl"><strong>Bootstrap</strong> — run all the setup code: connect to database, initialize each module in the right order.</p>
+              <p class="tl"><strong>Start</strong> — begin listening for HTTP requests. The app is now live.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+        <div class="quiz-container" id="quiz-m1">
+          <span class="quiz-label">Module 1 Quiz</span>
+
+          <div class="quiz-question-block" data-correct="b" id="m1q1">
+            <p class="quiz-question">You want to add a Stripe payments module to NebularCore. Based on what you've learned, what would you do first?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Edit the main NebularCore framework source code</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Create a new module that implements the Module interface, then RegisterModule() it in main.go</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Add Stripe logic directly into the auth handler since payments relate to users</span></button>
+            </div>
+            <div class="quiz-feedback" id="m1q1-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block" data-correct="c" id="m1q2">
+            <p class="quiz-question">A user reports they can't log in after you deployed. Looking at the flow from this module, where would you check first?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The Gin HTTP router — maybe it's not routing to /auth/login</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The Watermill event bus — events might not be firing</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The auth handler and database connection — that's where password checking and JWT issuance happen</span></button>
+            </div>
+            <div class="quiz-feedback" id="m1q2-feedback"></div>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn-primary" onclick="checkQuiz('quiz-m1', {m1q1:{b:'Exactly! NebularCore is designed around the concept of pluggable modules. Each feature is its own isolated piece you register — not hardcoded into the framework.',a:'Editing the framework itself would mean your changes get overwritten when you update NebularCore. The module system exists precisely so you don\'t need to do this.',c:'Mixing payments into the auth handler breaks a key principle: each module should have one job. NebularCore\'s architecture is designed to prevent this tangle.'},m1q2:{c:'Right — the login flow goes: request → auth handler → password check → JWT issue. Those are the steps most likely to fail.',a:'The router could be a cause, but it\'s less likely than the actual auth logic — start with the handler that processes the request.',b:'The event bus fires after login succeeds. If they can\'t log in at all, the problem is earlier in the chain.'}})">Check Answers</button>
+            <button class="btn-secondary" onclick="resetQuiz('quiz-m1')">Try Again</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 2 -->
+<section class="module" id="module-2" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">Meet the Cast</h1>
+      <p class="module-subtitle">Every NebularCore app has the same core characters. Know their roles and you can steer AI with precision.</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: The cast overview -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Six components, one backstage crew</h2>
+        <p>Think of a film studio: there's the director (the App), the different departments (Modules), the shared communications system (the Event Bus), the archive room (the Database), the front-of-house (the Router), and the security team (Auth). Each has one job. None steps on the others' toes.</p>
+        <div class="arch-diagram animate-in">
+          <div class="arch-layers">
+            <div class="arch-layer" style="background: rgba(42,123,155,.06); border: 1px solid rgba(42,123,155,.15)">
+              <div class="arch-layer-label">Your App's Entry Point</div>
+              <div class="arch-boxes">
+                <div class="arch-box" style="background: var(--color-actor-1); color:white" onclick="showDesc(this)" data-desc="NebularCore[T] — the outermost wrapper. It reads your config, wires up the CLI commands (serve, migrate), and holds everything together. You create exactly one of these in main.go.">
+                  NebularCore[T]
+                </div>
+                <div class="arch-box" style="background: rgba(42,123,155,.1); color:var(--color-actor-1); border-color:var(--color-actor-1)" onclick="showDesc(this)" data-desc="The App interface — the internal core that NebularCore wraps. It owns the database connection, the HTTP router, and the module registry. Every module gets access to it during initialization.">
+                  core.App[T]
+                </div>
+              </div>
+            </div>
+            <div class="arch-layer" style="background: rgba(212,168,67,.06); border: 1px solid rgba(212,168,67,.2)">
+              <div class="arch-layer-label">Module Layer (plug-in features)</div>
+              <div class="arch-boxes">
+                <div class="arch-box" style="background:rgba(217,79,48,.1);color:var(--color-actor-2);border-color:var(--color-actor-2)" onclick="showDesc(this)" data-desc="The Auth Module handles everything identity-related: login, logout, JWT tokens, password hashing, Google OAuth, OTP. It registers its own HTTP routes under /auth and fires events when users log in or out.">Auth</div>
+                <div class="arch-box" style="background:rgba(123,109,170,.1);color:var(--color-actor-3);border-color:var(--color-actor-3)" onclick="showDesc(this)" data-desc="The Event Module is the shared message board. When Auth says 'user logged in', it publishes an event. Other modules subscribe and react — without auth needing to know anything about them.">Event</div>
+                <div class="arch-box" style="background:rgba(45,139,85,.1);color:var(--color-actor-5);border-color:var(--color-actor-5)" onclick="showDesc(this)" data-desc="The Health Module exposes a /health endpoint that checks if the database is reachable, how long the server has been up, and other system vitals. Cloud platforms like Kubernetes use this to know if your app is alive.">Health</div>
+                <div class="arch-box" style="background:rgba(212,168,67,.1);color:var(--color-actor-4);border-color:var(--color-actor-4)" onclick="showDesc(this)" data-desc="The Storage Module abstracts file storage — it doesn't matter if files go to local disk, AWS S3, or Google Cloud Storage. Your code calls the same methods either way. Swap providers in config, not code.">Storage</div>
+                <div class="arch-box" style="background:rgba(42,123,155,.1);color:var(--color-actor-1);border-color:var(--color-actor-1)" onclick="showDesc(this)" data-desc="The Tenant Module enables multi-tenancy — running one app for many isolated customers. Each tenant gets their own database schema. A middleware reads the X-Tenant-ID header from every request and scopes all database queries automatically.">Tenant</div>
+              </div>
+            </div>
+            <div class="arch-layer" style="background: rgba(44,42,40,.03); border: 1px solid var(--color-border)">
+              <div class="arch-layer-label">Infrastructure Layer</div>
+              <div class="arch-boxes">
+                <div class="arch-box" style="background:var(--color-surface);color:var(--color-text);border-color:var(--color-border)" onclick="showDesc(this)" data-desc="Gin is the HTTP router — it maps incoming URLs to handler functions. Every HTTP request your app receives flows through Gin first. NebularCore lets each module register its own routes on the shared Gin engine.">Gin Router</div>
+                <div class="arch-box" style="background:var(--color-surface);color:var(--color-text);border-color:var(--color-border)" onclick="showDesc(this)" data-desc="GORM is the ORM — it talks to PostgreSQL or SQLite on your behalf. You describe data as Go structs; GORM translates operations like 'find user by email' into SQL SELECT queries automatically.">GORM + DB</div>
+                <div class="arch-box" style="background:var(--color-surface);color:var(--color-text);border-color:var(--color-border)" onclick="showDesc(this)" data-desc="The Module Registry tracks every registered module, resolves their dependencies, and determines the correct initialization order. If Auth depends on Event, the Registry ensures Event initializes first.">Module Registry</div>
+              </div>
+            </div>
+          </div>
+          <div class="arch-description" id="arch-desc">Click any component above to learn exactly what it does.</div>
+        </div>
+      </section>
+
+      <!-- Screen 2: File tree -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Where each character lives in the code</h2>
+        <p>Every module is a <span class="glossary-term" data-def="A package in Go is a folder of related .go files that work together. You import a package to use its code — like importing a toolbox.">Go package</span> in its own folder under <code>modules/</code>. The core framework lives in <code>core/</code>. Here's the map:</p>
+        <div class="file-tree animate-in">
+          <div class="tree-item dir">📁 nebularcore/</div>
+          <div class="tree-indent">
+            <div class="tree-item highlight">📄 nebularcore.go <span class="tree-badge">Entry point — NebularCore[T] wrapper</span></div>
+            <div class="tree-item dir">📁 core/</div>
+            <div class="tree-indent">
+              <div class="tree-item highlight">📄 app.go <span class="tree-badge">App interface definition</span></div>
+              <div class="tree-item highlight">📄 base.go <span class="tree-badge">Bootstrap, Shutdown, DB init</span></div>
+              <div class="tree-item dir">📁 module/ <span class="tree-badge">Registry + Module interface</span></div>
+              <div class="tree-item dir">📁 config/ <span class="tree-badge">YAML loader + validation</span></div>
+              <div class="tree-item dir">📁 migration_runner/ <span class="tree-badge">DB migration engine</span></div>
+            </div>
+            <div class="tree-item dir">📁 modules/</div>
+            <div class="tree-indent">
+              <div class="tree-item highlight">📁 auth/ <span class="tree-badge">Login, JWT, OAuth, passwords</span></div>
+              <div class="tree-item highlight">📁 event/ <span class="tree-badge">Pub/sub event bus</span></div>
+              <div class="tree-item">📁 health/ <span class="tree-badge">Health check endpoint</span></div>
+              <div class="tree-item">📁 storage/ <span class="tree-badge">File uploads (S3/GCS/local)</span></div>
+              <div class="tree-item">📁 tenant/ <span class="tree-badge">Multi-tenant schema isolation</span></div>
+            </div>
+            <div class="tree-item dir">📁 cmd/ <span class="tree-badge">CLI commands: serve, migrate</span></div>
+            <div class="tree-item dir">📁 examples/ <span class="tree-badge">Working example app</span></div>
+          </div>
+        </div>
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">🗺️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Vocabulary for steering AI</strong>
+            <p>When you tell your AI agent "put the registration logic in the auth module," you're speaking the exact language of the codebase. NebularCore's module structure makes your instructions unambiguous — the code is where you say it should be.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Group Chat — modules talking -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">How modules talk to each other</h2>
+        <p>Modules don't call each other directly — that would tangle them together. Instead, they <strong>publish events</strong> and <strong>subscribe to events</strong>, like leaving notes on a company message board. Watch:</p>
+        <div class="chat-window animate-in">
+          <div class="chat-header">
+            <div class="chat-dot" style="background:#F38BA8"></div>
+            <div class="chat-dot" style="background:#F9E2AF"></div>
+            <div class="chat-dot" style="background:#A6E3A1"></div>
+            <span class="chat-header-title">#nebularcore-internals</span>
+          </div>
+          <div class="chat-messages" id="m2-chat-messages">
+            <div class="chat-message" data-msg="0" data-sender="actor-a" style="display:none">
+              <div class="chat-avatar" style="background:var(--color-actor-2)">AU</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color:var(--color-actor-2)">Auth Module</span>
+                <p>🎉 User jide@example.com just logged in successfully!</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="1" data-sender="actor-b" style="display:none">
+              <div class="chat-avatar" style="background:var(--color-actor-3)">EV</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color:var(--color-actor-3)">Event Bus</span>
+                <p>Got it. Publishing event type: <code>user.logged_in</code> to all subscribers...</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="2" data-sender="actor-c" style="display:none">
+              <div class="chat-avatar" style="background:var(--color-actor-5)">AN</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color:var(--color-actor-5)">Your Analytics Module</span>
+                <p>I heard that! Logging login event to the analytics database... ✓</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="3" data-sender="actor-d" style="display:none">
+              <div class="chat-avatar" style="background:var(--color-actor-4)">WL</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color:var(--color-actor-4)">Your Welcome Email Module</span>
+                <p>First login? Sending welcome email to jide@example.com! 📧</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="4" data-sender="actor-a" style="display:none">
+              <div class="chat-avatar" style="background:var(--color-actor-2)">AU</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color:var(--color-actor-2)">Auth Module</span>
+                <p>I didn't even know you two existed. And that's the point.</p>
+              </div>
+            </div>
+          </div>
+          <div class="chat-typing" id="m2-chat-typing">
+            <div class="chat-avatar" id="m2-typing-avatar" style="background:var(--color-text-muted)">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+            </div>
+          </div>
+          <div class="chat-controls">
+            <button class="btn-primary" onclick="chatNext('m2')">Next Message</button>
+            <button class="btn-secondary" onclick="chatAll('m2', 1200)">Play All</button>
+            <button class="btn-secondary" onclick="chatReset('m2')">Replay</button>
+            <span class="chat-progress" id="m2-chat-progress">0 / 5 messages</span>
+          </div>
+        </div>
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Decoupling — the big idea</strong>
+            <p>The Auth module doesn't import or call the Analytics module. They're completely independent. This is called "loose coupling" — and it's why you can add, remove, or replace modules without breaking everything else.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+        <div class="quiz-container" id="quiz-m2">
+          <span class="quiz-label">Module 2 Quiz</span>
+
+          <div class="quiz-question-block" data-correct="b" id="m2q1">
+            <div class="scenario-block">
+              <span class="scenario-label">Scenario</span>
+              <p>You want to send a Slack notification every time a user registers. The registration logic lives in the Auth module.</p>
+            </div>
+            <p class="quiz-question">Where should the Slack notification code live?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Inside the Auth module, right after the user is saved to the database</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>In a new Slack module that subscribes to the user.registered event</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>In main.go, which can import both auth and the Slack SDK</span></button>
+            </div>
+            <div class="quiz-feedback" id="m2q1-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block" data-correct="a" id="m2q2">
+            <p class="quiz-question">The Module Registry resolves dependencies before initialization. Why does this matter?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>If Auth requires Event, Event must initialize first — otherwise Auth would try to publish to an event bus that doesn't exist yet</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>It prevents two modules from having the same name</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>It speeds up startup by initializing modules in parallel</span></button>
+            </div>
+            <div class="quiz-feedback" id="m2q2-feedback"></div>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn-primary" onclick="checkQuiz('quiz-m2', {m2q1:{b:'Exactly! A separate Slack module subscribes to user.registered — Auth fires the event and forgets. The modules stay completely independent of each other.',a:'This would mean every time you want a new reaction to registration (email, webhook, analytics), you\'d have to edit the Auth module. It becomes a dumping ground.',c:'Putting cross-cutting concerns in main.go makes it messy fast. The event system exists to handle this pattern cleanly.'},m2q2:{a:'Right — the Registry does a topological sort of dependencies. Auth lists Event as a dependency, so Event initializes first. Classic startup ordering problem solved automatically.',b:'The Registry does prevent duplicate names too, but that\'s a side effect. The main reason is initialization ordering.',c:'The Registry initializes in dependency order, which means sequentially — not in parallel. Parallel init would cause race conditions.'}})">Check Answers</button>
+            <button class="btn-secondary" onclick="resetQuiz('quiz-m2')">Try Again</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 3 -->
+<section class="module" id="module-3" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">The Module System</h1>
+      <p class="module-subtitle">How NebularCore turns a chaotic pile of features into an orderly, dependency-aware system.</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: The contract -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Every module signs a contract</h2>
+        <p>Think of NebularCore as a professional kitchen. To work there, every chef must follow the same protocol: show up, prep your station, cook when asked, clean up when done. In code, this protocol is called an <span class="glossary-term" data-def="An interface in Go defines a set of methods that a type must implement — it's a contract. If your struct has all the required methods, it satisfies the interface.">interface</span>.</p>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — core/module/module.go</span>
+            <pre><code><span class="code-keyword">type</span> <span class="code-type">Module</span> <span class="code-keyword">interface</span> {
+  <span class="code-function">Name</span>()    <span class="code-type">string</span>
+  <span class="code-function">Version</span>() <span class="code-type">string</span>
+  <span class="code-function">Dependencies</span>() []<span class="code-type">string</span>
+  <span class="code-function">Namespace</span>() <span class="code-type">ModuleNamespace</span>
+
+  <span class="code-function">Initialize</span>(ctx <span class="code-type">context.Context</span>,
+    db *<span class="code-type">gorm.DB</span>,
+    router *<span class="code-type">gin.Engine</span>) <span class="code-type">error</span>
+  <span class="code-function">NewConfig</span>() <span class="code-keyword">any</span>
+  <span class="code-function">Configure</span>(config <span class="code-keyword">any</span>) <span class="code-type">error</span>
+  <span class="code-function">Shutdown</span>(ctx <span class="code-type">context.Context</span>) <span class="code-type">error</span>
+
+  <span class="code-function">ProvidesMigrations</span>() <span class="code-type">bool</span>
+  <span class="code-function">GetMigrationSources</span>(...) []<span class="code-type">Source</span>
+}</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl"><strong>Name()</strong> — What are you called? (e.g. "auth", "storage")</p>
+              <p class="tl"><strong>Version()</strong> — Which version are you? Useful for debugging.</p>
+              <p class="tl"><strong>Dependencies()</strong> — Who do you need to be initialized before you? Return a list of module names.</p>
+              <p class="tl"><strong>Namespace()</strong> — Do you operate in the shared public schema, or in each tenant's private schema?</p>
+              <p class="tl"><strong>Initialize()</strong> — Run your setup code here. You get the database, the HTTP router, and a context. Register your routes, set up your tables.</p>
+              <p class="tl"><strong>NewConfig() / Configure()</strong> — Describe what config values you need; the framework will load them from the YAML file and hand them to you.</p>
+              <p class="tl"><strong>Shutdown()</strong> — Clean up when the server stops: close connections, flush buffers, say goodbye.</p>
+              <p class="tl"><strong>ProvidesMigrations()</strong> — Do you have SQL files that need to run to set up your database tables? Tell the framework here.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Data flow animation — bootstrap sequence -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Watch the bootstrap sequence</h2>
+        <p>When <code>app.Bootstrap()</code> is called, NebularCore initializes every registered module in the correct order. Step through it:</p>
+        <div class="flow-animation animate-in" id="m3-flow">
+          <div class="flow-actors">
+            <div class="flow-actor" id="m3-actor-app">
+              <div class="flow-actor-icon" style="background:var(--color-actor-1)">NC</div>
+              <span>NebularCore</span>
+            </div>
+            <div class="flow-actor" id="m3-actor-reg">
+              <div class="flow-actor-icon" style="background:var(--color-actor-3)">RE</div>
+              <span>Registry</span>
+            </div>
+            <div class="flow-actor" id="m3-actor-cfg">
+              <div class="flow-actor-icon" style="background:var(--color-actor-4)">CF</div>
+              <span>Config Loader</span>
+            </div>
+            <div class="flow-actor" id="m3-actor-mod">
+              <div class="flow-actor-icon" style="background:var(--color-actor-2)">AU</div>
+              <span>Auth Module</span>
+            </div>
+          </div>
+          <div class="flow-step-label" id="m3-flow-label">Click "Next Step" to watch bootstrap happen</div>
+          <div class="flow-controls">
+            <button class="btn-primary" onclick="flowNext('m3')">Next Step →</button>
+            <button class="btn-secondary" onclick="flowReset('m3')">Restart</button>
+            <span class="flow-progress" id="m3-flow-progress">Step 0 / 5</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Public vs Tenant namespace -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Public vs Tenant namespace</h2>
+        <p>This is the concept that makes multi-tenancy work. Imagine a shared office building with locked private suites. The <span class="glossary-term" data-def="In PostgreSQL, a schema is a named container inside a database. Think of the database as a filing cabinet and schemas as separate drawers inside it.">database schema</span> is like office space — there's the shared lobby (public schema) and private offices for each tenant.</p>
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-1)">
+            <div class="pattern-icon" style="background:rgba(42,123,155,.1)">🌐</div>
+            <div class="pattern-title">PublicNamespace</div>
+            <p class="pattern-desc">Modules like <strong>auth</strong>, <strong>health</strong>, and <strong>storage</strong> operate here. Their database tables live in the shared <code>public</code> schema. A user account is shared across all tenants.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-4)">
+            <div class="pattern-icon" style="background:rgba(212,168,67,.1)">🏢</div>
+            <div class="pattern-title">TenantNamespace</div>
+            <p class="pattern-desc">Modules in TenantNamespace get their tables in <em>each</em> tenant's private schema. A record created by Tenant A is completely invisible to Tenant B — guaranteed by the database.</p>
+          </div>
+        </div>
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">When to use this in practice</strong>
+            <p>If you're building a SaaS where each customer's data must be isolated (like their own CRM records), tell your AI agent: "This module should use TenantNamespace so each customer's data is schema-isolated." That's the exact vocabulary NebularCore uses.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+        <div class="quiz-container" id="quiz-m3">
+          <span class="quiz-label">Module 3 Quiz</span>
+
+          <div class="quiz-question-block" data-correct="c" id="m3q1">
+            <div class="scenario-block">
+              <span class="scenario-label">Scenario</span>
+              <p>You're adding a CRM module for a multi-tenant SaaS. Each customer should only see their own contacts, leads, and deals.</p>
+            </div>
+            <p class="quiz-question">Which namespace should your CRM module use, and why?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>PublicNamespace — all data lives in one place, then filter by tenant_id column in queries</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>PublicNamespace — simpler and good enough for most apps</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>TenantNamespace — each tenant gets their own schema, so isolation is enforced at the database level, not just in code</span></button>
+            </div>
+            <div class="quiz-feedback" id="m3q1-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block" data-correct="b" id="m3q2">
+            <p class="quiz-question">Your new Payments module needs access to the Auth module's user records. How should you declare this in NebularCore?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Import the auth package directly and call its internal functions</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Return ["auth"] from the Payments module's Dependencies() method</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The Registry handles this automatically — no declaration needed</span></button>
+            </div>
+            <div class="quiz-feedback" id="m3q2-feedback"></div>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn-primary" onclick="checkQuiz('quiz-m3', {m3q1:{c:'Correct! Schema-level isolation is much stronger than column-based filtering. A bug in a query can accidentally expose data with option A. With TenantNamespace, the database itself enforces the boundary.',a:'This works but is fragile — you rely on every query remembering to add AND tenant_id = ?. One forgotten filter and a tenant sees another\'s data. Schema isolation eliminates this risk.',b:'PublicNamespace would mix all tenants\' CRM data in the same tables. For a CRM, that\'s a serious data privacy problem.'},m3q2:{b:'Exactly. Dependencies() tells the Registry that Payments needs Auth to be initialized first. The Registry will then ensure correct ordering automatically.',a:'Direct imports would create tight coupling. If Auth changes its internal API, Payments breaks. The dependency declaration keeps them loosely coupled.',c:'The Registry only knows about dependencies if you declare them. Without declaring it, the Registry might initialize Payments before Auth — causing a runtime error.'}})">Check Answers</button>
+            <button class="btn-secondary" onclick="resetQuiz('quiz-m3')">Try Again</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 4 -->
+<section class="module" id="module-4" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">Auth &amp; Security</h1>
+      <p class="module-subtitle">How NebularCore proves who you are, keeps passwords safe, and issues digital VIP passes.</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: The wristband metaphor -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Security like a venue with wristbands</h2>
+        <p>Picture a music festival. At the gate, security checks your ID (<strong>authentication</strong>). If valid, they give you a wristband (<strong>JWT token</strong>). After that, every time you try to enter a stage or backstage, staff check the wristband color — not your ID again (<strong>authorization</strong>). The wristband is self-contained proof.</p>
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-2)">
+            <div class="pattern-icon" style="background:rgba(217,79,48,.1); color:var(--color-actor-2)">🪪</div>
+            <div class="pattern-title">Authentication</div>
+            <p class="pattern-desc">"Who are you?" — checked at login using email+password, Google OAuth, or Apple Sign-In. Handled by the Auth Module's <span class="glossary-term" data-def="A backend in the auth context is a pluggable strategy for verifying identity — local (password), Google OAuth, Apple, etc. Each is swappable.">backend</span> system.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-1)">
+            <div class="pattern-icon" style="background:rgba(42,123,155,.1); color:var(--color-actor-1)">🎟️</div>
+            <div class="pattern-title">JWT Token</div>
+            <p class="pattern-desc">"Here's your wristband." A signed string returned after login. Contains the user's ID and expiry. Your app sends it in every subsequent request inside the <code>Authorization</code> header.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-5)">
+            <div class="pattern-icon" style="background:rgba(45,139,85,.1); color:var(--color-actor-5)">🛡️</div>
+            <div class="pattern-title">Middleware</div>
+            <p class="pattern-desc">"Check the wristband." A <span class="glossary-term" data-def="Middleware is code that runs on every HTTP request before it reaches your handler — like airport security before the gate. It can reject requests or add info to them.">middleware</span> function that intercepts every protected request, validates the JWT, and attaches the user's identity to the request context.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Login flow data animation -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Trace a login request end-to-end</h2>
+        <p>Step through exactly what happens in the code when a user submits their email and password:</p>
+        <div class="flow-animation animate-in" id="m4-flow">
+          <div class="flow-actors">
+            <div class="flow-actor" id="m4-actor-browser">
+              <div class="flow-actor-icon" style="background:#6C7086">🌐</div>
+              <span>Browser</span>
+            </div>
+            <div class="flow-actor" id="m4-actor-gin">
+              <div class="flow-actor-icon" style="background:var(--color-actor-1)">GN</div>
+              <span>Gin Router</span>
+            </div>
+            <div class="flow-actor" id="m4-actor-handler">
+              <div class="flow-actor-icon" style="background:var(--color-actor-2)">AH</div>
+              <span>Auth Handler</span>
+            </div>
+            <div class="flow-actor" id="m4-actor-db">
+              <div class="flow-actor-icon" style="background:var(--color-actor-5)">DB</div>
+              <span>Database</span>
+            </div>
+          </div>
+          <div class="flow-step-label" id="m4-flow-label">Click "Next Step" to trace the login journey</div>
+          <div class="flow-controls">
+            <button class="btn-primary" onclick="flowNext('m4')">Next Step →</button>
+            <button class="btn-secondary" onclick="flowReset('m4')">Restart</button>
+            <span class="flow-progress" id="m4-flow-progress">Step 0 / 6</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Code translation — auth handler -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The auth handler, decoded</h2>
+        <p>Here's the real code that registers the auth routes in NebularCore — straight from <code>modules/auth/handlers/auth.go</code>:</p>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — modules/auth/handlers/auth.go</span>
+            <pre><code><span class="code-keyword">func</span> (h *<span class="code-type">AuthHandler</span>) <span class="code-function">RegisterRoutes</span>(
+  router *<span class="code-type">gin.RouterGroup</span>,
+  socialSignupHandler <span class="code-type">gin.HandlerFunc</span>,
+) {
+  auth := router.<span class="code-function">Group</span>(h.basePath)
+  {
+    <span class="code-keyword">if</span> h.config.Social.Enabled {
+      auth.<span class="code-function">GET</span>(<span class="code-string">"/providers/:provider/initiate"</span>,
+        h.<span class="code-function">InitiateSocialLogin</span>)
+      h.<span class="code-function">RegisterSocialSignupRoutes</span>(
+        router, socialSignupHandler)
+    }
+    auth.<span class="code-function">POST</span>(<span class="code-string">"/login"</span>,      h.<span class="code-function">Login</span>)
+    auth.<span class="code-function">POST</span>(<span class="code-string">"/refresh"</span>,    h.<span class="code-function">RefreshToken</span>)
+    auth.<span class="code-function">POST</span>(<span class="code-string">"/logout"</span>,     h.<span class="code-function">Logout</span>)
+  }
+}</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl"><strong>RegisterRoutes</strong> — "set up all my URLs." Called during Bootstrap.</p>
+              <p class="tl"><strong>auth.Group(h.basePath)</strong> — All routes will be prefixed with /auth (so /auth/login, /auth/logout, etc.)</p>
+              <p class="tl"><strong>if h.config.Social.Enabled</strong> — Only register Google/Apple login routes if social auth is turned on in the config file.</p>
+              <p class="tl"><strong>/providers/:provider/initiate</strong> — The :provider part is a URL variable — user can visit /auth/providers/google/initiate to start Google login.</p>
+              <p class="tl"><strong>POST /login</strong> — The email+password login endpoint. Calls h.Login which checks credentials and issues a JWT.</p>
+              <p class="tl"><strong>POST /refresh</strong> — When the JWT is about to expire, the client calls this to get a fresh one without logging in again.</p>
+              <p class="tl"><strong>POST /logout</strong> — Invalidates the current session.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Password safety -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">How passwords are stored safely</h2>
+        <p>NebularCore <strong>never</strong> stores your password in plain text. Instead, it uses <span class="glossary-term" data-def="bcrypt is a one-way hashing algorithm for passwords. You can turn a password INTO a hash, but you cannot reverse the hash back into the password. So even if the database is stolen, passwords are safe.">bcrypt</span> — a one-way hashing algorithm. Think of it as a shredder: once your password goes in, only confetti comes out. To check a password, you shred it again and compare the confetti patterns.</p>
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">🔑</div>
+          <div class="callout-content">
+            <strong class="callout-title">What this means for you</strong>
+            <p>"Can you store this password?" → Yes, using bcrypt. "Can you look up a user's password?" → No one can, not even an admin. "Can you reset it?" → Yes, by generating a new one. This is the gold standard and NebularCore implements it by default.</p>
+          </div>
+        </div>
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">🌐</div>
+          <div class="callout-content">
+            <strong class="callout-title">Social login (Google, Apple, Facebook)</strong>
+            <p>With social login, the user never gives NebularCore a password. Instead, Google/Apple verifies the identity and hands NebularCore a signed certificate. NebularCore checks the certificate is genuine, then issues its own JWT. No password stored anywhere.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+        <div class="quiz-container" id="quiz-m4">
+          <span class="quiz-label">Module 4 Quiz</span>
+
+          <div class="quiz-question-block" data-correct="b" id="m4q1">
+            <div class="scenario-block">
+              <span class="scenario-label">Scenario</span>
+              <p>A user complains they're logged out every time they close the browser tab, even though you want sessions to persist for 7 days.</p>
+            </div>
+            <p class="quiz-question">Where in NebularCore would you look to fix this?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The database — maybe user records are being deleted</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The JWT token expiry settings in the auth module config</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The Gin router — it might be closing connections too early</span></button>
+            </div>
+            <div class="quiz-feedback" id="m4q1-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block" data-correct="a" id="m4q2">
+            <div class="scenario-block">
+              <span class="scenario-label">Scenario</span>
+              <p>You're building an admin dashboard that only admins should access. Regular users who try to visit /admin get a 403 Forbidden.</p>
+            </div>
+            <p class="quiz-question">Which NebularCore mechanism enforces this?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Casbin authorization — it checks if the user's role has permission to access /admin</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>bcrypt — it hashes the URL and compares it to allowed paths</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The JWT middleware — it checks the token is not expired</span></button>
+            </div>
+            <div class="quiz-feedback" id="m4q2-feedback"></div>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn-primary" onclick="checkQuiz('quiz-m4', {m4q1:{b:'Correct! JWT tokens have an expiry duration set in the auth config. If the token expires when the tab closes, increase the token TTL (time-to-live) in the auth module settings.',a:'Unlikely — user records persist regardless of browser sessions. The issue is token expiry, not database records.',c:'The router handles routing, not session duration. JWT token lifetime is what controls how long a login lasts.'},m4q2:{a:'Exactly. Casbin is NebularCore\'s authorization engine. You define rules like "role:admin can access /admin*" and Casbin enforces them on every request.',b:'bcrypt is for password hashing only — it has nothing to do with URL access control.',c:'The JWT middleware only checks that the token is valid and not expired. It doesn\'t know anything about role permissions — that\'s Casbin\'s job.'}})">Check Answers</button>
+            <button class="btn-secondary" onclick="resetQuiz('quiz-m4')">Try Again</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 5 -->
+<section class="module" id="module-5" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">Events &amp; Migrations</h1>
+      <p class="module-subtitle">How NebularCore keeps modules talking without tangling, and how it evolves your database safely over time.</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: Events explained -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The event bus: a postal service for code</h2>
+        <p>Imagine every building in a city has a mailbox. When something happens — a user signs up, a payment succeeds — a letter is dropped into the central post office. Any building that cares about that event has signed up to receive that type of letter. Nobody calls each other on the phone — they just check the mail.</p>
+        <p>NebularCore's event system (<span class="glossary-term" data-def="Watermill is an open-source Go library for building event-driven applications. It provides publisher/subscriber patterns that work with in-memory, Kafka, RabbitMQ, and more.">Watermill</span>) works exactly like this. Here's the code that publishes a login event:</p>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — modules/event/event.go</span>
+            <pre><code><span class="code-keyword">func</span> (m *<span class="code-type">Module</span>) <span class="code-function">Publish</span>(
+  ctx <span class="code-type">context.Context</span>,
+  event <span class="code-type">Message</span>) <span class="code-type">error</span> {
+
+  event.Metadata.<span class="code-function">Set</span>(<span class="code-string">"source"</span>, event.Source)
+  event.Metadata.<span class="code-function">Set</span>(<span class="code-string">"event_type"</span>, event.EventType)
+  event.Metadata.<span class="code-function">Set</span>(<span class="code-string">"timestamp"</span>,
+    event.Timestamp.<span class="code-function">Format</span>(time.RFC3339))
+
+  <span class="code-keyword">return</span> m.publisher.<span class="code-function">Publish</span>(
+    event.EventType, event.Message)
+}</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl"><strong>Publish</strong> — "drop a letter in the post office." Any module can call this.</p>
+              <p class="tl"><strong>Metadata.Set("source")</strong> — Stamp the envelope with who sent it (e.g., "auth module").</p>
+              <p class="tl"><strong>Metadata.Set("event_type")</strong> — What kind of letter is this? (e.g., "user.logged_in"). Subscribers filter by this.</p>
+              <p class="tl"><strong>Metadata.Set("timestamp")</strong> — When exactly did this happen? Useful for debugging and audit trails.</p>
+              <p class="tl"><strong>m.publisher.Publish(event.EventType, event.Message)</strong> — Actually drop the letter. Everyone subscribed to this event_type receives it.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Async publishing -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Sync vs. Async publishing</h2>
+        <p>NebularCore offers two ways to publish events. The difference matters when you need speed vs. reliability:</p>
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-1)">
+            <div class="pattern-icon" style="background:rgba(42,123,155,.1); color:var(--color-actor-1)">⏳</div>
+            <div class="pattern-title">Publish() — Synchronous</div>
+            <p class="pattern-desc">Waits for the event to be received before continuing. If delivery fails, it returns an error right away. Use when you need to know the event was delivered before proceeding.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-4)">
+            <div class="pattern-icon" style="background:rgba(212,168,67,.1); color:var(--color-actor-4)">⚡</div>
+            <div class="pattern-title">PublishAsync() — Async</div>
+            <p class="pattern-desc">Fires the event in the background and returns immediately. Your code keeps running at full speed. Errors come back on a channel you can check later. Use for non-critical notifications (analytics, emails).</p>
+          </div>
+        </div>
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">When to tell your AI agent which to use</strong>
+            <p>"Send the welcome email asynchronously after registration" → <code>PublishAsync()</code>. "Don't continue until the payment event is confirmed" → <code>Publish()</code>. Choosing the right one prevents subtle bugs where an app appears fast but silently drops important actions.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Migrations -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Migrations: how your database evolves safely</h2>
+        <p>Imagine your database is a city. When the city was first built, there were 10 streets. As it grew, you added new streets and renamed old ones. A <span class="glossary-term" data-def="A database migration is a versioned SQL file that describes a change to the database structure — like adding a new table or column. Migrations run in order, one by one, and can be reversed.">migration</span> is the city planner's official record of every change, in order, so any new installation can replay the full history and end up with the exact same city.</p>
+        <div class="flow-steps stagger-children">
+          <div class="flow-step animate-in">
+            <div class="flow-step-num">1</div>
+            <p>Each module has its own <code>migrations/</code> folder with numbered SQL files</p>
+          </div>
+          <div class="flow-arrow animate-in">→</div>
+          <div class="flow-step animate-in">
+            <div class="flow-step-num">2</div>
+            <p>The Migration Runner reads all sources, sorted by priority</p>
+          </div>
+          <div class="flow-arrow animate-in">→</div>
+          <div class="flow-step animate-in">
+            <div class="flow-step-num">3</div>
+            <p>It checks which migrations have already run (tracked per module)</p>
+          </div>
+          <div class="flow-arrow animate-in">→</div>
+          <div class="flow-step animate-in">
+            <div class="flow-step-num">4</div>
+            <p>Applies only the new ones, in order, atomically</p>
+          </div>
+        </div>
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">📝</div>
+          <div class="callout-content">
+            <strong class="callout-title">The .up.sql / .down.sql pattern</strong>
+            <p>Every migration has two files: <code>000001_create_users.up.sql</code> (apply the change) and <code>000001_create_users.down.sql</code> (reverse the change). If something goes wrong in production, you can roll back to exactly where you were. NebularCore even lets you override framework migrations with your own project-level versions — using the priority + exclude system.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+        <div class="quiz-container" id="quiz-m5">
+          <span class="quiz-label">Module 5 Quiz</span>
+
+          <div class="quiz-question-block" data-correct="c" id="m5q1">
+            <div class="scenario-block">
+              <span class="scenario-label">Scenario</span>
+              <p>You've deployed a new version of your app with a migration that adds a <code>subscription_tier</code> column to the users table. Ten minutes later, users report errors. You need to roll back.</p>
+            </div>
+            <p class="quiz-question">What should you do, and what enables this?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Manually connect to the database and run ALTER TABLE to drop the column</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Redeploy the previous app version — the database will auto-revert</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Run migrate down — the .down.sql file reverses the exact change, safely and repeatably</span></button>
+            </div>
+            <div class="quiz-feedback" id="m5q1-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block" data-correct="b" id="m5q2">
+            <p class="quiz-question">You need to send an analytics event every time a user upgrades their plan, but you don't want it to slow down the checkout flow. Which publishing method do you choose?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Publish() — to make sure the analytics event is definitely delivered before confirming the upgrade</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>PublishAsync() — analytics is non-critical, fire-and-forget in the background so checkout stays fast</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Don't use the event bus — call the analytics service directly from the checkout handler</span></button>
+            </div>
+            <div class="quiz-feedback" id="m5q2-feedback"></div>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn-primary" onclick="checkQuiz('quiz-m5', {m5q1:{c:'Exactly! The .down.sql file is the safe, repeatable rollback. It reverses only the changes made by its paired .up.sql. This is exactly why migrations have both directions.',a:'Manual ALTER TABLE is dangerous in production and doesn\'t update the migration tracker — the next migrate up would try to apply the migration again and fail.',b:'The database doesn\'t auto-revert when you redeploy code. Database state is persistent and independent of which app version is running.'},m5q2:{b:'Right — PublishAsync() fires the event in a goroutine and returns immediately. The checkout flow completes at full speed. If analytics fails silently, the user\'s upgrade still succeeded.',a:'Waiting for analytics to confirm before completing checkout is terrible UX. If analytics is slow or down, users see a slow or broken checkout. Analytics isn\'t critical enough to block on.',c:'Direct calls create tight coupling — now your checkout handler needs to know about and import the analytics service. The event bus exists to avoid exactly this.'}})">Check Answers</button>
+            <button class="btn-secondary" onclick="resetQuiz('quiz-m5')">Try Again</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 6 -->
+<section class="module" id="module-6" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">06</span>
+      <h1 class="module-title">The Big Picture</h1>
+      <p class="module-subtitle">Zoom out. See the whole architecture at once — and make smarter decisions about what to build next.</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: Full architecture -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Everything, all at once</h2>
+        <p>You've now seen every piece. Here's how they all connect — from the moment a request hits your server to the moment a response flies back:</p>
+        <div class="arch-diagram animate-in">
+          <div class="arch-layers">
+            <div class="arch-layer" style="background:rgba(42,123,155,.05); border:1px solid rgba(42,123,155,.15)">
+              <div class="arch-layer-label">Incoming Request</div>
+              <div class="arch-boxes">
+                <div class="arch-box" style="background:var(--color-surface);color:var(--color-text);border-color:var(--color-border)" onclick="showDesc(this)" data-desc="Every HTTP request enters here. Gin routes it to the correct handler based on the URL and HTTP method (GET, POST, etc.). Middleware runs first — JWT validation, tenant extraction, CORS headers.">Gin Router + Middleware</div>
+              </div>
+            </div>
+            <div class="arch-layer" style="background:rgba(217,79,48,.04); border:1px solid rgba(217,79,48,.15)">
+              <div class="arch-layer-label">Module Handlers (each module owns its routes)</div>
+              <div class="arch-boxes">
+                <div class="arch-box" style="background:rgba(217,79,48,.1);color:var(--color-actor-2);border-color:var(--color-actor-2)" onclick="showDesc(this)" data-desc="Auth handlers: /auth/login, /auth/logout, /auth/refresh. Each handler validates input, calls the business logic, and returns a structured JSON response (ApiResponsePayload).">Auth Handlers</div>
+                <div class="arch-box" style="background:rgba(45,139,85,.1);color:var(--color-actor-5);border-color:var(--color-actor-5)" onclick="showDesc(this)" data-desc="GET /health — returns database status, uptime, and registered checks. Cloud platforms poll this to decide if the app is healthy. If it returns non-200, traffic is redirected elsewhere.">Health Handler</div>
+                <div class="arch-box" style="background:rgba(212,168,67,.1);color:var(--color-actor-4);border-color:var(--color-actor-4)" onclick="showDesc(this)" data-desc="File upload and retrieval endpoints. The module abstracts the storage provider — your handler code is identical whether files go to local disk, AWS S3, or Google Cloud Storage.">Storage Handlers</div>
+                <div class="arch-box" style="background:rgba(42,123,155,.1);color:var(--color-actor-1);border-color:var(--color-actor-1)" onclick="showDesc(this)" data-desc="Your custom module handlers live here too. You register them in your module's Initialize() method — they get the same Gin router as every other module.">Your Module Handlers</div>
+              </div>
+            </div>
+            <div class="arch-layer" style="background:rgba(123,109,170,.04); border:1px solid rgba(123,109,170,.2)">
+              <div class="arch-layer-label">Business Logic &amp; Services</div>
+              <div class="arch-boxes">
+                <div class="arch-box" style="background:rgba(123,109,170,.1);color:var(--color-actor-3);border-color:var(--color-actor-3)" onclick="showDesc(this)" data-desc="The event bus (Watermill) sits in this layer. Handlers publish events; other modules' background workers subscribe and react. This layer has no HTTP knowledge.">Event Bus (Watermill)</div>
+                <div class="arch-box" style="background:var(--color-surface);color:var(--color-text);border-color:var(--color-border)" onclick="showDesc(this)" data-desc="Casbin evaluates authorization rules: 'can this user with role X access resource Y with action Z?' It sits between your handler and executing the actual operation.">Casbin Authorization</div>
+                <div class="arch-box" style="background:var(--color-surface);color:var(--color-text);border-color:var(--color-border)" onclick="showDesc(this)" data-desc="The generic Repository pattern wraps GORM. Modules get a typed Repository[T] where T is their model struct. Operations like Create, Find, Update, Delete are methods with full type safety.">Repository Layer</div>
+              </div>
+            </div>
+            <div class="arch-layer" style="background:rgba(44,42,40,.03); border:1px solid var(--color-border)">
+              <div class="arch-layer-label">Data &amp; Storage</div>
+              <div class="arch-boxes">
+                <div class="arch-box" style="background:var(--color-surface);color:var(--color-text);border-color:var(--color-border)" onclick="showDesc(this)" data-desc="GORM connects to PostgreSQL, SQLite, or CloudSQL. The Tenant module intercepts GORM callbacks to automatically scope queries to the current tenant's schema — your query code stays the same.">GORM → PostgreSQL / SQLite</div>
+                <div class="arch-box" style="background:var(--color-surface);color:var(--color-text);border-color:var(--color-border)" onclick="showDesc(this)" data-desc="Files go here: Local filesystem (development), AWS S3 (common production), Google Cloud Storage (GCP). The storage module gives every module the same upload/download API regardless of where files actually live.">File Storage (S3/GCS/Local)</div>
+                <div class="arch-box" style="background:var(--color-surface);color:var(--color-text);border-color:var(--color-border)" onclick="showDesc(this)" data-desc="golang-migrate tracks which SQL migration files have run, per module, in its own tracking table (schema_migrations_auth, schema_migrations_storage, etc.). Running migrate up is safe to run multiple times.">Migration Tracker</div>
+              </div>
+            </div>
+          </div>
+          <div class="arch-description" id="arch-desc-m6">Click any component above to learn what it does in the full system.</div>
+        </div>
+      </section>
+
+      <!-- Screen 2: The patterns that power it -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Three patterns that make NebularCore reusable</h2>
+        <p>These aren't NebularCore-specific ideas — they're universal software engineering patterns you'll see in every well-built backend. Understanding them makes you a better director of AI tools.</p>
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-1)">
+            <div class="pattern-icon" style="background:rgba(42,123,155,.1); color:var(--color-actor-1)">🧩</div>
+            <div class="pattern-title">Interface-Based Design</div>
+            <p class="pattern-desc">Everything in NebularCore works against interfaces, not concrete types. Your module doesn't care <em>how</em> storage works — just that it has Upload() and Download(). Swap S3 for GCS and nothing else changes. This is the <span class="glossary-term" data-def="Dependency Inversion: code depends on abstractions (interfaces), not concrete implementations. Makes swapping providers effortless.">dependency inversion</span> principle.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-3)">
+            <div class="pattern-icon" style="background:rgba(123,109,170,.1); color:var(--color-actor-3)">🏭</div>
+            <div class="pattern-title">Factory Pattern</div>
+            <p class="pattern-desc">The auth module uses a UserFactory interface — you provide a factory that creates your custom User struct, and the auth module uses it without knowing your struct's fields. This is how NebularCore stays generic while you stay specific.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-5)">
+            <div class="pattern-icon" style="background:rgba(45,139,85,.1); color:var(--color-actor-5)">📦</div>
+            <div class="pattern-title">Generic Types</div>
+            <p class="pattern-desc">NebularCore uses Go <span class="glossary-term" data-def="Generics let you write code that works with any type — like a box that can hold any item. App[T config.Settings] means the App works with YOUR settings type, not a generic map.">generics</span>: <code>App[T config.Settings]</code> means your app carries your exact settings type with full type safety — no casting or type-checking at runtime.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: What to build next -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">What you now know how to do</h2>
+        <p>You've gone from "there's just some code somewhere" to having a mental model of every layer. Here's how these map to real things you'll do with AI tools:</p>
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-2)">
+            <div class="pattern-icon" style="background:rgba(217,79,48,.1)">🔧</div>
+            <div class="pattern-title">"Add a feature"</div>
+            <p class="pattern-desc">Create a new module under <code>modules/yourfeature/</code>, implement the Module interface, RegisterModule() it. Tell your AI: "Create a NebularCore module in PublicNamespace with a dependency on the event module."</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-4)">
+            <div class="pattern-icon" style="background:rgba(212,168,67,.1)">🐛</div>
+            <div class="pattern-title">"Debug a login issue"</div>
+            <p class="pattern-desc">Login flow: Browser → Gin → Auth Handler → backend.Authenticate() → repository.FindByEmail() → bcrypt.Compare() → tokenIssuer.Issue(). Each step is a distinct function. Find where the chain breaks.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-5)">
+            <div class="pattern-icon" style="background:rgba(45,139,85,.1)">⚙️</div>
+            <div class="pattern-title">"Change the database"</div>
+            <p class="pattern-desc">Run <code>migrate create [module] [name]</code>, write the .up.sql and .down.sql files, then <code>migrate up</code>. Never hand-edit production database schemas — always go through migrations.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-1)">
+            <div class="pattern-icon" style="background:rgba(42,123,155,.1)">🔔</div>
+            <div class="pattern-title">"React to user actions"</div>
+            <p class="pattern-desc">Subscribe to events in your module's Initialize(). The auth module already fires <code>user.logged_in</code>, <code>user.registered</code>, and similar events. Your module just listens — no changes to auth needed.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Final quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Final challenge</h2>
+        <div class="quiz-container" id="quiz-m6">
+          <span class="quiz-label">Module 6 — Final Quiz</span>
+
+          <div class="quiz-question-block" data-correct="c" id="m6q1">
+            <div class="scenario-block">
+              <span class="scenario-label">Architecture Decision</span>
+              <p>You're building a B2B SaaS where Company A's employees should never see Company B's data. Each company has 10-10,000 employees and their own settings.</p>
+            </div>
+            <p class="quiz-question">How would you architect this in NebularCore?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>One big database, filter all queries with WHERE company_id = ?</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>A separate database server per company</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Use the Tenant module — each company gets a separate PostgreSQL schema, enforced at the database level, with the X-Tenant-ID header routing requests</span></button>
+            </div>
+            <div class="quiz-feedback" id="m6q1-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block" data-correct="b" id="m6q2">
+            <div class="scenario-block">
+              <span class="scenario-label">Debugging Scenario</span>
+              <p>After deploying, the /health endpoint returns OK but users report that file uploads silently fail — files disappear after upload with no error message.</p>
+            </div>
+            <p class="quiz-question">Based on NebularCore's architecture, where's the most likely failure point?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The Gin router — it's probably dropping the multipart form data</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The Storage module config — wrong S3 bucket credentials, wrong region, or the bucket doesn't exist in the new environment</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>The migration runner — maybe the files table doesn't exist yet</span></button>
+            </div>
+            <div class="quiz-feedback" id="m6q2-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block" data-correct="a" id="m6q3">
+            <p class="quiz-question">You want the auth module to use your own custom User struct (with extra fields like <code>company_id</code> and <code>subscription_tier</code>). How does NebularCore support this?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Implement the UserFactory interface with your custom User struct, create a custom repository, and pass it to auth.New(eventBus).WithUserRepository(repo)</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Fork the NebularCore auth module and edit its User struct directly</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Add extra fields to the auth module's config YAML file</span></button>
+            </div>
+            <div class="quiz-feedback" id="m6q3-feedback"></div>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn-primary" onclick="checkQuiz('quiz-m6', {m6q1:{c:'Perfect! The Tenant module is exactly designed for this. Schema-per-tenant gives you strong isolation, the middleware handles routing automatically, and you don\'t need to remember to add company_id to every single query.',a:'Column-based isolation is fragile at scale. One forgotten WHERE clause leaks data. And it pollutes every table with a company_id column. Works for simple apps, not serious B2B.',b:'A separate DB server per company is expensive and operationally painful. You\'d need connection routing logic, separate migration runs, and much more infrastructure. Schema isolation gives you the same guarantee at a fraction of the cost.'},m6q2:{b:'Correct. The health check only verifies the database connection — not external services like S3. If AWS credentials are wrong or the bucket doesn\'t exist in the production region, uploads silently fail while /health stays green.',a:'Gin is extremely reliable for parsing multipart forms. If it were a router issue, you\'d see errors, not silent failures.',c:'A missing migration would cause an error inserting into the files table — you\'d see a database error, not a silent failure. Silent failures almost always point to external service config.'},m6q3:{a:'Exactly! The Factory pattern in the auth module is designed for this. Your UserFactory returns instances of your custom struct; the auth module works with them through the interface without ever importing your type.',b:'Forking the framework means you get none of the upstream bug fixes and security patches. The extension points (UserFactory, WithUserRepository) exist precisely so you never need to fork.',c:'YAML config is for runtime settings (ports, credentials, flags). Struct definitions are code — they can\'t be changed from config files.'}})">Check Answers</button>
+            <button class="btn-secondary" onclick="resetQuiz('quiz-m6')">Try Again</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Congrats -->
+      <section class="screen animate-in">
+        <div class="hero-banner">
+          <div class="hero-banner-content">
+            <h2>You know NebularCore.</h2>
+            <p>You can now read its code, direct AI agents with precision, debug issues by layer, and make real architectural decisions about what to build on top of it.</p>
+            <div class="hero-badges">
+              <span class="hero-badge">✓ Architecture mapped</span>
+              <span class="hero-badge">✓ Auth understood</span>
+              <span class="hero-badge">✓ Events mastered</span>
+              <span class="hero-badge">✓ Migrations demystified</span>
+              <span class="hero-badge">✓ Ready to build</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<!-- MODULE 7 -->
+<section class="module" id="module-7" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">07</span>
+      <h1 class="module-title">The Live Wire</h1>
+      <p class="module-subtitle">Real-time bidirectional communication — WebSockets explained without the jargon.</p>
+    </header>
+
+    <div class="module-body">
+
+      <!-- Screen 1: The analogy -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">HTTP vs WebSockets: letter vs phone call</h2>
+        <p><strong>HTTP is like sending a letter.</strong> You post it, wait for one reply, then post again. Every message requires a brand-new round trip. <strong>WebSockets are like a phone call</strong> — the line stays open and both sides can speak any time without redialling.</p>
+        <p>NebularCore's WebSocket module adds that always-open phone line to your backend with a single <code>GET /ws</code> endpoint.</p>
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-1)">
+            <div class="pattern-icon" style="background:rgba(42,123,155,.1); color:var(--color-actor-1)">🔌</div>
+            <div class="pattern-title">One endpoint, many connections</div>
+            <p class="pattern-desc">A single <code>GET /ws</code> route handles every real-time client. Gin upgrades HTTP to WebSocket (HTTP 101). From that moment, data flows freely both ways.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-3)">
+            <div class="pattern-icon" style="background:rgba(89,171,127,.1); color:var(--color-actor-3)">🗺️</div>
+            <div class="pattern-title">Topic subscriptions</div>
+            <p class="pattern-desc">Clients subscribe to named <em>topics</em> (e.g. <code>orders.placed</code>). When that event fires anywhere in the app, the EventBridge fans it out only to subscribed connections — no polling needed.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-2)">
+            <div class="pattern-icon" style="background:rgba(180,100,100,.1); color:var(--color-actor-2)">🛡️</div>
+            <div class="pattern-title">Same JWT, no new auth</div>
+            <p class="pattern-desc">The WebSocket middleware reads the same JWT your REST API issues. One token, one identity — WebSockets are just another surface, not a separate auth system.</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-4)">
+            <div class="pattern-icon" style="background:rgba(212,168,67,.1); color:var(--color-actor-4)">⚡</div>
+            <div class="pattern-title">Sharded connection manager</div>
+            <p class="pattern-desc">Connections are stored across 256 independent shards. No single lock blocks the whole map — thousands of concurrent connections stay fast.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Flow animation -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The WebSocket lifecycle — step by step</h2>
+        <p>From the moment a browser connects to the moment it receives a live event, here's what NebularCore does internally:</p>
+        <div class="flow-animation animate-in" id="m7-flow">
+          <div class="flow-actors">
+            <div class="flow-actor" id="m7-actor-browser">
+              <div class="flow-actor-icon" style="background:var(--color-actor-1)">BR</div>
+              <span>Browser</span>
+            </div>
+            <div class="flow-actor" id="m7-actor-gin">
+              <div class="flow-actor-icon" style="background:var(--color-actor-2)">GN</div>
+              <span>Gin / JWT</span>
+            </div>
+            <div class="flow-actor" id="m7-actor-mgr">
+              <div class="flow-actor-icon" style="background:var(--color-actor-3)">MG</div>
+              <span>Manager</span>
+            </div>
+            <div class="flow-actor" id="m7-actor-bridge">
+              <div class="flow-actor-icon" style="background:var(--color-actor-4)">EB</div>
+              <span>EventBridge</span>
+            </div>
+          </div>
+          <div class="flow-step-label" id="m7-flow-label">Click "Next Step" to trace a WebSocket connection</div>
+          <div class="flow-controls">
+            <button class="btn-primary" onclick="flowNext('m7')">Next Step →</button>
+            <button class="btn-secondary" onclick="flowReset('m7')">Restart</button>
+            <span class="flow-progress" id="m7-flow-progress">Step 0 / 6</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Code translation -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Reading Initialize() — the wiring code</h2>
+        <p>When NebularCore boots, the WebSocket module's <code>Initialize()</code> method runs. Here's what each line actually does:</p>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE — modules/websocket/module.go</span>
+            <pre><code><span class="code-keyword">func</span> (m *<span class="code-type">Module</span>) <span class="code-function">Initialize</span>(
+  ctx <span class="code-type">context.Context</span>,
+  db  *<span class="code-type">gorm.DB</span>,
+  ginRouter *<span class="code-type">gin.Engine</span>,
+) <span class="code-type">error</span> {
+  m.manager = connections.<span class="code-function">NewManager</span>(
+    m.config.Server.<span class="code-keyword">MaxConnections</span>)
+
+  m.pool = connections.<span class="code-function">NewPool</span>(
+    m.manager,
+    m.config.Server.<span class="code-keyword">MaxConnectionsPerUser</span>,
+    m.config.Server.<span class="code-keyword">MaxConnectionsPerTenant</span>)
+
+  m.subs   = store.<span class="code-function">NewSubscriptions</span>()
+  m.router = bridge.<span class="code-function">NewRouter</span>()
+
+  handlers.<span class="code-function">RegisterMessageHandlers</span>(
+    m.router, m.manager,
+    m.subs, m.eventBus,
+    m.config.Routing.<span class="code-keyword">MaxTopicsPerConnection</span>)
+
+  <span class="code-keyword">if</span> len(m.config.Events.<span class="code-keyword">AllowedEventTypes</span>) &gt; 0 {
+    m.evBridge = bridge.<span class="code-function">NewEventBridge</span>(
+      m.eventBus, m.manager,
+      m.subs,
+      m.config.Events.<span class="code-keyword">AllowedEventTypes</span>)
+    m.evBridge.<span class="code-function">Start</span>(ctx)
+  }
+
+  ginRouter.<span class="code-function">GET</span>(<span class="code-string">"/ws"</span>,
+    wsauth.<span class="code-function">Middleware</span>(jwtSecret, authRequired),
+    wsHandler.<span class="code-function">Handle</span>)
+}</code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl"><strong>NewManager</strong> — Creates the sharded connection store. Think of it as a massive switchboard that can handle thousands of open lines at once without slowing down.</p>
+              <p class="tl"><strong>NewPool</strong> — Adds rate-limit guards: "no more than N connections per user, and no more than M per tenant." Prevents one bad actor from hogging all the lines.</p>
+              <p class="tl"><strong>NewSubscriptions</strong> — Creates the topic registry: a map of "who is listening to what." When a client says <code>subscribe orders.placed</code>, it lands here.</p>
+              <p class="tl"><strong>RegisterMessageHandlers</strong> — Wires up handlers for each JSON message type the client can send: <code>subscribe</code>, <code>unsubscribe</code>, <code>publish</code>, <code>ping</code>.</p>
+              <p class="tl"><strong>EventBridge.Start</strong> — Plugs into the internal event bus. Every time an allowed event fires, it fans out to all WS clients subscribed to that topic.</p>
+              <p class="tl"><strong>GET /ws</strong> — Registers the upgrade endpoint on Gin, protected by JWT middleware — same token, no extra login needed.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Protocol + simulator -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The message protocol &amp; live simulator</h2>
+        <p>Every message between client and server is plain JSON with a <code>type</code> field. The router reads that field and dispatches to the right handler — like a tiny switch statement per connection.</p>
+        <div class="pattern-cards stagger-children">
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-1)">
+            <div class="pattern-icon" style="background:rgba(42,123,155,.1); color:var(--color-actor-1)">→</div>
+            <div class="pattern-title">Client → Server</div>
+            <p class="pattern-desc"><code>subscribe</code> — Start listening to a topic<br>
+            <code>unsubscribe</code> — Stop listening<br>
+            <code>publish</code> — Broadcast to all topic subscribers<br>
+            <code>ping</code> — Keep-alive heartbeat<br>
+            <code>auth</code> — Send JWT post-connect</p>
+          </div>
+          <div class="pattern-card animate-in" style="border-top-color: var(--color-actor-3)">
+            <div class="pattern-icon" style="background:rgba(89,171,127,.1); color:var(--color-actor-3)">←</div>
+            <div class="pattern-title">Server → Client</div>
+            <p class="pattern-desc"><code>subscribed</code> — Confirms subscription<br>
+            <code>unsubscribed</code> — Confirms removal<br>
+            <code>message</code> — A real-time event payload<br>
+            <code>error</code> — Something went wrong<br>
+            <code>pong</code> — Response to ping<br>
+            <code>auth_success</code> — JWT accepted</p>
+          </div>
+        </div>
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">🧪</div>
+          <div class="callout-content">
+            <strong class="callout-title">Simulated session — no server needed</strong>
+            <p>This shows exactly what the real log output and message flow looks like. Connect, subscribe to a topic, then fire an event to see the EventBridge fan it to your client.</p>
+          </div>
+        </div>
+        <div class="ws-simulator animate-in">
+          <div class="ws-simulator-header">
+            <div class="ws-status">
+              <span class="ws-status-dot" id="m7-ws-status-dot"></span>
+              <span id="m7-ws-status-text">Disconnected</span>
+            </div>
+            <div class="ws-simulator-actions">
+              <button class="btn-primary" onclick="wsConnect()">Connect</button>
+              <button class="btn-secondary" onclick="wsDisconnect()">Disconnect</button>
+            </div>
+          </div>
+          <div class="ws-subscribe-row">
+            <input class="ws-input" id="m7-ws-input" type="text" placeholder="Topic e.g. orders.placed" value="orders.placed">
+            <button class="btn-secondary" onclick="wsSend()">Subscribe →</button>
+            <button class="btn-secondary" onclick="wsFireEvent()">Fire Event ⚡</button>
+          </div>
+          <div class="ws-log" id="m7-ws-log">
+            <div class="ws-log-line" style="color: var(--color-text-muted)">// Session log will appear here after you connect</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Quiz -->
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your understanding</h2>
+        <div class="quiz-container" id="quiz-m7">
+          <span class="quiz-label">Module 7 Quiz</span>
+
+          <div class="quiz-question-block" data-correct="b" id="m7q1">
+            <div class="scenario-block">
+              <span class="scenario-label">Scenario</span>
+              <p>A client wants to receive live notifications whenever a new order is placed, without polling the server every second.</p>
+            </div>
+            <p class="quiz-question">What should the client do after connecting to <code>/ws</code>?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Poll GET /orders every second over the same WebSocket connection</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Send {"type":"subscribe","topic":"orders.placed"} and wait for server push</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Open a second HTTP connection and long-poll /events</span></button>
+            </div>
+            <div class="quiz-feedback" id="m7q1-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block" data-correct="a" id="m7q2">
+            <p class="quiz-question">What does the EventBridge actually do inside NebularCore?</p>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Subscribes to the internal Watermill event bus and fans matching events out to subscribed WebSocket clients</span></button>
+              <button class="quiz-option" data-value="b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Manages database transactions for WebSocket messages</span></button>
+              <button class="quiz-option" data-value="c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>Converts WebSocket frames into HTTP requests for REST handlers</span></button>
+            </div>
+            <div class="quiz-feedback" id="m7q2-feedback"></div>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn-primary" onclick="checkQuiz('quiz-m7', {m7q1:{b:'Exactly. Connect once, then subscribe. The server pushes events to you — no polling, no extra connections.',a:'Polling inside a WebSocket defeats the purpose. The whole point is server-initiated push, not client-initiated pull.',c:'Long-polling is a workaround for environments that don\'t support WebSockets. NebularCore uses real WebSockets.'},m7q2:{a:'Correct. EventBridge subscribes to the Watermill bus and for each matching event fans the payload out to every WebSocket client whose subscription matches the topic.',b:'The WebSocket module has no database interaction at all — it\'s a pure in-memory pub/sub layer.',c:'No conversion needed. WebSocket is its own protocol on top of TCP; it doesn\'t get translated back into HTTP.'}})">Check Answers</button>
+            <button class="btn-secondary" onclick="resetQuiz('quiz-m7')">Try Again</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 6: Completion banner -->
+      <section class="screen animate-in">
+        <div class="hero-banner">
+          <div class="hero-banner-content">
+            <h2>You've covered the full stack. 🎉</h2>
+            <p>From the module system to real-time WebSockets — you now understand every major layer of NebularCore. Go build something live.</p>
+            <div class="hero-badges">
+              <span class="hero-badge">✓ Module system</span>
+              <span class="hero-badge">✓ Auth &amp; JWT</span>
+              <span class="hero-badge">✓ Events</span>
+              <span class="hero-badge">✓ Migrations</span>
+              <span class="hero-badge">✓ Multi-tenancy</span>
+              <span class="hero-badge">✓ Real-time WebSockets</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+'use strict';
+
+/* ===== NAVIGATION & PROGRESS ===== */
+const modules = document.querySelectorAll('.module');
+const navDots = document.querySelectorAll('.nav-dot');
+const progressBar = document.getElementById('progress-bar');
+
+function updateNav() {
+  const scrollTop = window.scrollY;
+  const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+  progressBar.style.width = ((scrollTop / scrollHeight) * 100) + '%';
+
+  let currentIdx = 0;
+  modules.forEach((mod, i) => {
+    const rect = mod.getBoundingClientRect();
+    if (rect.top <= window.innerHeight * 0.5) currentIdx = i;
+  });
+
+  navDots.forEach((dot, i) => {
+    dot.classList.remove('current', 'visited');
+    if (i === currentIdx) dot.classList.add('current');
+    else if (i < currentIdx) dot.classList.add('visited');
+  });
+}
+
+window.addEventListener('scroll', () => requestAnimationFrame(updateNav), { passive: true });
+
+navDots.forEach(dot => {
+  const tip = document.createElement('span');
+  tip.className = 'nav-dot-tooltip';
+  tip.textContent = dot.dataset.tooltip;
+  dot.appendChild(tip);
+  dot.addEventListener('click', () => {
+    const target = document.getElementById(dot.dataset.target);
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+  const active = document.querySelector('.nav-dot.current');
+  const idx = active ? Array.from(navDots).indexOf(active) : 0;
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && idx < modules.length - 1) {
+    e.preventDefault(); modules[idx + 1].scrollIntoView({ behavior: 'smooth' });
+  }
+  if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && idx > 0) {
+    e.preventDefault(); modules[idx - 1].scrollIntoView({ behavior: 'smooth' });
+  }
+});
+
+/* ===== SCROLL-TRIGGERED ANIMATIONS ===== */
+document.querySelectorAll('.stagger-children').forEach(parent => {
+  Array.from(parent.children).forEach((child, i) => {
+    child.style.setProperty('--stagger-index', i);
+  });
+});
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+
+document.querySelectorAll('.animate-in').forEach(el => observer.observe(el));
+
+/* ===== GLOSSARY TOOLTIPS ===== */
+const tooltip = document.getElementById('glossary-tooltip');
+document.querySelectorAll('.glossary-term').forEach(term => {
+  term.addEventListener('mouseenter', e => {
+    tooltip.textContent = term.dataset.def;
+    const r = term.getBoundingClientRect();
+    tooltip.style.left = Math.min(r.left, window.innerWidth - 300) + 'px';
+    tooltip.style.top = (r.bottom + 8) + 'px';
+    tooltip.classList.add('visible');
+  });
+  term.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+  term.addEventListener('click', e => {
+    tooltip.textContent = term.dataset.def;
+    const r = term.getBoundingClientRect();
+    tooltip.style.left = Math.min(r.left, window.innerWidth - 300) + 'px';
+    tooltip.style.top = (r.bottom + 8) + 'px';
+    tooltip.classList.toggle('visible');
+    e.stopPropagation();
+  });
+});
+document.addEventListener('click', () => tooltip.classList.remove('visible'));
+
+/* ===== ARCH DIAGRAM ===== */
+window.showDesc = function(el) {
+  const desc = el.closest('.arch-diagram').querySelector('[id^="arch-desc"]');
+  if (desc) desc.textContent = el.dataset.desc;
+};
+
+/* ===== QUIZ ENGINE ===== */
+window.selectOption = function(btn) {
+  const block = btn.closest('.quiz-question-block');
+  block.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
+  btn.classList.add('selected');
+};
+
+window.checkQuiz = function(containerId, explanations) {
+  const container = document.getElementById(containerId);
+  const questions = container.querySelectorAll('.quiz-question-block');
+  questions.forEach(q => {
+    const selected = q.querySelector('.quiz-option.selected');
+    const feedback = q.querySelector('.quiz-feedback');
+    const correct = q.dataset.correct;
+    const qId = q.id;
+    const exps = explanations[qId] || {};
+
+    if (!selected) {
+      feedback.textContent = 'Please choose an answer first.';
+      feedback.className = 'quiz-feedback show warning';
+      return;
+    }
+    q.querySelectorAll('.quiz-option').forEach(o => o.disabled = true);
+
+    if (selected.dataset.value === correct) {
+      selected.classList.add('correct');
+      feedback.innerHTML = '<strong>Exactly!</strong> ' + (exps[correct] || '');
+      feedback.className = 'quiz-feedback show success';
+    } else {
+      selected.classList.add('incorrect');
+      const correctBtn = q.querySelector(`[data-value="${correct}"]`);
+      if (correctBtn) correctBtn.classList.add('correct');
+      feedback.innerHTML = '<strong>Not quite.</strong> ' + (exps[selected.dataset.value] || '');
+      feedback.className = 'quiz-feedback show error';
+    }
+  });
+};
+
+window.resetQuiz = function(containerId) {
+  const container = document.getElementById(containerId);
+  container.querySelectorAll('.quiz-option').forEach(o => {
+    o.classList.remove('selected','correct','incorrect');
+    o.disabled = false;
+  });
+  container.querySelectorAll('.quiz-feedback').forEach(f => {
+    f.className = 'quiz-feedback';
+  });
+};
+
+/* ===== GROUP CHAT ===== */
+const chatState = {};
+
+function initChat(id) {
+  chatState[id] = { index: 0 };
+  const actors = {
+    'actor-a': { initials: 'AU', color: 'var(--color-actor-2)' },
+    'actor-b': { initials: 'EV', color: 'var(--color-actor-3)' },
+    'actor-c': { initials: 'AN', color: 'var(--color-actor-5)' },
+    'actor-d': { initials: 'WL', color: 'var(--color-actor-4)' },
+  };
+  chatState[id].actors = actors;
+  chatState[id].messages = document.querySelectorAll(`#${id}-chat-messages .chat-message`);
+  updateChatProgress(id);
+}
+
+function updateChatProgress(id) {
+  const el = document.getElementById(`${id}-chat-progress`);
+  if (el) el.textContent = `${chatState[id].index} / ${chatState[id].messages.length} messages`;
+}
+
+window.chatNext = function(id) {
+  if (!chatState[id]) initChat(id);
+  const s = chatState[id];
+  if (s.index >= s.messages.length) return;
+  const msg = s.messages[s.index];
+  const sender = msg.dataset.sender;
+  const actor = s.actors[sender] || { initials: '?', color: 'var(--color-text-muted)' };
+
+  const typingEl = document.getElementById(`${id}-chat-typing`);
+  const avatarEl = document.getElementById(`${id}-typing-avatar`);
+  if (typingEl && avatarEl) {
+    avatarEl.textContent = actor.initials;
+    avatarEl.style.background = actor.color;
+    typingEl.style.display = 'flex';
+  }
+  setTimeout(() => {
+    if (typingEl) typingEl.style.display = 'none';
+    msg.style.display = 'flex';
+    s.index++;
+    updateChatProgress(id);
+  }, 700);
+};
+
+window.chatAll = function(id, delay) {
+  if (!chatState[id]) initChat(id);
+  const s = chatState[id];
+  const run = () => {
+    if (s.index >= s.messages.length) return;
+    chatNext(id);
+    setTimeout(run, delay || 1200);
+  };
+  run();
+};
+
+window.chatReset = function(id) {
+  if (!chatState[id]) initChat(id);
+  const s = chatState[id];
+  s.index = 0;
+  s.messages.forEach(m => { m.style.display = 'none'; m.style.animation = ''; });
+  const typingEl = document.getElementById(`${id}-chat-typing`);
+  if (typingEl) typingEl.style.display = 'none';
+  updateChatProgress(id);
+};
+
+initChat('m2');
+
+/* ===== DATA FLOW ANIMATIONS ===== */
+const flowDefs = {
+  m3: {
+    actors: ['m3-actor-app','m3-actor-reg','m3-actor-cfg','m3-actor-mod'],
+    steps: [
+      { highlight: 'm3-actor-app', label: 'Step 1: app.Bootstrap() is called — NebularCore wakes up.' },
+      { highlight: 'm3-actor-cfg', label: 'Step 2: ConfigLoader reads config.yml and loads each module\'s settings.' },
+      { highlight: 'm3-actor-mod', label: 'Step 3: Each module\'s Configure() is called with its settings from the YAML.' },
+      { highlight: 'm3-actor-reg', label: 'Step 4: Registry does a topological sort — resolves who depends on whom, determines init order.' },
+      { highlight: 'm3-actor-mod', label: 'Step 5: Initialize() is called on each module in dependency order. They get the DB and Gin router. ✓' },
+    ]
+  },
+  m4: {
+    actors: ['m4-actor-browser','m4-actor-gin','m4-actor-handler','m4-actor-db'],
+    steps: [
+      { highlight: 'm4-actor-browser', label: 'Step 1: User submits the login form. Browser sends POST /auth/login with email + password as JSON.' },
+      { highlight: 'm4-actor-gin', label: 'Step 2: Gin receives the request and routes it to the Auth Handler\'s Login() function.' },
+      { highlight: 'm4-actor-handler', label: 'Step 3: Auth Handler validates the request shape (is email valid? is password present?). If not, returns 400.' },
+      { highlight: 'm4-actor-db', label: 'Step 4: Repository queries the DB: "Find user where email = X." If not found, returns 401 Unauthorized.' },
+      { highlight: 'm4-actor-handler', label: 'Step 5: bcrypt compares the submitted password against the stored hash. If no match, returns 401.' },
+      { highlight: 'm4-actor-browser', label: 'Step 6: Token issuer creates a signed JWT. Handler returns 200 with the token. Browser stores it. ✓' },
+    ]
+  },
+  m7: {
+    actors: ['m7-actor-browser','m7-actor-gin','m7-actor-mgr','m7-actor-bridge'],
+    steps: [
+      { highlight: 'm7-actor-browser', label: 'Step 1: Browser sends GET /ws with an Authorization: Bearer <JWT> header.' },
+      { highlight: 'm7-actor-gin', label: 'Step 2: JWT Middleware validates the token. Extracts userID and tenantID from claims.' },
+      { highlight: 'm7-actor-mgr', label: 'Step 3: Pool.CheckLimits() verifies per-user and per-tenant connection caps. If exceeded → 429 Too Many Requests.' },
+      { highlight: 'm7-actor-mgr', label: 'Step 4: Server upgrades HTTP → WebSocket (HTTP 101). Connection is registered in the sharded Manager.' },
+      { highlight: 'm7-actor-bridge', label: 'Step 5: Client sends {"type":"subscribe","topic":"orders.placed"}. Subscriptions store saves connID → topic.' },
+      { highlight: 'm7-actor-browser', label: 'Step 6: Internal event "orders.placed" fires. EventBridge fans the payload to all subscribed connections. Client receives {"type":"message",...} in real time. ✓' },
+    ]
+  }
+};
+
+const flowState = {};
+
+window.flowNext = function(id) {
+  if (!flowDefs[id]) return;
+  if (!flowState[id]) flowState[id] = { step: 0 };
+  const def = flowDefs[id];
+  const s = flowState[id];
+  if (s.step >= def.steps.length) return;
+
+  def.actors.forEach(a => {
+    const el = document.getElementById(a);
+    if (el) el.classList.remove('active');
+  });
+
+  const step = def.steps[s.step];
+  const el = document.getElementById(step.highlight);
+  if (el) el.classList.add('active');
+
+  const label = document.getElementById(`${id}-flow-label`);
+  if (label) label.textContent = step.label;
+
+  s.step++;
+  const prog = document.getElementById(`${id}-flow-progress`);
+  if (prog) prog.textContent = `Step ${s.step} / ${def.steps.length}`;
+};
+
+window.flowReset = function(id) {
+  if (!flowDefs[id]) return;
+  flowState[id] = { step: 0 };
+  flowDefs[id].actors.forEach(a => {
+    const el = document.getElementById(a);
+    if (el) el.classList.remove('active');
+  });
+  const label = document.getElementById(`${id}-flow-label`);
+  if (label) label.textContent = 'Click "Next Step" to begin';
+  const prog = document.getElementById(`${id}-flow-progress`);
+  if (prog) prog.textContent = `Step 0 / ${flowDefs[id].steps.length}`;
+};
+
+updateNav();
+
+/* ===== WEBSOCKET LIVE DEMO ===== */
+(function() {
+  const log = document.getElementById('m7-ws-log');
+  const statusDot = document.getElementById('m7-ws-status-dot');
+  const statusText = document.getElementById('m7-ws-status-text');
+  let fakeConnected = false;
+  let fakeTopics = [];
+  let msgCount = 0;
+
+  function wsLog(text, cls) {
+    if (!log) return;
+    const line = document.createElement('div');
+    line.className = 'ws-log-line' + (cls ? ' ' + cls : '');
+    const ts = new Date().toLocaleTimeString('en-US', {hour12: false});
+    line.textContent = '[' + ts + '] ' + text;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function setStatus(connected) {
+    fakeConnected = connected;
+    if (!statusDot || !statusText) return;
+    statusDot.className = 'ws-status-dot' + (connected ? ' connected' : '');
+    statusText.textContent = connected ? 'Connected' : 'Disconnected';
+  }
+
+  window.wsConnect = function() {
+    if (fakeConnected) { wsLog('Already connected.', 'warn'); return; }
+    wsLog('→ Upgrading HTTP GET /ws to WebSocket...');
+    setTimeout(() => {
+      wsLog('← HTTP 101 Switching Protocols', 'success');
+      wsLog('✓ JWT validated — userID: usr_demo, tenantID: tenant_acme', 'success');
+      wsLog('✓ Connection registered in Manager (shard #42)', 'success');
+      setStatus(true);
+    }, 600);
+  };
+
+  window.wsDisconnect = function() {
+    if (!fakeConnected) { wsLog('Not connected.', 'warn'); return; }
+    fakeTopics = [];
+    setStatus(false);
+    wsLog('← Connection closed. Deregistered from Manager.');
+  };
+
+  window.wsSend = function() {
+    const input = document.getElementById('m7-ws-input');
+    const topic = input ? input.value.trim() : 'orders.placed';
+    if (!topic) { wsLog('Enter a topic name first.', 'warn'); return; }
+    if (!fakeConnected) { wsLog('Connect first!', 'warn'); return; }
+    wsLog('→ SEND {"type":"subscribe","topic":"' + topic + '"}');
+    fakeTopics.push(topic);
+    setTimeout(() => {
+      wsLog('← RECV {"type":"subscribed","topic":"' + topic + '"}', 'success');
+      wsLog('✓ Subscription stored in Subscriptions map for this connID', 'success');
+    }, 400);
+  };
+
+  window.wsFireEvent = function() {
+    if (!fakeConnected) { wsLog('Connect first!', 'warn'); return; }
+    if (fakeTopics.length === 0) { wsLog('Subscribe to a topic first!', 'warn'); return; }
+    msgCount++;
+    const topic = fakeTopics[0];
+    wsLog('  [EventBridge] Internal event fired: "' + topic + '"');
+    wsLog('  [EventBridge] Found 1 subscriber for topic → fanout start');
+    setTimeout(() => {
+      wsLog('← RECV {"type":"message","topic":"' + topic + '","payload":{"id":' + msgCount + '}}', 'success');
+    }, 300);
+  };
+})();
+
+})();
+</script>
+</body>
+</html>
