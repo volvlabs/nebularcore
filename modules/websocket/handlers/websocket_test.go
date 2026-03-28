@@ -67,7 +67,9 @@ func TestWebSocketUpgradeNoAuth(t *testing.T) {
 	require.NoError(t, err)
 	defer ws.Close(websocket.StatusNormalClosure, "done")
 
-	assert.Equal(t, int64(1), manager.Total())
+	require.Eventually(t, func() bool {
+		return manager.Total() == 1
+	}, time.Second, 10*time.Millisecond)
 }
 
 func TestWebSocketAuthRequired(t *testing.T) {
