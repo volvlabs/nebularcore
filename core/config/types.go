@@ -36,6 +36,7 @@ type DatabaseConfig struct {
 type ServerConfig struct {
 	Host            string        `yaml:"host" json:"host" validate:"required"`
 	Port            string        `yaml:"port" json:"port" validate:"required"`
+	AllowedOrigins  string        `yaml:"allowedOrigins" json:"allowedOrigins"`
 	ReadTimeout     time.Duration `yaml:"readTimeout" json:"readTimeout"`
 	WriteTimeout    time.Duration `yaml:"writeTimeout" json:"writeTimeout"`
 	ShutdownTimeout time.Duration `yaml:"shutdownTimeout" json:"shutdownTimeout"`
