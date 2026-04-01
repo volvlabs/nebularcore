@@ -97,7 +97,9 @@ func (m *Module) Initialize(ctx context.Context, db *gorm.DB, ginRouter *gin.Eng
 	)
 
 	m.subs = store.NewSubscriptions()
-	m.adapter = store.NewAdapter(m.manager, m.subs)
+	validators := store.NewValidatorRegistry()
+	m.adapter = store.NewAdapter(m.manager, m.subs, validators)
+	m.evBridge = bridge.NewEventBridge(m.eventBus, m.manager, m.subs, m.config.Events.AllowedEventTypes)
 
 	m.router = bridge.NewRouter()
 	handlers.RegisterMessageHandlers(
@@ -106,10 +108,11 @@ func (m *Module) Initialize(ctx context.Context, db *gorm.DB, ginRouter *gin.Eng
 		m.subs,
 		m.eventBus,
 		m.config.Routing.MaxTopicsPerConnection,
+		validators,
+		m.evBridge,
 	)
 
 	if len(m.config.Events.AllowedEventTypes) > 0 {
-		m.evBridge = bridge.NewEventBridge(m.eventBus, m.manager, m.subs, m.config.Events.AllowedEventTypes)
 		if err := m.evBridge.Start(ctx); err != nil {
 			return fmt.Errorf("websocket: failed to start event bridge: %w", err)
 		}

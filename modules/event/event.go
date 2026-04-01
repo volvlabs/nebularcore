@@ -69,6 +69,17 @@ func (m *Module) Subscribe(eventType string, handler Handler) error {
 		},
 	)
 
+	// If the router is already running, start the newly registered handler
+	// goroutine immediately so it subscribes to the GoChannel before the
+	// first publish on this topic arrives.
+	if m.runCtx != nil {
+		go func() {
+			if err := m.router.RunHandlers(m.runCtx); err != nil {
+				m.logger.Error("Error running handlers", err, nil)
+			}
+		}()
+	}
+
 	return nil
 }
 
@@ -82,6 +93,7 @@ func (m *Module) RunHandlers(ctx context.Context) error {
 }
 
 func (m *Module) Run(ctx context.Context) error {
+	m.runCtx = ctx
 	return m.router.Run(ctx)
 }
 

@@ -3,6 +3,8 @@ package bridge
 import (
 	"context"
 	"encoding/json"
+	"strings"
+	"sync"
 
 	"github.com/rs/zerolog/log"
 	"gitlab.com/jideobs/nebularcore/modules/event"
@@ -18,6 +20,8 @@ type EventBridge struct {
 	manager         *connections.Manager
 	subscriptions   *store.Subscriptions
 	allowedPatterns []string
+
+	subscribedTopics sync.Map
 }
 
 // NewEventBridge creates a new EventBridge.
@@ -42,8 +46,45 @@ func (b *EventBridge) Start(ctx context.Context) error {
 		}); err != nil {
 			return err
 		}
+		b.subscribedTopics.Store(p, struct{}{})
 		log.Info().Str("pattern", p).Msg("event bridge subscribed")
 	}
+	return nil
+}
+
+// SubscribeTopic dynamically subscribes to an exact topic on the event bus so
+// that events published by other modules are forwarded to WebSocket clients.
+// Wildcard topics (containing * or **) are silently skipped because Watermill
+// requires exact topic names — glob matching is handled at the WebSocket
+// subscription store level.
+// If allowedPatterns is configured, the topic must match at least one pattern.
+func (b *EventBridge) SubscribeTopic(topic string) error {
+	if strings.Contains(topic, "*") {
+		log.Debug().Str("topic", topic).Msg("event bridge: wildcard topic skipped for dynamic subscribe")
+		return nil
+	}
+
+	if _, loaded := b.subscribedTopics.LoadOrStore(topic, struct{}{}); loaded {
+		log.Debug().Str("topic", topic).Msg("event bridge: topic already subscribed, skipping")
+		return nil
+	}
+
+	// If allowedPatterns is configured, enforce it as a security filter.
+	if len(b.allowedPatterns) > 0 && !protocol.MatchAny(b.allowedPatterns, topic) {
+		b.subscribedTopics.Delete(topic)
+		log.Debug().Str("topic", topic).Msg("event bridge: topic not allowed by configured patterns")
+		return nil
+	}
+
+	if err := b.bus.Subscribe(topic, func(ctx context.Context, msg event.Message) error {
+		b.fanout(msg.EventType, msg.Payload)
+		return nil
+	}); err != nil {
+		b.subscribedTopics.Delete(topic)
+		return err
+	}
+
+	log.Info().Str("topic", topic).Msg("event bridge dynamically subscribed")
 	return nil
 }
 

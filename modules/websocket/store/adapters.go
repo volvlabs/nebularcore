@@ -13,14 +13,25 @@ import (
 type Adapter struct {
 	manager       *connections.Manager
 	subscriptions *Subscriptions
+	validators    *ValidatorRegistry
 }
 
 // NewAdapter creates a new Adapter.
-func NewAdapter(manager *connections.Manager, subs *Subscriptions) *Adapter {
+func NewAdapter(manager *connections.Manager, subs *Subscriptions, validators *ValidatorRegistry) *Adapter {
 	return &Adapter{
 		manager:       manager,
 		subscriptions: subs,
+		validators:    validators,
 	}
+}
+
+// RegisterTopicValidator registers an authorization callback for topics matching the given glob pattern.
+// The callback receives the connection attempting to subscribe/publish and the full topic string.
+// Return nil to allow, return an error to reject (the error message is sent to the client).
+// If multiple patterns match a topic, all registered validators are called; any rejection blocks the operation.
+// Patterns use the same glob syntax as allowedEventTypes (e.g. "qa.user.*", "qa.conversation.*").
+func (a *Adapter) RegisterTopicValidator(pattern string, validator TopicValidatorFunc) error {
+	return a.validators.Register(pattern, validator)
 }
 
 // Broadcast sends a message to all connections subscribed to the given topic,

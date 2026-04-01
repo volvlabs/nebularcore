@@ -18,6 +18,8 @@ type Module struct {
 	subscriber message.Subscriber
 	router     *message.Router
 	logger     watermill.LoggerAdapter
+
+	runCtx context.Context
 }
 
 // New creates a new event module
