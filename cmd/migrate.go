@@ -14,16 +14,17 @@ import (
 
 func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command {
 	const cmdDesc = `Supported commands are:
-- up			- runs migrtations
-- down [number] - revert last number of migrations
-- create [name] - creates new blank migration file
-- tenant [schema] [command] - runs migrations for a specific tenant schema
-- all-tenants   - runs migrations for all tenant schemas`
+- up			- runs migrations
+- down [number]		- revert last [number] of migrations, or all if omitted
+- goto <version>	- migrate to a specific version number
+- create [name]		- creates new blank migration file
+- tenant [schema] [command] [args] - runs migrations for a specific tenant schema
+- all-tenants [command] [args]     - runs migrations for all tenant schemas`
 	command := &cobra.Command{
 		Use:       "migrate",
 		Short:     "Execute app DB migration scripts",
 		Long:      cmdDesc,
-		ValidArgs: []string{"up", "down", "create", "tenant", "all-tenants"},
+		ValidArgs: []string{"up", "down", "goto", "create", "tenant", "all-tenants"},
 		RunE: func(command *cobra.Command, args []string) error {
 			cmd := ""
 			if len(args) > 0 {
@@ -75,8 +76,8 @@ func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command
 					return fmt.Errorf("database access is not available")
 				}
 
-				// Run migrations for all tenants
-				return dao.AutoMigrateSchemas()
+				// Run migrations for all tenants, passing any sub-command and args
+				return dao.AutoMigrateSchemas(args[1:]...)
 			default:
 				runner, err := migrate.NewRunner(
 					fmt.Sprintf("file:///%s", app.MigrationsDir()),

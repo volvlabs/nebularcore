@@ -29,7 +29,11 @@ func (d *Dao) DropSchema(schemaName string) error {
 	return d.DB().Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE", schemaName)).Error
 }
 
-func (d *Dao) MigrateSchema(schemaName string) error {
+func (d *Dao) MigrateSchema(schemaName string, args ...string) error {
+	if len(args) == 0 {
+		args = []string{"up"}
+	}
+
 	dbConfig := d.databaseConfig
 	// Create a base runner
 	runner, err := migrate.NewRunner(
@@ -54,10 +58,10 @@ func (d *Dao) MigrateSchema(schemaName string) error {
 	}
 
 	// Run the migration
-	return schemaRunner.Run("up")
+	return schemaRunner.Run(args...)
 }
 
-func (d *Dao) AutoMigrateSchemas() error {
+func (d *Dao) AutoMigrateSchemas(args ...string) error {
 	const batchSize = 1000
 	var offset int
 
@@ -79,7 +83,7 @@ func (d *Dao) AutoMigrateSchemas() error {
 		}
 
 		for _, schemaName := range schemaNames {
-			if err := d.MigrateSchema(schemaName); err != nil {
+			if err := d.MigrateSchema(schemaName, args...); err != nil {
 				return err
 			}
 		}

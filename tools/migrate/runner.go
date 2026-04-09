@@ -81,6 +81,15 @@ func (r *Runner) Run(args ...string) error {
 			fmt.Sscanf(args[1], "%d", &toRevertCount)
 		}
 		return r.down(toRevertCount)
+	case "goto":
+		if len(args) < 2 {
+			return fmt.Errorf("goto requires a target version number")
+		}
+		var version uint
+		if _, err := fmt.Sscanf(args[1], "%d", &version); err != nil {
+			return fmt.Errorf("invalid version %q: must be a positive integer", args[1])
+		}
+		return r.goTo(version)
 	default:
 		return fmt.Errorf("command not supported: %q", cmd)
 	}
@@ -118,6 +127,20 @@ func (r *Runner) down(toRevertCount int) error {
 		return err
 	}
 	log.Info().Msgf("database migration rollback ran successfully%s", schemaInfo)
+	return nil
+}
+
+func (r *Runner) goTo(version uint) error {
+	schemaInfo := ""
+	if r.schemaSearchParam != "" {
+		schemaInfo = fmt.Sprintf(" for schema '%s'", r.schemaSearchParam)
+	}
+
+	if err := r.migrate.Migrate(version); err != nil && err != migrate.ErrNoChange {
+		log.Err(err).Msgf("database migration goto version %d failed%s", version, schemaInfo)
+		return err
+	}
+	log.Info().Msgf("database migration moved to version %d successfully%s", version, schemaInfo)
 	return nil
 }
 
