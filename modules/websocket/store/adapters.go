@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"gitlab.com/jideobs/nebularcore/modules/websocket/connections"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/protocol"
+	"github.com/volvlabs/nebularcore/modules/websocket/connections"
+	"github.com/volvlabs/nebularcore/modules/websocket/protocol"
 )
 
 // Adapter implements the WebSocketAdapter interface, providing a high-level API

@@ -7,7 +7,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	types "gitlab.com/jideobs/nebularcore/tools/types"
+	types "github.com/volvlabs/nebularcore/tools/types"
 
 	uuid "github.com/google/uuid"
 )

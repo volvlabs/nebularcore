@@ -1,6 +1,6 @@
 package bridge
 
-import "gitlab.com/jideobs/nebularcore/modules/websocket/protocol"
+import "github.com/volvlabs/nebularcore/modules/websocket/protocol"
 
 // MatchTopic delegates to protocol.MatchTopic.
 func MatchTopic(pattern, topic string) bool {

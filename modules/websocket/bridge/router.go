@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/protocol"
+	"github.com/volvlabs/nebularcore/modules/websocket/protocol"
 )
 
 // MessageHandler processes an incoming client message for a specific type.

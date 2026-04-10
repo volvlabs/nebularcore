@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"gitlab.com/jideobs/nebularcore/modules/storage/models"
+	"github.com/volvlabs/nebularcore/modules/storage/models"
 )
 
 // StorageProvider defines the interface for storage operations

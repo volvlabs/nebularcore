@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.com/jideobs/nebularcore/modules/storage/models"
+	"github.com/volvlabs/nebularcore/modules/storage/models"
 )
 
 func setupTestEnvironment(t *testing.T) (string, func()) {

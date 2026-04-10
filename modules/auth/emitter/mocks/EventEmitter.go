@@ -5,8 +5,8 @@ package mocks
 import (
 	context "context"
 
-	emitter "gitlab.com/jideobs/nebularcore/modules/auth/emitter"
-	interfaces "gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
+	emitter "github.com/volvlabs/nebularcore/modules/auth/emitter"
+	interfaces "github.com/volvlabs/nebularcore/modules/auth/interfaces"
 
 	mock "github.com/stretchr/testify/mock"
 )

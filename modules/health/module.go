@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	migrationRunner "gitlab.com/jideobs/nebularcore/core/migration_runner"
-	"gitlab.com/jideobs/nebularcore/core/module"
-	"gitlab.com/jideobs/nebularcore/modules/health/config"
+	migrationRunner "github.com/volvlabs/nebularcore/core/migration_runner"
+	"github.com/volvlabs/nebularcore/core/module"
+	"github.com/volvlabs/nebularcore/modules/health/config"
 	"gorm.io/gorm"
 )
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"gitlab.com/jideobs/nebularcore/core/model"
+	"github.com/volvlabs/nebularcore/core/model"
 	"gorm.io/gorm"
 )
 

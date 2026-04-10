@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	autherrors "gitlab.com/jideobs/nebularcore/modules/auth/errors"
-	"gitlab.com/jideobs/nebularcore/modules/auth/factories"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models"
+	autherrors "github.com/volvlabs/nebularcore/modules/auth/errors"
+	"github.com/volvlabs/nebularcore/modules/auth/factories"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/models"
 	"gorm.io/gorm"
 )
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/protocol"
+	"github.com/volvlabs/nebularcore/modules/websocket/protocol"
 )
 
 func makeConn(id, userID, tenantID string) *conn {

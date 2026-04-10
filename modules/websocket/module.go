@@ -8,15 +8,15 @@ import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 
-	"gitlab.com/jideobs/nebularcore/core/migration_runner"
-	"gitlab.com/jideobs/nebularcore/core/module"
-	"gitlab.com/jideobs/nebularcore/modules/event"
-	wsauth "gitlab.com/jideobs/nebularcore/modules/websocket/auth"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/bridge"
-	wsconfig "gitlab.com/jideobs/nebularcore/modules/websocket/config"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/connections"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/handlers"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/store"
+	"github.com/volvlabs/nebularcore/core/migration_runner"
+	"github.com/volvlabs/nebularcore/core/module"
+	"github.com/volvlabs/nebularcore/modules/event"
+	wsauth "github.com/volvlabs/nebularcore/modules/websocket/auth"
+	"github.com/volvlabs/nebularcore/modules/websocket/bridge"
+	wsconfig "github.com/volvlabs/nebularcore/modules/websocket/config"
+	"github.com/volvlabs/nebularcore/modules/websocket/connections"
+	"github.com/volvlabs/nebularcore/modules/websocket/handlers"
+	"github.com/volvlabs/nebularcore/modules/websocket/store"
 )
 
 // Module implements the WebSocket module for NebularCore.

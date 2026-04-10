@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	eventmocks "gitlab.com/jideobs/nebularcore/modules/event/mocks"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/connections"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/store"
+	eventmocks "github.com/volvlabs/nebularcore/modules/event/mocks"
+	"github.com/volvlabs/nebularcore/modules/websocket/connections"
+	"github.com/volvlabs/nebularcore/modules/websocket/store"
 )
 
 func newTestBridge(bus *eventmocks.EventBus, allowedPatterns []string) *EventBridge {

@@ -7,10 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gitlab.com/jideobs/nebularcore/modules/auth/config"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	"gitlab.com/jideobs/nebularcore/modules/auth/state"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/state"
+	"github.com/volvlabs/nebularcore/tools/types"
 )
 
 type mockUser struct {

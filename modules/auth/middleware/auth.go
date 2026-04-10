@@ -6,9 +6,9 @@ import (
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
-	"gitlab.com/jideobs/nebularcore/modules/auth/backends"
-	"gitlab.com/jideobs/nebularcore/modules/auth/config"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/backends"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
 )
 
 // AuthMiddleware provides authentication middleware for Gin

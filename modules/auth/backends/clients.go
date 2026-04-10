@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"gitlab.com/jideobs/nebularcore/modules/auth/config"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
 )
 
 // SocialProviderClient defines the interface for social provider API clients

@@ -11,33 +11,33 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"gitlab.com/jideobs/nebularcore/modules/storage/models"
+	"github.com/volvlabs/nebularcore/modules/storage/models"
 )
 
 // mockS3Client implements the s3ClientAPI interface
 type mockS3Client struct {
-	putObjectOutput           *s3.PutObjectOutput
-	putObjectErr              error
-	getObjectOutput           *s3.GetObjectOutput
-	getObjectErr              error
-	deleteObjectOutput        *s3.DeleteObjectOutput
-	deleteObjectErr           error
-	listObjectsOutput         *s3.ListObjectsV2Output
-	listObjectsErr            error
-	headObjectOutput          *s3.HeadObjectOutput
-	headObjectErr             error
-	createMultipartOutput     *s3.CreateMultipartUploadOutput
-	createMultipartErr        error
-	uploadPartOutput          *s3.UploadPartOutput
-	uploadPartErr             error
-	completeMultipartOutput   *s3.CompleteMultipartUploadOutput
-	completeMultipartErr      error
-	abortMultipartOutput      *s3.AbortMultipartUploadOutput
-	abortMultipartErr         error
-	listMultipartPartsOutput  *s3.ListPartsOutput
-	listMultipartPartsErr     error
-	uploadPartCopyOutput      *s3.UploadPartCopyOutput
-	uploadPartCopyErr         error
+	putObjectOutput          *s3.PutObjectOutput
+	putObjectErr             error
+	getObjectOutput          *s3.GetObjectOutput
+	getObjectErr             error
+	deleteObjectOutput       *s3.DeleteObjectOutput
+	deleteObjectErr          error
+	listObjectsOutput        *s3.ListObjectsV2Output
+	listObjectsErr           error
+	headObjectOutput         *s3.HeadObjectOutput
+	headObjectErr            error
+	createMultipartOutput    *s3.CreateMultipartUploadOutput
+	createMultipartErr       error
+	uploadPartOutput         *s3.UploadPartOutput
+	uploadPartErr            error
+	completeMultipartOutput  *s3.CompleteMultipartUploadOutput
+	completeMultipartErr     error
+	abortMultipartOutput     *s3.AbortMultipartUploadOutput
+	abortMultipartErr        error
+	listMultipartPartsOutput *s3.ListPartsOutput
+	listMultipartPartsErr    error
+	uploadPartCopyOutput     *s3.UploadPartCopyOutput
+	uploadPartCopyErr        error
 }
 
 func (m *mockS3Client) PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error) {
@@ -104,7 +104,7 @@ func TestProvider_Upload(t *testing.T) {
 		File:        bytes.NewReader([]byte("test content")),
 		FileName:    "test.txt",
 		ContentType: "text/plain",
-		Key:        "test/file.txt",
+		Key:         "test/file.txt",
 		Metadata:    map[string]string{"test": "value"},
 	}
 

@@ -7,12 +7,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gitlab.com/jideobs/nebularcore/modules/auth/backends"
-	backendMocks "gitlab.com/jideobs/nebularcore/modules/auth/backends/mocks"
-	eventEmitterMocks "gitlab.com/jideobs/nebularcore/modules/auth/emitter/mocks"
-	autherrors "gitlab.com/jideobs/nebularcore/modules/auth/errors"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces/mocks"
+	"github.com/volvlabs/nebularcore/modules/auth/backends"
+	backendMocks "github.com/volvlabs/nebularcore/modules/auth/backends/mocks"
+	eventEmitterMocks "github.com/volvlabs/nebularcore/modules/auth/emitter/mocks"
+	autherrors "github.com/volvlabs/nebularcore/modules/auth/errors"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces/mocks"
 )
 
 func TestAuthenticationManager__RegisterBackend(t *testing.T) {

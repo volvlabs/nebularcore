@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"gitlab.com/jideobs/nebularcore/modules/auth/config"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models/responses"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/models/responses"
 )
 
 type JWTTokenIssuer struct {

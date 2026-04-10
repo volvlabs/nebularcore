@@ -7,12 +7,12 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"gitlab.com/jideobs/nebularcore/core/migration_runner"
-	"gitlab.com/jideobs/nebularcore/core/module"
-	"gitlab.com/jideobs/nebularcore/modules/storage/gcs"
-	"gitlab.com/jideobs/nebularcore/modules/storage/local"
-	"gitlab.com/jideobs/nebularcore/modules/storage/models"
-	"gitlab.com/jideobs/nebularcore/modules/storage/s3"
+	"github.com/volvlabs/nebularcore/core/migration_runner"
+	"github.com/volvlabs/nebularcore/core/module"
+	"github.com/volvlabs/nebularcore/modules/storage/gcs"
+	"github.com/volvlabs/nebularcore/modules/storage/local"
+	"github.com/volvlabs/nebularcore/modules/storage/models"
+	"github.com/volvlabs/nebularcore/modules/storage/s3"
 	"gorm.io/gorm"
 )
 

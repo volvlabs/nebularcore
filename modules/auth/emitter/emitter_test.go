@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models"
-	"gitlab.com/jideobs/nebularcore/modules/event"
-	"gitlab.com/jideobs/nebularcore/modules/event/mocks"
+	"github.com/volvlabs/nebularcore/modules/auth/models"
+	"github.com/volvlabs/nebularcore/modules/event"
+	"github.com/volvlabs/nebularcore/modules/event/mocks"
 )
 
 func TestEventEmitter_EmitAuthEvent(t *testing.T) {

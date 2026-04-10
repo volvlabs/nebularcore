@@ -3,7 +3,7 @@ package store
 import (
 	"sync"
 
-	"gitlab.com/jideobs/nebularcore/modules/websocket/protocol"
+	"github.com/volvlabs/nebularcore/modules/websocket/protocol"
 )
 
 // Subscriptions tracks which connections are subscribed to which topics.

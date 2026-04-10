@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/jideobs/nebularcore/core/migration_runner"
+	"github.com/volvlabs/nebularcore/core/migration_runner"
 )
 
 //go:embed testdata/migrations/*.sql

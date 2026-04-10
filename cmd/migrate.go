@@ -10,9 +10,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/volvlabs/nebularcore/core"
-	"github.com/volvlabs/nebularcore/models/config"
-	"github.com/volvlabs/nebularcore/tools/migrate"
-	migrationRunner "github.com/vovlabs/nebularcore/tools/migrate/runner"
+	"github.com/volvlabs/nebularcore/core/config"
+	migrationRunner "github.com/volvlabs/nebularcore/core/migration_runner"
+	"github.com/volvlabs/nebularcore/core/module"
 )
 
 func NewMigrateCommand[T config.Settings](
@@ -20,17 +20,13 @@ func NewMigrateCommand[T config.Settings](
 	dbCfg config.DatabaseConfig,
 ) *cobra.Command {
 	const cmdDesc = `Supported commands are:
-- up			- runs migrations
-- down [number]		- revert last [number] of migrations, or all if omitted
-- goto <version>	- migrate to a specific version number
-- create [name]		- creates new blank migration file
-- tenant [schema] [command] [args] - runs migrations for a specific tenant schema
-- all-tenants [command] [args]     - runs migrations for all tenant schemas`
+- create [module] [name] - creates new blank migration file
+- up - runs all pending migrations`
 	command := &cobra.Command{
 		Use:       "migrate",
 		Short:     "All DB migration commands",
 		Long:      cmdDesc,
-		ValidArgs: []string{"up", "down", "goto", "create", "tenant", "all-tenants"},
+		ValidArgs: []string{"create", "up"},
 		RunE: func(command *cobra.Command, args []string) error {
 			cmd := ""
 			if len(args) > 0 {
@@ -84,42 +80,6 @@ func NewMigrateCommand[T config.Settings](
 					log.Info().Msgf("migration for module %s ran successfully", om.Name)
 				}
 
-				schemaName := args[1]
-
-				// Create a new migration runner
-				runner, err := migrate.NewRunner(
-					fmt.Sprintf("file:///%s", app.MigrationsDir()),
-					fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-						dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode))
-				if err != nil {
-					return err
-				}
-
-				// Create a schema-specific runner
-				schemaRunner, err := runner.WithSchema(schemaName)
-				if err != nil {
-					return err
-				}
-
-				// Run the migration with the remaining args
-				var migrationArgs []string
-				if len(args) > 2 {
-					migrationArgs = args[2:]
-				} else {
-					migrationArgs = []string{"up"}
-				}
-
-				return schemaRunner.Run(migrationArgs...)
-			case "all-tenants":
-				// Create a DAO to access the database
-				dao := app.Dao()
-				if dao == nil {
-					return fmt.Errorf("database access is not available")
-				}
-
-				// Run migrations for all tenants, passing any sub-command and args
-				return dao.AutoMigrateSchemas(args[1:]...)
-			default:
 				return fmt.Errorf("unknown command %s", cmd)
 			}
 			return nil

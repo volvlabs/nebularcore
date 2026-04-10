@@ -7,7 +7,7 @@ import (
 
 	"github.com/casbin/casbin/v2"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
-	"gitlab.com/jideobs/nebularcore/modules/auth/repositories"
+	"github.com/volvlabs/nebularcore/modules/auth/repositories"
 	"gorm.io/gorm"
 )
 

@@ -5,10 +5,10 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/core/config"
-	migrationRunner "gitlab.com/jideobs/nebularcore/core/migration_runner"
-	"gitlab.com/jideobs/nebularcore/core/module"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/core/config"
+	migrationRunner "github.com/volvlabs/nebularcore/core/migration_runner"
+	"github.com/volvlabs/nebularcore/core/module"
 	"gorm.io/gorm"
 )
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	runnerMocks "gitlab.com/jideobs/nebularcore/core/migration_runner/mocks"
+	runnerMocks "github.com/volvlabs/nebularcore/core/migration_runner/mocks"
 )
 
 func TestChainedSource_Open(t *testing.T) {

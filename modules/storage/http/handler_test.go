@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"gitlab.com/jideobs/nebularcore/modules/storage/local"
+	"github.com/volvlabs/nebularcore/modules/storage/local"
 )
 
 // mockLocalProvider implements a mock for the local.Provider

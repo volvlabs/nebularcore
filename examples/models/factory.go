@@ -1,6 +1,6 @@
 package models
 
-import "gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
+import "github.com/volvlabs/nebularcore/modules/auth/interfaces"
 
 // CustomUserFactory creates instances of CustomUser
 type CustomUserFactory struct{}

@@ -1,8 +1,8 @@
 package factories
 
 import (
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/models"
 )
 
 type DefaultUserFactory struct {

@@ -7,10 +7,10 @@ import (
 	"sync"
 
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/modules/event"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/connections"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/protocol"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/store"
+	"github.com/volvlabs/nebularcore/modules/event"
+	"github.com/volvlabs/nebularcore/modules/websocket/connections"
+	"github.com/volvlabs/nebularcore/modules/websocket/protocol"
+	"github.com/volvlabs/nebularcore/modules/websocket/store"
 )
 
 // EventBridge subscribes to the event.Bus and fans out matching events to

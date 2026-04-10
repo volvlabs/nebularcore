@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"gitlab.com/jideobs/nebularcore/modules/storage/models"
+	"github.com/volvlabs/nebularcore/modules/storage/models"
 )
 
 // mockStorageProvider implements StorageProvider interface for testing
@@ -116,7 +116,7 @@ func TestStorageProviderInterface(t *testing.T) {
 				File:        bytes.NewReader(testContent),
 				FileName:    "test.txt",
 				ContentType: "text/plain",
-				Key:        "test/file.txt",
+				Key:         "test/file.txt",
 				Metadata:    map[string]string{"test": "value"},
 			}
 			output, err := tt.provider.Upload(ctx, input)
@@ -208,7 +208,7 @@ func TestStorageProviderEdgeCases(t *testing.T) {
 		_, err := provider.Upload(ctx, &models.UploadInput{
 			FileName:    "test.txt",
 			ContentType: "text/plain",
-			Key:        "test/file.txt",
+			Key:         "test/file.txt",
 		})
 		if err == nil {
 			t.Error("expected error for nil file")

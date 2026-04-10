@@ -12,9 +12,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/jideobs/nebularcore/modules/event"
-	websocket "gitlab.com/jideobs/nebularcore/modules/websocket"
-	wsconfig "gitlab.com/jideobs/nebularcore/modules/websocket/config"
+	"github.com/volvlabs/nebularcore/modules/event"
+	websocket "github.com/volvlabs/nebularcore/modules/websocket"
+	wsconfig "github.com/volvlabs/nebularcore/modules/websocket/config"
 )
 
 func main() {

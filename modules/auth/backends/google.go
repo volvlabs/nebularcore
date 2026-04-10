@@ -5,11 +5,11 @@ import (
 	"errors"
 
 	"github.com/rs/zerolog/log"
-	autherrors "gitlab.com/jideobs/nebularcore/modules/auth/errors"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models"
-	"gitlab.com/jideobs/nebularcore/modules/auth/pkg"
-	"gitlab.com/jideobs/nebularcore/modules/auth/types"
+	autherrors "github.com/volvlabs/nebularcore/modules/auth/errors"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/models"
+	"github.com/volvlabs/nebularcore/modules/auth/pkg"
+	"github.com/volvlabs/nebularcore/modules/auth/types"
 	"gorm.io/gorm"
 )
 

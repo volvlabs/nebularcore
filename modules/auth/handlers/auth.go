@@ -7,15 +7,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gitlab.com/jideobs/nebularcore/models/responses"
-	"gitlab.com/jideobs/nebularcore/modules/auth/backends"
-	"gitlab.com/jideobs/nebularcore/modules/auth/config"
-	autherrors "gitlab.com/jideobs/nebularcore/modules/auth/errors"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models/requests"
-	authresponses "gitlab.com/jideobs/nebularcore/modules/auth/models/responses"
-	"gitlab.com/jideobs/nebularcore/modules/auth/types"
-	"gitlab.com/jideobs/nebularcore/tools/handlers"
+	"github.com/volvlabs/nebularcore/models/responses"
+	"github.com/volvlabs/nebularcore/modules/auth/backends"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
+	autherrors "github.com/volvlabs/nebularcore/modules/auth/errors"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/models/requests"
+	authresponses "github.com/volvlabs/nebularcore/modules/auth/models/responses"
+	"github.com/volvlabs/nebularcore/modules/auth/types"
+	"github.com/volvlabs/nebularcore/tools/handlers"
 )
 
 // AuthHandler handles authentication-related HTTP requests

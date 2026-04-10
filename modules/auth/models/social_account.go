@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-	"gitlab.com/jideobs/nebularcore/core/model"
-	"gitlab.com/jideobs/nebularcore/modules/auth/types"
+	"github.com/volvlabs/nebularcore/core/model"
+	"github.com/volvlabs/nebularcore/modules/auth/types"
 )
 
 // SocialAccount represents a social media account linked to a user

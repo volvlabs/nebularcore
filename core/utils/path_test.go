@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/jideobs/nebularcore/core/utils"
+	"github.com/volvlabs/nebularcore/core/utils"
 )
 
 func TestGetProjectRoot(t *testing.T) {

@@ -3,7 +3,7 @@ package backends
 import (
 	"context"
 
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
 )
 
 // AuthenticationBackend defines the interface for authentication backends

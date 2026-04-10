@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"gitlab.com/jideobs/nebularcore/modules/storage/models"
+	"github.com/volvlabs/nebularcore/modules/storage/models"
 )
 
 // s3ClientAPI defines the interface for S3 client operations

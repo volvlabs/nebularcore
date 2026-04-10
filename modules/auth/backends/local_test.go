@@ -7,10 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gitlab.com/jideobs/nebularcore/modules/auth/backends"
-	autherrors "gitlab.com/jideobs/nebularcore/modules/auth/errors"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces/mocks"
+	"github.com/volvlabs/nebularcore/modules/auth/backends"
+	autherrors "github.com/volvlabs/nebularcore/modules/auth/errors"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces/mocks"
 )
 
 func TestLocalBackend(t *testing.T) {

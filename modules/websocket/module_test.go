@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
-	"gitlab.com/jideobs/nebularcore/core/module"
-	"gitlab.com/jideobs/nebularcore/modules/event"
-	wsconfig "gitlab.com/jideobs/nebularcore/modules/websocket/config"
+	"github.com/volvlabs/nebularcore/core/module"
+	"github.com/volvlabs/nebularcore/modules/event"
+	wsconfig "github.com/volvlabs/nebularcore/modules/websocket/config"
 )
 
 // mockBus implements event.Bus for testing.

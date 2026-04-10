@@ -47,8 +47,8 @@ package main
 import (
     "log"
 
-    "gitlab.com/jideobs/nebularcore/core"
-    "gitlab.com/jideobs/nebularcore/modules/health"
+    "github.com/volvlabs/nebularcore/core"
+    "github.com/volvlabs/nebularcore/modules/health"
 )
 
 func main() {
@@ -113,7 +113,7 @@ package main
 
 import (
     "context"
-    "gitlab.com/jideobs/nebularcore/modules/health"
+    "github.com/volvlabs/nebularcore/modules/health"
 )
 
 func main() {

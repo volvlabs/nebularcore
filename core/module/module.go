@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
-	migrationRunner "gitlab.com/jideobs/nebularcore/core/migration_runner"
+	migrationRunner "github.com/volvlabs/nebularcore/core/migration_runner"
 	"gorm.io/gorm"
 )
 

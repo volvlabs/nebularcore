@@ -32,8 +32,8 @@ To register the tenant module:
 package main
 
 import (
-    "gitlab.com/jideobs/nebularcore/core"
-    "gitlab.com/jideobs/nebularcore/modules/tenant"
+    "github.com/volvlabs/nebularcore/core"
+    "github.com/volvlabs/nebularcore/modules/tenant"
 )
 
 func main() {
@@ -67,7 +67,7 @@ Models that should be tenant-aware must implement the `model.TenantBound` interf
 ```go
 package myapp
 
-import "gitlab.com/jideobs/nebularcore/core/model"
+import "github.com/volvlabs/nebularcore/core/model"
 
 type MyModel struct {
     ID        uint   `gorm:"primarykey"`
@@ -89,7 +89,7 @@ Use the `TenantAwareRepository` to create repositories for tenant-bound models:
 package myapp
 
 import (
-    "gitlab.com/jideobs/nebularcore/modules/tenant"
+    "github.com/volvlabs/nebularcore/modules/tenant"
     "gorm.io/gorm"
 )
 
@@ -127,7 +127,7 @@ package main
 
 import (
     "github.com/gin-gonic/gin"
-    "gitlab.com/jideobs/nebularcore/modules/tenant"
+    "github.com/volvlabs/nebularcore/modules/tenant"
 )
 
 func setupRoutes(r *gin.Engine) {
@@ -212,7 +212,7 @@ import (
     "context"
     "github.com/gin-gonic/gin"
     "gorm.io/gorm"
-    "gitlab.com/jideobs/nebularcore/modules/tenant"
+    "github.com/volvlabs/nebularcore/modules/tenant"
 )
 
 func main() {

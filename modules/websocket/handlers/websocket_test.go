@@ -13,12 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	wsauth "gitlab.com/jideobs/nebularcore/modules/websocket/auth"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/bridge"
-	wsconfig "gitlab.com/jideobs/nebularcore/modules/websocket/config"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/connections"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/protocol"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/store"
+	wsauth "github.com/volvlabs/nebularcore/modules/websocket/auth"
+	"github.com/volvlabs/nebularcore/modules/websocket/bridge"
+	wsconfig "github.com/volvlabs/nebularcore/modules/websocket/config"
+	"github.com/volvlabs/nebularcore/modules/websocket/connections"
+	"github.com/volvlabs/nebularcore/modules/websocket/protocol"
+	"github.com/volvlabs/nebularcore/modules/websocket/store"
 )
 
 func setupTestServer(t *testing.T, authRequired bool) (*httptest.Server, *connections.Manager, *store.Subscriptions) {

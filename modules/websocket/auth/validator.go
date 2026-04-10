@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/golang-jwt/jwt/v4"
-	"gitlab.com/jideobs/nebularcore/tools/security"
+	"github.com/volvlabs/nebularcore/tools/security"
 )
 
 // Claims holds the validated user claims from a JWT.

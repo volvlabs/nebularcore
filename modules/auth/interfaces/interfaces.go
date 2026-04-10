@@ -6,11 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models/responses"
-	"gitlab.com/jideobs/nebularcore/modules/auth/pkg"
-	authTypes "gitlab.com/jideobs/nebularcore/modules/auth/types"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/modules/auth/models"
+	"github.com/volvlabs/nebularcore/modules/auth/models/responses"
+	"github.com/volvlabs/nebularcore/modules/auth/pkg"
+	authTypes "github.com/volvlabs/nebularcore/modules/auth/types"
+	"github.com/volvlabs/nebularcore/tools/types"
 )
 
 // User represents the interface that all user models must implement

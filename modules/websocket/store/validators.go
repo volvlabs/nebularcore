@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"gitlab.com/jideobs/nebularcore/modules/websocket/connections"
-	"gitlab.com/jideobs/nebularcore/modules/websocket/protocol"
+	"github.com/volvlabs/nebularcore/modules/websocket/connections"
+	"github.com/volvlabs/nebularcore/modules/websocket/protocol"
 )
 
 // TopicValidatorFunc is called before a subscribe or publish is processed.

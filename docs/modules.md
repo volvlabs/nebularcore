@@ -155,8 +155,8 @@ func (s *Service) DoSomething() error {
 package main
 
 import (
-    "gitlab.com/jideobs/nebularcore/core"
-    "gitlab.com/jideobs/nebularcore/modules/mymodule"
+    "github.com/volvlabs/nebularcore/core"
+    "github.com/volvlabs/nebularcore/modules/mymodule"
 )
 
 func main() {

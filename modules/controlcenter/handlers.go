@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gitlab.com/jideobs/nebularcore/core/module"
+	"github.com/volvlabs/nebularcore/core/module"
 )
 
 type handler struct {

@@ -4,12 +4,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gitlab.com/jideobs/nebularcore/models/responses"
-	"gitlab.com/jideobs/nebularcore/modules/auth/config"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models/requests"
-	"gitlab.com/jideobs/nebularcore/modules/auth/password"
-	"gitlab.com/jideobs/nebularcore/tools/handlers"
+	"github.com/volvlabs/nebularcore/models/responses"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/models/requests"
+	"github.com/volvlabs/nebularcore/modules/auth/password"
+	"github.com/volvlabs/nebularcore/tools/handlers"
 )
 
 // PasswordHandler handles password-related HTTP requests

@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/core/module"
-	moduleMocks "gitlab.com/jideobs/nebularcore/core/module/mocks"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/core/module"
+	moduleMocks "github.com/volvlabs/nebularcore/core/module/mocks"
 )
 
 // TestSettings implements config.Settings interface for testing

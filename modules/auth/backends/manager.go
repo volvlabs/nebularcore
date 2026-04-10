@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/modules/auth/emitter"
-	autherrors "gitlab.com/jideobs/nebularcore/modules/auth/errors"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/emitter"
+	autherrors "github.com/volvlabs/nebularcore/modules/auth/errors"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
 )
 
 // AuthenticationManager manages multiple authentication backends

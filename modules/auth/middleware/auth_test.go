@@ -10,10 +10,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	backendMocks "gitlab.com/jideobs/nebularcore/modules/auth/backends/mocks"
-	"gitlab.com/jideobs/nebularcore/modules/auth/config"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces/mocks"
-	"gitlab.com/jideobs/nebularcore/modules/auth/middleware"
+	backendMocks "github.com/volvlabs/nebularcore/modules/auth/backends/mocks"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces/mocks"
+	"github.com/volvlabs/nebularcore/modules/auth/middleware"
 )
 
 func setupTest(t *testing.T) (*gin.Engine, *middleware.AuthMiddleware, *backendMocks.AuthenticationManager) {

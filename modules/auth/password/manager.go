@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/modules/auth/emitter"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models/requests"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/modules/auth/emitter"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/models/requests"
+	"github.com/volvlabs/nebularcore/tools/types"
 	"golang.org/x/crypto/bcrypt"
 )
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/volvlabs/nebularcore/core"
-	"github.com/volvlabs/nebularcore/models/config"
+	"github.com/volvlabs/nebularcore/core/config"
 )
 
 func NewServeCommand[T config.Settings](app core.App[T]) *cobra.Command {

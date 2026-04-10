@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models"
+	"github.com/volvlabs/nebularcore/modules/auth/models"
 	"gorm.io/gorm"
 )
 

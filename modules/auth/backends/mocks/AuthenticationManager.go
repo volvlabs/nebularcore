@@ -5,9 +5,9 @@ package mocks
 import (
 	context "context"
 
-	backends "gitlab.com/jideobs/nebularcore/modules/auth/backends"
+	backends "github.com/volvlabs/nebularcore/modules/auth/backends"
 
-	interfaces "gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
+	interfaces "github.com/volvlabs/nebularcore/modules/auth/interfaces"
 
 	mock "github.com/stretchr/testify/mock"
 )

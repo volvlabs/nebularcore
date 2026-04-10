@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"gitlab.com/jideobs/nebularcore/modules/auth/errors"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models"
-	"gitlab.com/jideobs/nebularcore/modules/auth/types"
+	"github.com/volvlabs/nebularcore/modules/auth/errors"
+	"github.com/volvlabs/nebularcore/modules/auth/models"
+	"github.com/volvlabs/nebularcore/modules/auth/types"
 	"gorm.io/gorm"
 )
 

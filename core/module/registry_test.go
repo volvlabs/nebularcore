@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/jideobs/nebularcore/core/module"
-	"gitlab.com/jideobs/nebularcore/core/module/mocks"
+	"github.com/volvlabs/nebularcore/core/module"
+	"github.com/volvlabs/nebularcore/core/module/mocks"
 )
 
 func TestRegistry_Register(t *testing.T) {

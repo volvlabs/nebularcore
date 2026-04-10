@@ -7,13 +7,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
-	backendsMocks "gitlab.com/jideobs/nebularcore/modules/auth/backends/mocks"
-	"gitlab.com/jideobs/nebularcore/modules/auth/config"
-	autherrors "gitlab.com/jideobs/nebularcore/modules/auth/errors"
-	"gitlab.com/jideobs/nebularcore/modules/auth/handlers"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces/mocks"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models/responses"
-	"gitlab.com/jideobs/nebularcore/tools/test"
+	backendsMocks "github.com/volvlabs/nebularcore/modules/auth/backends/mocks"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
+	autherrors "github.com/volvlabs/nebularcore/modules/auth/errors"
+	"github.com/volvlabs/nebularcore/modules/auth/handlers"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces/mocks"
+	"github.com/volvlabs/nebularcore/modules/auth/models/responses"
+	"github.com/volvlabs/nebularcore/tools/test"
 )
 
 func setupAuthHandler(t *testing.T) (*handlers.AuthHandler, *backendsMocks.AuthenticationManager, *mocks.TokenIssuer, *mocks.GoogleSignin) {

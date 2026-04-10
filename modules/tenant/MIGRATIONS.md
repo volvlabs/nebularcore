@@ -119,8 +119,8 @@ migrations:
 package main
 
 import (
-    "gitlab.com/jideobs/nebularcore/core"
-    "gitlab.com/jideobs/nebularcore/modules/tenant"
+    "github.com/volvlabs/nebularcore/core"
+    "github.com/volvlabs/nebularcore/modules/tenant"
 )
 
 func main() {
@@ -144,7 +144,7 @@ package main
 
 import (
     "context"
-    "gitlab.com/jideobs/nebularcore/core/migration"
+    "github.com/volvlabs/nebularcore/core/migration"
 )
 
 func main() {
@@ -295,8 +295,8 @@ package main
 
 import (
     "context"
-    "gitlab.com/jideobs/nebularcore/core"
-    "gitlab.com/jideobs/nebularcore/core/migration"
+    "github.com/volvlabs/nebularcore/core"
+    "github.com/volvlabs/nebularcore/core/migration"
 )
 
 func main() {
@@ -319,7 +319,7 @@ func main() {
 package myapp
 
 import (
-    "gitlab.com/jideobs/nebularcore/core/repository"
+    "github.com/volvlabs/nebularcore/core/repository"
     "gorm.io/gorm"
 )
 

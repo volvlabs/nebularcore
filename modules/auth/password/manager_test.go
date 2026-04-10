@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gitlab.com/jideobs/nebularcore/modules/auth/emitter/mocks"
-	authMocks "gitlab.com/jideobs/nebularcore/modules/auth/interfaces/mocks"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models/requests"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/modules/auth/emitter/mocks"
+	authMocks "github.com/volvlabs/nebularcore/modules/auth/interfaces/mocks"
+	"github.com/volvlabs/nebularcore/modules/auth/models/requests"
+	"github.com/volvlabs/nebularcore/tools/types"
 	"golang.org/x/crypto/bcrypt"
 )
 

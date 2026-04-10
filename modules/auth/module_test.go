@@ -7,12 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	migrationRunner "gitlab.com/jideobs/nebularcore/core/migration_runner"
-	"gitlab.com/jideobs/nebularcore/modules/auth"
-	"gitlab.com/jideobs/nebularcore/modules/auth/backends"
-	"gitlab.com/jideobs/nebularcore/modules/auth/config"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
-	eventMocks "gitlab.com/jideobs/nebularcore/modules/event/mocks"
+	migrationRunner "github.com/volvlabs/nebularcore/core/migration_runner"
+	"github.com/volvlabs/nebularcore/modules/auth"
+	"github.com/volvlabs/nebularcore/modules/auth/backends"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	eventMocks "github.com/volvlabs/nebularcore/modules/event/mocks"
 	"gorm.io/gorm"
 )
 

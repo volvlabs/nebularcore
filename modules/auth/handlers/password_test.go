@@ -7,12 +7,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
-	"gitlab.com/jideobs/nebularcore/modules/auth/config"
-	"gitlab.com/jideobs/nebularcore/modules/auth/handlers"
-	"gitlab.com/jideobs/nebularcore/modules/auth/interfaces/mocks"
-	"gitlab.com/jideobs/nebularcore/modules/auth/models/requests"
-	passwordMocks "gitlab.com/jideobs/nebularcore/modules/auth/password/mocks"
-	"gitlab.com/jideobs/nebularcore/tools/test"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
+	"github.com/volvlabs/nebularcore/modules/auth/handlers"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces/mocks"
+	"github.com/volvlabs/nebularcore/modules/auth/models/requests"
+	passwordMocks "github.com/volvlabs/nebularcore/modules/auth/password/mocks"
+	"github.com/volvlabs/nebularcore/tools/test"
 )
 
 func TestPasswordHandlerScenarios(t *testing.T) {

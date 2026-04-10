@@ -6,7 +6,7 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
-	interfaces "gitlab.com/jideobs/nebularcore/modules/auth/interfaces"
+	interfaces "github.com/volvlabs/nebularcore/modules/auth/interfaces"
 
 	uuid "github.com/google/uuid"
 )
