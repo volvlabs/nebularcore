@@ -73,7 +73,7 @@ jobs:
       (github.event_name == 'push' && (
         github.ref == 'refs/heads/main' ||
         github.ref == 'refs/heads/develop' ||
-        startsWith(github.ref, 'refs/heads/feature/')
+        startsWith(github.ref, 'refs/heads/feature-')
       ))
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -83,13 +83,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Compute short branch slug
-        if: startsWith(github.ref, 'refs/heads/feature/')
+      - name: Compute branch prerelease id
+        if: startsWith(github.ref, 'refs/heads/feature-')
         run: |
           SLUG="${{ github.ref_name }}"
-          SLUG="${SLUG#feature/}"
           SLUG="${SLUG//[^a-zA-Z0-9]/-}"
-          SLUG="${SLUG:0:20}"
+          SLUG="${SLUG:0:30}"
           SLUG="${SLUG%-}"
           echo "RELEASE_PREID=$SLUG" >> $GITHUB_ENV
 
