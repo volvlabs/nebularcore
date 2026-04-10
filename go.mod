@@ -40,7 +40,7 @@ require (
 	gopkg.in/yaml.v2 v2.2.8
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.5.4
-	gorm.io/driver/sqlite v1.6.0
+	gorm.io/driver/sqlite v1.5.4
 	gorm.io/gorm v1.30.0
 )
 
