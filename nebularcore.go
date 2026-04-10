@@ -60,7 +60,9 @@ func (n *NebularCore[T]) Execute(ctx context.Context) error {
 	}()
 
 	go func() {
-		n.RootCmd.Execute()
+		if err := n.RootCmd.Execute(); err != nil {
+			fmt.Fprintf(os.Stderr, "command error: %v\n", err)
+		}
 
 		done <- true
 	}()

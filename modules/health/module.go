@@ -75,9 +75,13 @@ func (m *Module) Initialize(ctx context.Context, db *gorm.DB, router *gin.Engine
 	m.shutdown = make(chan struct{})
 
 	// Add default checks
-	m.AddCheck("system", m.systemCheck())
+	if err := m.AddCheck("system", m.systemCheck()); err != nil {
+		return fmt.Errorf("failed to add system check: %w", err)
+	}
 	if db != nil {
-		m.AddCheck("database", m.databaseCheck(db))
+		if err := m.AddCheck("database", m.databaseCheck(db)); err != nil {
+			return fmt.Errorf("failed to add database check: %w", err)
+		}
 	}
 
 	// Start check scheduler

@@ -111,6 +111,10 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	wsModule.Shutdown(shutdownCtx)
-	srv.Shutdown(shutdownCtx)
+	if err := wsModule.Shutdown(shutdownCtx); err != nil {
+		log.Error().Err(err).Msg("error shutting down websocket module")
+	}
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Error().Err(err).Msg("error shutting down server")
+	}
 }

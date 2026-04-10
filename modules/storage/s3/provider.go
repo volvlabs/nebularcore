@@ -58,23 +58,21 @@ func New(cfg Config) (*Provider, error) {
 		opts = append(opts, config.WithCredentialsProvider(creds))
 	}
 
-	// Add custom endpoint if provided
-	if cfg.Endpoint != "" {
-		customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-			return aws.Endpoint{URL: cfg.Endpoint, SigningRegion: cfg.Region}, nil
-		})
-		opts = append(opts, config.WithEndpointResolverWithOptions(customResolver))
-	}
-
 	awsCfg, err := config.LoadDefaultConfig(context.Background(), opts...)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load SDK config: %w", err)
 	}
 
-	s3Opts := []func(*s3.Options){}
+	// S3 client options
+	var s3Opts []func(*s3.Options)
 	if cfg.ForcePathStyle {
 		s3Opts = append(s3Opts, func(o *s3.Options) {
 			o.UsePathStyle = true
+		})
+	}
+	if cfg.Endpoint != "" {
+		s3Opts = append(s3Opts, func(o *s3.Options) {
+			o.BaseEndpoint = &cfg.Endpoint
 		})
 	}
 

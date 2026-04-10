@@ -135,10 +135,12 @@ func TestProvider_Upload(t *testing.T) {
 func TestProvider_Download(t *testing.T) {
 	testContent := []byte("test content")
 	mock := newMockStorage()
-	mock.writeObject("test/file.txt", testContent, &storage.ObjectAttrs{
+	if err := mock.writeObject("test/file.txt", testContent, &storage.ObjectAttrs{
 		Name:        "test/file.txt",
 		ContentType: "text/plain",
-	})
+	}); err != nil {
+		t.Fatalf("failed to write test object: %v", err)
+	}
 
 	provider := &Provider{
 		client: mock,
@@ -192,10 +194,12 @@ func TestProvider_Download(t *testing.T) {
 func TestProvider_Delete(t *testing.T) {
 	mock := newMockStorage()
 	// Add test file
-	mock.writeObject("test/file.txt", []byte("test content"), &storage.ObjectAttrs{
+	if err := mock.writeObject("test/file.txt", []byte("test content"), &storage.ObjectAttrs{
 		Name:        "test/file.txt",
 		ContentType: "text/plain",
-	})
+	}); err != nil {
+		t.Fatalf("failed to write test object: %v", err)
+	}
 
 	provider := &Provider{
 		client: mock,
@@ -240,18 +244,22 @@ func TestProvider_List(t *testing.T) {
 	mock := newMockStorage()
 
 	// Add test files
-	mock.writeObject("test/file1.txt", []byte("content1"), &storage.ObjectAttrs{
+	if err := mock.writeObject("test/file1.txt", []byte("content1"), &storage.ObjectAttrs{
 		Name:        "test/file1.txt",
 		Size:        100,
 		Updated:     now,
 		ContentType: "text/plain",
-	})
-	mock.writeObject("test/folder/", []byte{}, &storage.ObjectAttrs{
+	}); err != nil {
+		t.Fatalf("failed to write test object: %v", err)
+	}
+	if err := mock.writeObject("test/folder/", []byte{}, &storage.ObjectAttrs{
 		Name:        "test/folder/",
 		Size:        0,
 		Updated:     now,
 		ContentType: "application/x-directory",
-	})
+	}); err != nil {
+		t.Fatalf("failed to write test object: %v", err)
+	}
 
 	provider := &Provider{
 		client: mock,

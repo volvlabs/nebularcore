@@ -46,7 +46,9 @@ func TestHandler_Register(t *testing.T) {
 						t.Errorf("expected path %s, got %s", "test.txt", path)
 					}
 					w.WriteHeader(http.StatusOK)
-					io.WriteString(w, "test content")
+					if _, err := io.WriteString(w, "test content"); err != nil {
+						t.Errorf("failed to write response: %v", err)
+					}
 				},
 			},
 		},
@@ -63,7 +65,9 @@ func TestHandler_Register(t *testing.T) {
 						t.Errorf("expected path %s, got %s", "test.txt", path)
 					}
 					w.WriteHeader(http.StatusOK)
-					io.WriteString(w, "test content")
+					if _, err := io.WriteString(w, "test content"); err != nil {
+						t.Errorf("failed to write response: %v", err)
+					}
 				},
 			},
 		},
@@ -87,7 +91,9 @@ func TestHandler_Register(t *testing.T) {
 						t.Errorf("expected path %s, got %s", "secret.txt", path)
 					}
 					w.WriteHeader(http.StatusOK)
-					io.WriteString(w, "test content")
+					if _, err := io.WriteString(w, "test content"); err != nil {
+						t.Errorf("failed to write response: %v", err)
+					}
 				},
 			},
 		},

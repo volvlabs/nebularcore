@@ -68,7 +68,9 @@ func (h *manager) RequestPasswordReset(
 		return types.NewSystemError("Failed to process request")
 	}
 
-	h.eventEmitter.EmitPasswordResetInitiatedEvent(ctx, user, resetToken)
+	if err := h.eventEmitter.EmitPasswordResetInitiatedEvent(ctx, user, resetToken); err != nil {
+		log.Error().Err(err).Msg("failed to emit password reset initiated event")
+	}
 	return nil
 }
 
@@ -109,7 +111,9 @@ func (h *manager) VerifyPasswordReset(ctx context.Context, payload requests.Pass
 		return types.NewSystemError("Failed to process request")
 	}
 
-	h.eventEmitter.EmitPasswordChangedEvent(ctx, user)
+	if err := h.eventEmitter.EmitPasswordChangedEvent(ctx, user); err != nil {
+		log.Error().Err(err).Msg("failed to emit password changed event")
+	}
 	return nil
 }
 

@@ -29,9 +29,13 @@ func TestGetProjectRoot(t *testing.T) {
 			setupFunc: func(baseDir string) string {
 				// Create a nested directory structure with go.mod
 				testDir := filepath.Join(baseDir, "project", "src", "pkg")
-				os.MkdirAll(testDir, 0755)
+				if err := os.MkdirAll(testDir, 0755); err != nil {
+					panic(err)
+				}
 				goModPath := filepath.Join(baseDir, "project", "go.mod")
-				os.WriteFile(goModPath, []byte("module test"), 0644)
+				if err := os.WriteFile(goModPath, []byte("module test"), 0644); err != nil {
+					panic(err)
+				}
 				return testDir
 			},
 			expectedMarker: "go.mod",
@@ -41,9 +45,13 @@ func TestGetProjectRoot(t *testing.T) {
 			setupFunc: func(baseDir string) string {
 				// Create a nested directory structure with .git
 				testDir := filepath.Join(baseDir, "project", "src", "pkg")
-				os.MkdirAll(testDir, 0755)
+				if err := os.MkdirAll(testDir, 0755); err != nil {
+					panic(err)
+				}
 				gitDir := filepath.Join(baseDir, "project", ".git")
-				os.MkdirAll(gitDir, 0755)
+				if err := os.MkdirAll(gitDir, 0755); err != nil {
+					panic(err)
+				}
 				return testDir
 			},
 			expectedMarker: ".git",
@@ -53,7 +61,9 @@ func TestGetProjectRoot(t *testing.T) {
 			setupFunc: func(baseDir string) string {
 				// Create a nested directory without any project markers
 				testDir := filepath.Join(baseDir, "no-project", "src", "pkg")
-				os.MkdirAll(testDir, 0755)
+				if err := os.MkdirAll(testDir, 0755); err != nil {
+					panic(err)
+				}
 				return testDir
 			},
 			expectedError: true,

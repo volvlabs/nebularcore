@@ -68,14 +68,18 @@ func (m *authManager) Authenticate(ctx context.Context, credentials map[string]a
 		user, err = backend.Authenticate(ctx, credentials)
 		if err == nil && user != nil {
 			log.Info().Str("userID", user.GetID().String()).Msg("authentication successful using backend: " + name)
-			m.eventEmitter.EmitLoginEvent(ctx, user, "", "", true)
+			if err := m.eventEmitter.EmitLoginEvent(ctx, user, "", "", true); err != nil {
+				log.Error().Err(err).Msg("failed to emit login event")
+			}
 			return user, nil
 		}
 	}
 
 	if err != nil {
 		if errors.Is(err, autherrors.ErrInvalidCredentials) {
-			m.eventEmitter.EmitLoginEvent(ctx, user, "", "", false)
+			if emitErr := m.eventEmitter.EmitLoginEvent(ctx, user, "", "", false); emitErr != nil {
+				log.Error().Err(emitErr).Msg("failed to emit login event")
+			}
 		}
 		return nil, err
 	}

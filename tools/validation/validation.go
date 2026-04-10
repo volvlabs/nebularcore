@@ -18,28 +18,36 @@ func New() *Validator {
 	enLocale := en.New()
 	uni := ut.New(enLocale, enLocale)
 	trans, _ := uni.GetTranslator("en")
-	en_translations.RegisterDefaultTranslations(validate, trans)
+	if err := en_translations.RegisterDefaultTranslations(validate, trans); err != nil {
+		panic(err)
+	}
 
-	validate.RegisterTranslation("required", trans, func(ut ut.Translator) error {
+	if err := validate.RegisterTranslation("required", trans, func(ut ut.Translator) error {
 		return ut.Add("required", "{0} is a required field", true)
 	}, func(ut ut.Translator, fe validator.FieldError) string {
 		t, _ := ut.T("required", fe.Field())
 		return t
-	})
+	}); err != nil {
+		panic(err)
+	}
 
 	v := &Validator{
 		validate:   validate,
 		translator: trans,
 	}
 
-	validate.RegisterValidation("phonenumber", func(fl validator.FieldLevel) bool {
+	if err := validate.RegisterValidation("phonenumber", func(fl validator.FieldLevel) bool {
 		return ValidatePhoneNumber(fl.Field().String(), "NG")
-	})
+	}); err != nil {
+		panic(err)
+	}
 
-	validate.RegisterValidation("custom_email", func(fl validator.FieldLevel) bool {
+	if err := validate.RegisterValidation("custom_email", func(fl validator.FieldLevel) bool {
 		isValid, _ := ValidateEmail(fl.Field().String())
 		return isValid
-	})
+	}); err != nil {
+		panic(err)
+	}
 
 	return v
 }
