@@ -50,7 +50,9 @@ func NewTestApp() (*TestApp, error) {
 
 	// Create data directory for each app created, this is to prevent multiple unit tests
 	// trying to perform operations on the same data.
-	os.Mkdir(dataDir, 0755)
+	if err := os.Mkdir(dataDir, 0755); err != nil {
+		return nil, err
+	}
 
 	app.BaseApp = core.NewBaseApp(
 		core.BaseAppConfig{
