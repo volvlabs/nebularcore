@@ -110,7 +110,7 @@ func (s *System) Upload(content []byte, fileKey string) error {
 	}
 
 	if _, err := w.Write(content); err != nil {
-		w.Close()
+		_ = w.Close()
 		return err
 	}
 
@@ -131,7 +131,7 @@ func (s *System) Download(fileKey string) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	content, err := io.ReadAll(r)
 	if err != nil {
