@@ -76,7 +76,9 @@ func TestPasswordLogin(t *testing.T) {
 
 			// Act:
 			_, err = authService.PasswordLogin(requests.LoginRequest{
-				scenario.userEnteredIdentity, scenario.userEnteredPassword})
+				Identity: scenario.userEnteredIdentity,
+				Password: scenario.userEnteredPassword,
+			})
 			if err != nil && err.Error() != scenario.wantErr.Error() {
 				t.Errorf("got error %v, want %v", err, scenario.wantErr)
 			}
