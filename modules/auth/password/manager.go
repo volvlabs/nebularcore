@@ -146,6 +146,8 @@ func (h *manager) ChangePassword(ctx context.Context, userInfo interfaces.User, 
 		return types.NewSystemError("Failed to process request")
 	}
 
-	h.eventEmitter.EmitPasswordChangedEvent(ctx, user)
+	if err := h.eventEmitter.EmitPasswordChangedEvent(ctx, user); err != nil {
+		log.Error().Err(err).Msg("Error emitting password changed event")
+	}
 	return nil
 }

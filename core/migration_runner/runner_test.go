@@ -18,7 +18,7 @@ func TestNew(t *testing.T) {
 	// Create a temporary directory for test migrations
 	tmpDir, err := os.MkdirTemp("", "migrations")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	// Create test migration files
 	migrationContent := []byte("-- Test migration")

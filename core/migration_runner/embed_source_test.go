@@ -47,7 +47,7 @@ func TestEmbedSource_ReadUp(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "000001_test.up.sql", identifier)
 	assert.NotNil(t, reader)
-	reader.Close()
+	_ = reader.Close()
 
 	_, _, err = source.ReadUp(999)
 	assert.Error(t, err)
@@ -60,7 +60,7 @@ func TestEmbedSource_ReadDown(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "000001_test.down.sql", identifier)
 	assert.NotNil(t, reader)
-	reader.Close()
+	_ = reader.Close()
 
 	_, _, err = source.ReadDown(999)
 	assert.Error(t, err)

@@ -69,5 +69,5 @@ func (n *NebularCore[T]) Execute(ctx context.Context) error {
 
 	<-done
 
-	return n.appWrapper.Shutdown(ctx)
+	return n.Shutdown(ctx)
 }

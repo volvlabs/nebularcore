@@ -98,7 +98,7 @@ func (h *WebSocketHandler) Handle(c *gin.Context) {
 	}
 
 	if !h.manager.Register(conn) {
-		ws.Close(websocket.StatusTryAgainLater, "server at capacity")
+		_ = ws.Close(websocket.StatusTryAgainLater, "server at capacity")
 		return
 	}
 
@@ -112,7 +112,7 @@ func (h *WebSocketHandler) Handle(c *gin.Context) {
 	h.manager.Deregister(connID)
 	h.subs.UnsubscribeAll(connID)
 
-	ws.Close(websocket.StatusNormalClosure, "connection closed")
+	_ = ws.Close(websocket.StatusNormalClosure, "connection closed")
 	log.Info().Str("conn_id", connID).Msg("websocket disconnected")
 }
 

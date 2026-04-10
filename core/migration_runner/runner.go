@@ -104,5 +104,5 @@ func (r *Runner) Steps(steps int) error {
 
 // Close releases migration resources
 func (r *Runner) Close() {
-	r.migrate.Close()
+	_, _ = r.migrate.Close()
 }

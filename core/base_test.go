@@ -63,7 +63,7 @@ modules:
 
 func TestNew(t *testing.T) {
 	configPath := createTempConfig(t)
-	defer os.Remove(configPath)
+	defer func() { _ = os.Remove(configPath) }()
 
 	// Test successful initialization
 	opts := core.Options[TestSettings]{
@@ -84,7 +84,7 @@ func TestNew(t *testing.T) {
 
 func TestModuleRegistration(t *testing.T) {
 	configPath := createTempConfig(t)
-	defer os.Remove(configPath)
+	defer func() { _ = os.Remove(configPath) }()
 
 	opts := core.Options[TestSettings]{
 		ConfigPath: configPath,
@@ -123,7 +123,7 @@ func TestBootstrapAndShutdown(t *testing.T) {
 	}
 
 	configPath := createTempConfig(t)
-	defer os.Remove(configPath)
+	defer func() { _ = os.Remove(configPath) }()
 
 	opts := core.Options[TestSettings]{
 		ConfigPath: configPath,
@@ -169,7 +169,7 @@ func TestBootstrapAndShutdown(t *testing.T) {
 
 func TestConfiguration(t *testing.T) {
 	configPath := createTempConfig(t)
-	defer os.Remove(configPath)
+	defer func() { _ = os.Remove(configPath) }()
 
 	opts := core.Options[TestSettings]{
 		ConfigPath: configPath,

@@ -19,7 +19,7 @@ func IsValidAudioFileType(fileHeader *multipart.FileHeader) bool {
 	if err != nil {
 		return false
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	buffer := make([]byte, 512)
 	_, err = file.Read(buffer)

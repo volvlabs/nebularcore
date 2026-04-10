@@ -24,7 +24,7 @@ func setupTestEnvironment(t *testing.T) (string, func()) {
 
 	// Return cleanup function
 	cleanup := func() {
-		os.RemoveAll(tempDir)
+		_ = os.RemoveAll(tempDir)
 	}
 
 	return tempDir, cleanup
@@ -237,7 +237,7 @@ func TestProvider_Download(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 				return
 			}
-			defer reader.Close()
+			defer func() { _ = reader.Close() }()
 
 			content, err := io.ReadAll(reader)
 			if err != nil {

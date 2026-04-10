@@ -73,7 +73,7 @@ func (p *Provider) Upload(ctx context.Context, input *models.UploadInput) (*mode
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer os.Remove(tempFile.Name())
+	defer func() { _ = os.Remove(tempFile.Name()) }()
 
 	// Calculate hash while copying
 	hash := sha256.New()
@@ -81,7 +81,7 @@ func (p *Provider) Upload(ctx context.Context, input *models.UploadInput) (*mode
 
 	size, err := io.Copy(writer, input.File)
 	if err != nil {
-		tempFile.Close()
+		_ = tempFile.Close()
 		return nil, fmt.Errorf("failed to copy file: %w", err)
 	}
 
@@ -121,7 +121,7 @@ func (p *Provider) Upload(ctx context.Context, input *models.UploadInput) (*mode
 
 	// Move temp file to final location
 	if err := os.Rename(tempFile.Name(), targetPath); err != nil {
-		os.Remove(metadataPath)
+		_ = os.Remove(metadataPath)
 		return nil, fmt.Errorf("failed to move file: %w", err)
 	}
 
@@ -225,7 +225,7 @@ func (p *Provider) writeMetadata(path string, metadata map[string]string) error 
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	for k, v := range metadata {
 		if _, err := fmt.Fprintf(file, "%s=%s\n", k, v); err != nil {

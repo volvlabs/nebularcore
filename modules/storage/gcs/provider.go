@@ -85,7 +85,7 @@ func (a *gcsClientAdapter) writeObject(name string, data []byte, attrs *storage.
 
 	// Write data
 	if _, err := writer.Write(data); err != nil {
-		writer.Close()
+		_ = writer.Close()
 		return err
 	}
 

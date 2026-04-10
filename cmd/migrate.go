@@ -119,13 +119,13 @@ func createMigrationFileHandler(migrationsDir, name string) error {
 	if err != nil {
 		return err
 	}
-	defer upFile.Close()
+	defer func() { _ = upFile.Close() }()
 
 	downFile, err := os.Create(downFileName)
 	if err != nil {
 		return err
 	}
-	defer downFile.Close()
+	defer func() { _ = downFile.Close() }()
 
 	log.Info().Msgf("Created %s and %s\n", upFileName, downFileName)
 	return nil

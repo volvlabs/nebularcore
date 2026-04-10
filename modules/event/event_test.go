@@ -84,7 +84,7 @@ func TestNewEvent(t *testing.T) {
 			assert.Equal(t, tt.eventType, event.EventType)
 			assert.Equal(t, tt.source, event.Source)
 			assert.NotNil(t, event.Message)
-			assert.NotEmpty(t, event.Message.UUID)
+			assert.NotEmpty(t, event.UUID)
 			assert.WithinDuration(t, time.Now(), event.Timestamp, 2*time.Second)
 
 			if tt.payload != nil {
@@ -260,7 +260,7 @@ func TestModule_Subscribe(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			module := setupTestModule(t)
-			defer module.router.Close()
+			defer func() { _ = module.router.Close() }()
 
 			eventCh := make(chan Message, 1)
 			errCh := make(chan error, 1)

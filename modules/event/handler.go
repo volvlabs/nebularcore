@@ -31,8 +31,8 @@ func WithRetry(handler Handler, config RetryConfig) Handler {
 				lastErr = err
 
 				// Log retry attempt
-				event.Message.Metadata.Set("retry_count", fmt.Sprintf("%d", i+1))
-				event.Message.Metadata.Set("last_error", err.Error())
+				event.Metadata.Set("retry_count", fmt.Sprintf("%d", i+1))
+				event.Metadata.Set("last_error", err.Error())
 
 				// Wait before retrying
 				select {
