@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/tools"
-	"gitlab.com/jideobs/nebularcore/tools/security"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/tools"
+	"github.com/volvlabs/nebularcore/tools/security"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"

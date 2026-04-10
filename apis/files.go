@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/core"
 )
 
 func BindFilesApi(app core.App, r *gin.RouterGroup) {

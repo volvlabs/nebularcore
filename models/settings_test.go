@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/jideobs/nebularcore/models"
+	"github.com/volvlabs/nebularcore/models"
 )
 
 func TestNewSettings(t *testing.T) {

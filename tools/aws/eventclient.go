@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge"
 	"github.com/aws/aws-sdk-go-v2/service/eventbridge/types"
-	"gitlab.com/jideobs/nebularcore/tools/eventclient"
+	"github.com/volvlabs/nebularcore/tools/eventclient"
 )
 
 type AwsEventBridgeClient struct {

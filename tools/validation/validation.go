@@ -5,7 +5,7 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/types"
 )
 
 type Validator struct {

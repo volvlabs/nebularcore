@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/models/config"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/models/config"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

@@ -1,9 +1,9 @@
 package daos
 
 import (
-	"gitlab.com/jideobs/nebularcore/entities"
-	"gitlab.com/jideobs/nebularcore/models/config"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/models/config"
+	"github.com/volvlabs/nebularcore/tools/types"
 
 	"gorm.io/gorm"
 )

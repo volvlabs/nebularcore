@@ -1,10 +1,10 @@
 package account
 
 import (
-	"gitlab.com/jideobs/nebularcore/entities"
-	"gitlab.com/jideobs/nebularcore/services/authentication"
-	"gitlab.com/jideobs/nebularcore/tools/types"
-	"gitlab.com/jideobs/nebularcore/tools/validation"
+	"github.com/volvlabs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/services/authentication"
+	"github.com/volvlabs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/validation"
 
 	"github.com/rs/zerolog/log"
 )

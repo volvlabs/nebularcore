@@ -6,8 +6,8 @@ import (
 	"os"
 	"reflect"
 
-	"gitlab.com/jideobs/nebularcore/tools/auth"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/auth"
+	"github.com/volvlabs/nebularcore/tools/types"
 	"gopkg.in/yaml.v2"
 )
 

@@ -1,6 +1,6 @@
 package authentication
 
-import "gitlab.com/jideobs/nebularcore/tools/types"
+import "github.com/volvlabs/nebularcore/tools/types"
 
 var (
 	ErrInvalidPasswordToken = &types.UserError{

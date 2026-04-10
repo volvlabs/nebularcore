@@ -1,9 +1,9 @@
 package account
 
 import (
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/daos"
-	"gitlab.com/jideobs/nebularcore/tools/validation"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/daos"
+	"github.com/volvlabs/nebularcore/tools/validation"
 )
 
 type Service struct {

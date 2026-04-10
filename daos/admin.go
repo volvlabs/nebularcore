@@ -2,10 +2,10 @@ package daos
 
 import (
 	"errors"
-	"gitlab.com/jideobs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/entities"
 	"strings"
 
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/types"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

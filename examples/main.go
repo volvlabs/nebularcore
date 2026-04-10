@@ -4,11 +4,11 @@ import (
 	"log"
 	"path/filepath"
 
-	"gitlab.com/jideobs/nebularcore"
-	"gitlab.com/jideobs/nebularcore/apis"
-	"gitlab.com/jideobs/nebularcore/models/config"
-	"gitlab.com/jideobs/nebularcore/tools/auth"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"github.com/volvlabs/nebularcore"
+	"github.com/volvlabs/nebularcore/apis"
+	"github.com/volvlabs/nebularcore/models/config"
+	"github.com/volvlabs/nebularcore/tools/auth"
+	"github.com/volvlabs/nebularcore/tools/filesystem"
 )
 
 func main() {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/types"
 	"golang.org/x/oauth2"
 )
 

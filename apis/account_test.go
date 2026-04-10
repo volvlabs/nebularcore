@@ -3,8 +3,8 @@ package apis
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"gitlab.com/jideobs/nebularcore/test"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"github.com/volvlabs/nebularcore/test"
+	"github.com/volvlabs/nebularcore/tools/filesystem"
 	"net/http"
 	"strings"
 	"testing"

@@ -3,8 +3,8 @@ package core
 import (
 	"fmt"
 
-	"gitlab.com/jideobs/nebularcore/models/config"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/models/config"
+	"github.com/volvlabs/nebularcore/tools/types"
 
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	"gorm.io/driver/postgres"

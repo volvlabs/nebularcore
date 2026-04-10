@@ -1,6 +1,6 @@
 package test
 
-import "gitlab.com/jideobs/nebularcore/tools/eventclient"
+import "github.com/volvlabs/nebularcore/tools/eventclient"
 
 type eventClientMock struct{}
 

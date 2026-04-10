@@ -3,9 +3,9 @@ package authentication
 import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/entities"
-	"gitlab.com/jideobs/nebularcore/tools/security"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/tools/security"
+	"github.com/volvlabs/nebularcore/tools/types"
 )
 
 func (a *Auth) Create(identity, password, userTableName string, role types.Role, userId uuid.UUID) error {

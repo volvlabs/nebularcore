@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"gitlab.com/jideobs/nebularcore/cmd"
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/models/config"
+	"github.com/volvlabs/nebularcore/cmd"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/models/config"
 
 	"github.com/spf13/cobra"
 )

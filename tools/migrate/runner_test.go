@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
-	"gitlab.com/jideobs/nebularcore/tools/migrate"
+	"github.com/volvlabs/nebularcore/tools/filesystem"
+	"github.com/volvlabs/nebularcore/tools/migrate"
 )
 
 func TestNewRunner(t *testing.T) {

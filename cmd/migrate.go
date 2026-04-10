@@ -7,9 +7,9 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/models/config"
-	"gitlab.com/jideobs/nebularcore/tools/migrate"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/models/config"
+	"github.com/volvlabs/nebularcore/tools/migrate"
 )
 
 func NewMigrateCommand(app core.App, dbCfg config.DatabaseConfig) *cobra.Command {

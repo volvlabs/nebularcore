@@ -1,7 +1,7 @@
 package entities
 
 import (
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/types"
 )
 
 type Admin struct {

@@ -3,8 +3,8 @@ package apis
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/services/account"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/services/account"
 )
 
 func BindAccountApi(app core.App, rg *gin.RouterGroup) {
