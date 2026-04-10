@@ -75,10 +75,10 @@ func Serve(app core.App, config config.ServeConfig) error {
 		defer cancel()
 
 		wg.Add(1)
-		server.Shutdown(ctx)
+		shutdownErr := server.Shutdown(ctx)
 		wg.Done()
 
-		return nil
+		return shutdownErr
 	})
 
 	defer wg.Wait()

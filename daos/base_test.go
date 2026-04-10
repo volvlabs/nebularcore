@@ -137,7 +137,9 @@ func TestDao_Delete(t *testing.T) {
 			Email: "john.doe@gmail.com",
 		},
 	}
-	app.Dao().Save(admin)
+	if err := app.Dao().Save(admin); err != nil {
+		t.Fatalf("app.Dao().Save() error = %v", err)
+	}
 
 	where := &entities.Admin{}
 	where.SetId(admin.Id)
@@ -148,10 +150,12 @@ func TestDao_Delete(t *testing.T) {
 	// Assert:
 	assert.Equal(t, nil, err)
 	adminGotten := entities.Admin{}
-	app.Dao().FindBy(&adminGotten, &entities.Admin{
+	if err := app.Dao().FindBy(&adminGotten, &entities.Admin{
 		UserBase: entities.UserBase{
 			Email: admin.Email,
-		}})
+		}}); err != nil {
+		t.Fatalf("app.Dao().FindBy() error = %v", err)
+	}
 
 	assert.Equal(t, true, adminGotten.IsDeleted)
 	assert.NotNil(t, adminGotten.DeletedAt)
@@ -169,7 +173,9 @@ func TestDao_Updates(t *testing.T) {
 			Email:     "john.doe@gmail.com",
 		},
 	}
-	app.Dao().Save(admin)
+	if err := app.Dao().Save(admin); err != nil {
+		t.Fatalf("app.Dao().Save() error = %v", err)
+	}
 	assert.Equal(t, "John", admin.FirstName)
 	assert.Equal(t, "", admin.LastName)
 
@@ -189,11 +195,13 @@ func TestDao_Updates(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	adminGotten := entities.Admin{}
-	app.Dao().FindBy(&adminGotten, &entities.Admin{
+	if err := app.Dao().FindBy(&adminGotten, &entities.Admin{
 		UserBase: entities.UserBase{
 			Email: admin.Email,
 		},
-	})
+	}); err != nil {
+		t.Fatalf("app.Dao().FindBy() error = %v", err)
+	}
 
 	assert.Equal(t, "Jane", adminGotten.FirstName)
 	assert.Equal(t, "Dawn", adminGotten.LastName)

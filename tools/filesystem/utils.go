@@ -27,7 +27,9 @@ func IsValidAudioFileType(fileHeader *multipart.FileHeader) bool {
 		return false
 	}
 
-	file.Seek(0, 0)
+	if _, err = file.Seek(0, 0); err != nil {
+		return false
+	}
 
 	mimeType := http.DetectContentType(buffer)
 

@@ -25,7 +25,9 @@ func setupAdmin(app *test.TestApp) *entities.Admin {
 		},
 	}
 	user.SetId(uuid.MustParse("579387fc-d8cd-4803-8b6e-52742d1460a8"))
-	app.Dao().Save(user)
+	if err := app.Dao().Save(user); err != nil {
+		panic(err)
+	}
 	return user
 }
 

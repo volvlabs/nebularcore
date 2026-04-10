@@ -75,7 +75,9 @@ func TestOauth2CreateValidate(t *testing.T) {
 
 			otherSettings := models.NewSettings()
 			otherSettings.GoogleAuth.Enabled = true
-			testapp.Settings().Merge(otherSettings)
+			if err := testapp.Settings().Merge(otherSettings); err != nil {
+				t.Fatalf("Settings().Merge() error = %v", err)
+			}
 
 			// Act:
 			err := auth.ValidateOAuth2Request(scenario.oauth2Request)
