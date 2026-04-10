@@ -83,16 +83,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Compute short branch slug
-        if: startsWith(github.ref, 'refs/heads/feature/')
-        run: |
-          SLUG="${{ github.ref_name }}"
-          SLUG="${SLUG#feature/}"
-          SLUG="${SLUG//[^a-zA-Z0-9]/-}"
-          SLUG="${SLUG:0:20}"
-          SLUG="${SLUG%-}"
-          echo "RELEASE_PREID=$SLUG" >> $GITHUB_ENV
-
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
         with:
