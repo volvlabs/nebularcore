@@ -1,10 +1,11 @@
 package authentication_test
 
 import (
+	"testing"
+
 	"github.com/volvlabs/nebularcore/entities"
 	"github.com/volvlabs/nebularcore/models/requests"
 	"github.com/volvlabs/nebularcore/services/authentication"
-	"testing"
 
 	"github.com/volvlabs/nebularcore/test"
 	"github.com/volvlabs/nebularcore/tools/filesystem"

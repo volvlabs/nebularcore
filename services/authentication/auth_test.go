@@ -2,8 +2,9 @@ package authentication_test
 
 import (
 	"errors"
-	"github.com/volvlabs/nebularcore/services/authentication"
 	"testing"
+
+	"github.com/volvlabs/nebularcore/services/authentication"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/volvlabs/nebularcore/models"
