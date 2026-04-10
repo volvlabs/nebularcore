@@ -1,10 +1,11 @@
 package authentication_test
 
 import (
+	"testing"
+
 	"github.com/volvlabs/nebularcore/entities"
 	"github.com/volvlabs/nebularcore/models/requests"
 	"github.com/volvlabs/nebularcore/services/authentication"
-	"testing"
 
 	"github.com/volvlabs/nebularcore/test"
 	"github.com/volvlabs/nebularcore/tools/filesystem"
@@ -76,7 +77,9 @@ func TestPasswordLogin(t *testing.T) {
 
 			// Act:
 			_, err = authService.PasswordLogin(requests.LoginRequest{
-				scenario.userEnteredIdentity, scenario.userEnteredPassword})
+				Identity: scenario.userEnteredIdentity,
+				Password: scenario.userEnteredPassword,
+			})
 			if err != nil && err.Error() != scenario.wantErr.Error() {
 				t.Errorf("got error %v, want %v", err, scenario.wantErr)
 			}

@@ -2,8 +2,9 @@ package authentication_test
 
 import (
 	"errors"
-	"github.com/volvlabs/nebularcore/services/authentication"
 	"testing"
+
+	"github.com/volvlabs/nebularcore/services/authentication"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/volvlabs/nebularcore/models"
@@ -75,7 +76,9 @@ func TestOauth2CreateValidate(t *testing.T) {
 
 			otherSettings := models.NewSettings()
 			otherSettings.GoogleAuth.Enabled = true
-			testapp.Settings().Merge(otherSettings)
+			if err := testapp.Settings().Merge(otherSettings); err != nil {
+				t.Fatalf("Settings().Merge() error = %v", err)
+			}
 
 			// Act:
 			err := auth.ValidateOAuth2Request(scenario.oauth2Request)
