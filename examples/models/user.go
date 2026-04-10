@@ -58,7 +58,7 @@ func (u *CustomUser) GetLastLoginAt() *time.Time {
 // GetMetadata implements interfaces.User
 func (u *CustomUser) GetMetadata() map[string]any {
 	metadata := map[string]any{}
-	json.Unmarshal(u.Metadata, metadata)
+	json.Unmarshal(u.Metadata, &metadata)
 	return metadata
 }
 
