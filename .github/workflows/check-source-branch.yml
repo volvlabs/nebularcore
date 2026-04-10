@@ -1,0 +1,19 @@
+name: Check Source Branch
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Check Source Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce develop → main only
+        run: |
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "Only the 'develop' branch may open a PR against 'main'."
+            echo "Source branch: ${{ github.head_ref }}"
+            exit 1
+          fi
+          echo "Source branch is 'develop' — OK"
