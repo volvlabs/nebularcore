@@ -6,6 +6,8 @@ branches:
     prerelease: "beta"
   - name: "alpha"
     prerelease: "alpha"
+  - name: "/^feature\/.+$/"
+    prerelease: "${process.env.RELEASE_PREID}"
 plugins:
   - "@semantic-release/commit-analyzer"
   - "@semantic-release/release-notes-generator"
