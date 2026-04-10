@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"gitlab.com/jideobs/nebularcore/apis"
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/models/config"
+	"github.com/volvlabs/nebularcore/apis"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/models/config"
 
 	"github.com/spf13/cobra"
 )

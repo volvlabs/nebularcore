@@ -2,8 +2,8 @@ package authentication
 
 import (
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/tools/security"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/security"
+	"github.com/volvlabs/nebularcore/tools/types"
 )
 
 func (a *Auth) ChangePassword(identity, currentPassword, password string) error {

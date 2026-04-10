@@ -5,14 +5,14 @@ import (
 	"strings"
 	"testing"
 
-	"gitlab.com/jideobs/nebularcore/entities"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/tools/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
-	"gitlab.com/jideobs/nebularcore/test"
-	"gitlab.com/jideobs/nebularcore/tools/security"
+	"github.com/volvlabs/nebularcore/test"
+	"github.com/volvlabs/nebularcore/tools/security"
 )
 
 func setupAdmin(app *test.TestApp) *entities.Admin {

@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
-	"gitlab.com/jideobs/nebularcore/daos"
-	"gitlab.com/jideobs/nebularcore/models"
-	"gitlab.com/jideobs/nebularcore/tools/auth"
-	"gitlab.com/jideobs/nebularcore/tools/aws/scheduler"
-	"gitlab.com/jideobs/nebularcore/tools/eventclient"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
-	"gitlab.com/jideobs/nebularcore/tools/security"
-	"gitlab.com/jideobs/nebularcore/tools/validation"
+	"github.com/volvlabs/nebularcore/daos"
+	"github.com/volvlabs/nebularcore/models"
+	"github.com/volvlabs/nebularcore/tools/auth"
+	"github.com/volvlabs/nebularcore/tools/aws/scheduler"
+	"github.com/volvlabs/nebularcore/tools/eventclient"
+	"github.com/volvlabs/nebularcore/tools/filesystem"
+	"github.com/volvlabs/nebularcore/tools/security"
+	"github.com/volvlabs/nebularcore/tools/validation"
 	"gorm.io/gorm"
 )
 

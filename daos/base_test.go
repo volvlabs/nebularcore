@@ -3,13 +3,13 @@ package daos_test
 import (
 	"testing"
 
-	"gitlab.com/jideobs/nebularcore/entities"
-	"gitlab.com/jideobs/nebularcore/models/config"
+	"github.com/volvlabs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/models/config"
 
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/jideobs/nebularcore/daos"
-	"gitlab.com/jideobs/nebularcore/test"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"github.com/volvlabs/nebularcore/daos"
+	"github.com/volvlabs/nebularcore/test"
+	"github.com/volvlabs/nebularcore/tools/filesystem"
 )
 
 func TestDao_Save(t *testing.T) {

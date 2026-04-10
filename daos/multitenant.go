@@ -3,7 +3,7 @@ package daos
 import (
 	"fmt"
 
-	"gitlab.com/jideobs/nebularcore/tools/migrate"
+	"github.com/volvlabs/nebularcore/tools/migrate"
 	"gorm.io/gorm"
 )
 

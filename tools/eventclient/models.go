@@ -2,7 +2,7 @@ package eventclient
 
 import (
 	"github.com/google/uuid"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/types"
 )
 
 type Event struct {

@@ -6,8 +6,8 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/models"
-	"gitlab.com/jideobs/nebularcore/tools/eventclient"
+	"github.com/volvlabs/nebularcore/models"
+	"github.com/volvlabs/nebularcore/tools/eventclient"
 	"google.golang.org/api/option"
 )
 

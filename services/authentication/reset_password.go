@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/entities"
-	"gitlab.com/jideobs/nebularcore/models/requests"
-	"gitlab.com/jideobs/nebularcore/tools/security"
+	"github.com/volvlabs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/models/requests"
+	"github.com/volvlabs/nebularcore/tools/security"
 	"gorm.io/gorm"
 )
 

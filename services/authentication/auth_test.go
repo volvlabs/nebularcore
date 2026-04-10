@@ -2,13 +2,13 @@ package authentication_test
 
 import (
 	"errors"
-	"gitlab.com/jideobs/nebularcore/services/authentication"
+	"github.com/volvlabs/nebularcore/services/authentication"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/jideobs/nebularcore/models"
-	"gitlab.com/jideobs/nebularcore/test"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/models"
+	"github.com/volvlabs/nebularcore/test"
+	"github.com/volvlabs/nebularcore/tools/types"
 )
 
 func TestOauth2CreateValidate(t *testing.T) {

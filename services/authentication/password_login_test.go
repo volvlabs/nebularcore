@@ -1,14 +1,14 @@
 package authentication_test
 
 import (
-	"gitlab.com/jideobs/nebularcore/entities"
-	"gitlab.com/jideobs/nebularcore/models/requests"
-	"gitlab.com/jideobs/nebularcore/services/authentication"
+	"github.com/volvlabs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/models/requests"
+	"github.com/volvlabs/nebularcore/services/authentication"
 	"testing"
 
-	"gitlab.com/jideobs/nebularcore/test"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/test"
+	"github.com/volvlabs/nebularcore/tools/filesystem"
+	"github.com/volvlabs/nebularcore/tools/types"
 )
 
 func TestPasswordLogin(t *testing.T) {

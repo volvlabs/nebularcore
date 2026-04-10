@@ -3,7 +3,7 @@ package auth
 import (
 	"encoding/json"
 
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/types"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )

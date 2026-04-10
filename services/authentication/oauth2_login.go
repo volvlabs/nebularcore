@@ -1,6 +1,6 @@
 package authentication
 
-import "gitlab.com/jideobs/nebularcore/tools/auth"
+import "github.com/volvlabs/nebularcore/tools/auth"
 
 func (a *Auth) LoginWithOAuth2(oauth2Request OAuth2Request) (*auth.AuthUser, error) {
 	err := a.ValidateOAuth2Request(oauth2Request)

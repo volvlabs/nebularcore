@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-playground/assert/v2"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"github.com/volvlabs/nebularcore/tools/filesystem"
 )
 
 func TestRegisterNewRoleWithValidPaths(t *testing.T) {

@@ -2,15 +2,15 @@ package authentication
 
 import (
 	"errors"
-	"gitlab.com/jideobs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/entities"
 
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/daos"
-	"gitlab.com/jideobs/nebularcore/models/requests"
-	"gitlab.com/jideobs/nebularcore/tools/auth"
-	"gitlab.com/jideobs/nebularcore/tools/security"
-	"gitlab.com/jideobs/nebularcore/tools/types"
-	"gitlab.com/jideobs/nebularcore/tools/validation"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/daos"
+	"github.com/volvlabs/nebularcore/models/requests"
+	"github.com/volvlabs/nebularcore/tools/auth"
+	"github.com/volvlabs/nebularcore/tools/security"
+	"github.com/volvlabs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/validation"
 	"gorm.io/gorm"
 )
 

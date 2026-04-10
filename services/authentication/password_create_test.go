@@ -3,12 +3,12 @@ package authentication_test
 import (
 	"errors"
 	"github.com/google/uuid"
-	"gitlab.com/jideobs/nebularcore/services/authentication"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/services/authentication"
+	"github.com/volvlabs/nebularcore/tools/types"
 	"testing"
 
-	"gitlab.com/jideobs/nebularcore/test"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
+	"github.com/volvlabs/nebularcore/test"
+	"github.com/volvlabs/nebularcore/tools/filesystem"
 )
 
 func TestCreate(t *testing.T) {

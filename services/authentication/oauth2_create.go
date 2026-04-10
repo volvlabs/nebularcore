@@ -1,8 +1,8 @@
 package authentication
 
 import (
-	"gitlab.com/jideobs/nebularcore/entities"
-	"gitlab.com/jideobs/nebularcore/tools/auth"
+	"github.com/volvlabs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/tools/auth"
 )
 
 func (a *Auth) CreateWithOAuth2(oauth2Request OAuth2Request) (*auth.AuthUser, error) {

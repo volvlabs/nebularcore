@@ -5,14 +5,14 @@ import (
 	"net/http"
 
 	"github.com/rs/zerolog/log"
-	"gitlab.com/jideobs/nebularcore/entities"
-	"gitlab.com/jideobs/nebularcore/models/responses"
-	"gitlab.com/jideobs/nebularcore/services/authentication"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/models/responses"
+	"github.com/volvlabs/nebularcore/services/authentication"
+	"github.com/volvlabs/nebularcore/tools/types"
 
-	"gitlab.com/jideobs/nebularcore/core"
-	"gitlab.com/jideobs/nebularcore/models/requests"
-	"gitlab.com/jideobs/nebularcore/tools/security"
+	"github.com/volvlabs/nebularcore/core"
+	"github.com/volvlabs/nebularcore/models/requests"
+	"github.com/volvlabs/nebularcore/tools/security"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"

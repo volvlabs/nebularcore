@@ -12,8 +12,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/spf13/cast"
-	"gitlab.com/jideobs/nebularcore/tools/httpclient"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/tools/httpclient"
+	"github.com/volvlabs/nebularcore/tools/types"
 	"golang.org/x/oauth2"
 )
 

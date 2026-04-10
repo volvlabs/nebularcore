@@ -2,12 +2,12 @@ package daos_test
 
 import (
 	"github.com/google/uuid"
-	"gitlab.com/jideobs/nebularcore/entities"
+	"github.com/volvlabs/nebularcore/entities"
 	"testing"
 
-	"gitlab.com/jideobs/nebularcore/test"
-	"gitlab.com/jideobs/nebularcore/tools/filesystem"
-	"gitlab.com/jideobs/nebularcore/tools/types"
+	"github.com/volvlabs/nebularcore/test"
+	"github.com/volvlabs/nebularcore/tools/filesystem"
+	"github.com/volvlabs/nebularcore/tools/types"
 )
 
 func TestCreateAuth(t *testing.T) {
