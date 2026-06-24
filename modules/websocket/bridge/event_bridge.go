@@ -3,6 +3,7 @@ package bridge
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -38,9 +39,9 @@ func NewEventBridge(bus event.Bus, manager *connections.Manager, subs *store.Sub
 // incoming event, it fans out to all WebSocket clients subscribed to a matching
 // topic.
 func (b *EventBridge) Start(ctx context.Context) error {
-	for _, pattern := range b.allowedPatterns {
+	for idx, pattern := range b.allowedPatterns {
 		p := pattern // capture
-		if err := b.bus.Subscribe(p, p, func(ctx context.Context, msg event.Message) error {
+		if err := b.bus.Subscribe(p, fmt.Sprintf("%s-handler-%d", p, idx), func(ctx context.Context, msg event.Message) error {
 			b.fanout(msg.EventType, msg.Payload)
 			return nil
 		}); err != nil {

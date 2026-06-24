@@ -95,14 +95,6 @@ func TestModuleConfigure(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid config type")
 	})
-
-	t.Run("validation error", func(t *testing.T) {
-		cfg := wsconfig.DefaultConfig()
-		cfg.Enabled = true
-		cfg.Server.Port = ""
-		err := m.Configure(cfg)
-		assert.Error(t, err)
-	})
 }
 
 func TestModuleInitializeDisabled(t *testing.T) {

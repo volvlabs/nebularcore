@@ -26,6 +26,18 @@ func (s TestSettings) IsProduction() bool {
 	return false
 }
 
+type ModuleConfig struct {
+	Enabled bool `yaml:"enabled"`
+}
+
+func (m *ModuleConfig) Key() string {
+	return "test-module"
+}
+
+func (m *ModuleConfig) Validate() error {
+	return nil
+}
+
 // Helper function to create a temporary config file
 func createTempConfig(t *testing.T) string {
 	content := `
@@ -118,10 +130,6 @@ func TestModuleRegistration(t *testing.T) {
 }
 
 func TestBootstrapAndShutdown(t *testing.T) {
-	type ModuleConfig struct {
-		Enabled bool `yaml:"enabled"`
-	}
-
 	configPath := createTempConfig(t)
 	defer func() { _ = os.Remove(configPath) }()
 

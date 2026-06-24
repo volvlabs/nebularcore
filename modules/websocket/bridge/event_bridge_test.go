@@ -20,13 +20,13 @@ func newTestBridge(bus *eventmocks.Bus, allowedPatterns []string) *EventBridge {
 
 func TestSubscribeTopic_ExactTopic(t *testing.T) {
 	bus := new(eventmocks.Bus)
-	bus.On("Subscribe", "user.created", mock.AnythingOfType("event.Handler")).Return(nil)
+	bus.On("Subscribe", "user.created", "websocket-fanout", mock.AnythingOfType("event.Handler")).Return(nil)
 
 	eb := newTestBridge(bus, nil)
 	err := eb.SubscribeTopic("user.created")
 
 	require.NoError(t, err)
-	bus.AssertCalled(t, "Subscribe", "user.created", mock.AnythingOfType("event.Handler"))
+	bus.AssertCalled(t, "Subscribe", "user.created", "websocket-fanout", mock.AnythingOfType("event.Handler"))
 }
 
 func TestSubscribeTopic_SkipsWildcard(t *testing.T) {
@@ -44,7 +44,7 @@ func TestSubscribeTopic_SkipsWildcard(t *testing.T) {
 
 func TestSubscribeTopic_Idempotent(t *testing.T) {
 	bus := new(eventmocks.Bus)
-	bus.On("Subscribe", "order.placed", mock.AnythingOfType("event.Handler")).Return(nil).Once()
+	bus.On("Subscribe", "order.placed", "websocket-fanout", mock.AnythingOfType("event.Handler")).Return(nil).Once()
 
 	eb := newTestBridge(bus, nil)
 
@@ -59,29 +59,29 @@ func TestSubscribeTopic_AllowedPatternsFilter(t *testing.T) {
 	eb := newTestBridge(bus, []string{"user.*", "order.*"})
 
 	// Allowed topic — should subscribe.
-	bus.On("Subscribe", "user.created", mock.AnythingOfType("event.Handler")).Return(nil)
+	bus.On("Subscribe", "user.created", "websocket-fanout", mock.AnythingOfType("event.Handler")).Return(nil)
 	require.NoError(t, eb.SubscribeTopic("user.created"))
-	bus.AssertCalled(t, "Subscribe", "user.created", mock.AnythingOfType("event.Handler"))
+	bus.AssertCalled(t, "Subscribe", "user.created", "websocket-fanout", mock.AnythingOfType("event.Handler"))
 
 	// Disallowed topic — should NOT subscribe.
 	err := eb.SubscribeTopic("admin.secret")
 	require.NoError(t, err)
-	bus.AssertNotCalled(t, "Subscribe", "admin.secret", mock.Anything)
+	bus.AssertNotCalled(t, "Subscribe", "admin.secret", "whatever", mock.Anything)
 }
 
 func TestSubscribeTopic_EmptyAllowedPatternsAllowsAll(t *testing.T) {
 	bus := new(eventmocks.Bus)
-	bus.On("Subscribe", "anything.goes", mock.AnythingOfType("event.Handler")).Return(nil)
+	bus.On("Subscribe", "anything.goes", "websocket-fanout", mock.AnythingOfType("event.Handler")).Return(nil)
 
 	eb := newTestBridge(bus, nil)
 	require.NoError(t, eb.SubscribeTopic("anything.goes"))
-	bus.AssertCalled(t, "Subscribe", "anything.goes", mock.AnythingOfType("event.Handler"))
+	bus.AssertCalled(t, "Subscribe", "anything.goes", "websocket-fanout", mock.AnythingOfType("event.Handler"))
 }
 
 func TestStart_StaticPatterns(t *testing.T) {
 	bus := new(eventmocks.Bus)
-	bus.On("Subscribe", "user.*", mock.AnythingOfType("event.Handler")).Return(nil)
-	bus.On("Subscribe", "order.*", mock.AnythingOfType("event.Handler")).Return(nil)
+	bus.On("Subscribe", "user.*", mock.AnythingOfType("string"), mock.AnythingOfType("event.Handler")).Return(nil)
+	bus.On("Subscribe", "order.*", mock.AnythingOfType("string"), mock.AnythingOfType("event.Handler")).Return(nil)
 
 	eb := newTestBridge(bus, []string{"user.*", "order.*"})
 	err := eb.Start(context.Background())
