@@ -274,7 +274,7 @@ func TestModule_Subscribe(t *testing.T) {
 			}
 
 			// Subscribe
-			err := module.Subscribe(eventType, handlerWrapper)
+			err := module.Subscribe(eventType, eventType, handlerWrapper)
 			require.NoError(t, err)
 
 			// Start router

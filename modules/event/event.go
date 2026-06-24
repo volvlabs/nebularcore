@@ -38,9 +38,9 @@ func (m *Module) PublishAsync(ctx context.Context, event Message) (<-chan error,
 	return errCh, nil
 }
 
-func (m *Module) Subscribe(eventType string, handler Handler) error {
+func (m *Module) Subscribe(eventType, handlerName string, handler Handler) error {
 	m.router.AddNoPublisherHandler(
-		eventType,
+		handlerName,
 		eventType,
 		m.subscriber,
 		func(msg *message.Message) error {
@@ -59,8 +59,8 @@ func (m *Module) Subscribe(eventType string, handler Handler) error {
 
 			if err := handler(context.Background(), event); err != nil {
 				m.logger.Error("Event handler error", err, watermill.LogFields{
-					"event_type": event.EventType,
-					"source":     event.Source,
+					"eventType": event.EventType,
+					"source":    event.Source,
 				})
 				return err
 			}

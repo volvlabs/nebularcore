@@ -24,7 +24,7 @@ type Publisher interface {
 }
 
 type Subscriber interface {
-	Subscribe(eventType string, handler Handler) error
+	Subscribe(eventType, handlerName string, handler Handler) error
 	Unsubscribe(eventType string) error
 }
 
