@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	coreConfig "github.com/volvlabs/nebularcore/core/config"
 	migrationRunner "github.com/volvlabs/nebularcore/core/migration_runner"
 	"github.com/volvlabs/nebularcore/modules/auth"
 	"github.com/volvlabs/nebularcore/modules/auth/backends"
@@ -60,6 +61,16 @@ func (m *mockAuthMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {}
 }
 
+type invalidConfig struct{}
+
+func (i *invalidConfig) Key() string {
+	return "invalid config"
+}
+
+func (i *invalidConfig) Validate() error {
+	return nil
+}
+
 func TestModule(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -69,7 +80,7 @@ func TestModule(t *testing.T) {
 		{
 			name: "New module initialization",
 			setup: func() *auth.Module {
-				eventBus := eventMocks.NewEventBus(t)
+				eventBus := eventMocks.NewBus(t)
 				return auth.New(eventBus)
 			},
 			validate: func(t *testing.T, module *auth.Module) {
@@ -93,12 +104,12 @@ func TestModule(t *testing.T) {
 func TestModuleConfiguration(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      interface{}
+		config      coreConfig.Config
 		expectError bool
 	}{
 		{
 			name: "valid configuration",
-			config: func() *config.Config {
+			config: func() coreConfig.Config {
 				cfg := config.Default()
 				cfg.JWT.AccessTokenSecret = "test-secret"
 				cfg.JWT.RefreshTokenSecret = "test-refresh-secret"
@@ -108,14 +119,14 @@ func TestModuleConfiguration(t *testing.T) {
 		},
 		{
 			name:        "invalid configuration type",
-			config:      "invalid",
+			config:      &invalidConfig{},
 			expectError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			module := auth.New(eventMocks.NewEventBus(t))
+			module := auth.New(eventMocks.NewBus(t))
 			err := module.Configure(tt.config)
 
 			if tt.expectError {
@@ -137,7 +148,7 @@ func TestModuleInitialization(t *testing.T) {
 		{
 			name: "default configuration",
 			setup: func() (*auth.Module, *gorm.DB, *gin.Engine) {
-				module := auth.New(eventMocks.NewEventBus(t))
+				module := auth.New(eventMocks.NewBus(t))
 				cfg := config.Default()
 				cfg.JWT.AccessTokenSecret = "test-secret"
 				cfg.JWT.RefreshTokenSecret = "test-refresh-secret"
@@ -169,7 +180,7 @@ func TestModuleInitialization(t *testing.T) {
 		{
 			name: "custom components",
 			setup: func() (*auth.Module, *gorm.DB, *gin.Engine) {
-				module := auth.New(eventMocks.NewEventBus(t))
+				module := auth.New(eventMocks.NewBus(t))
 				cfg := config.Default()
 				cfg.JWT.AccessTokenSecret = "test-secret"
 				cfg.JWT.RefreshTokenSecret = "test-refresh-secret"
@@ -203,7 +214,7 @@ func TestModuleInitialization(t *testing.T) {
 		{
 			name: "unknown backend",
 			setup: func() (*auth.Module, *gorm.DB, *gin.Engine) {
-				module := auth.New(eventMocks.NewEventBus(t))
+				module := auth.New(eventMocks.NewBus(t))
 				cfg := config.Default()
 				cfg.JWT.AccessTokenSecret = "test-secret"
 				cfg.JWT.RefreshTokenSecret = "test-refresh-secret"
@@ -243,7 +254,7 @@ func TestModuleMigrations(t *testing.T) {
 		{
 			name: "default migration sources",
 			setup: func() *auth.Module {
-				return auth.New(eventMocks.NewEventBus(t))
+				return auth.New(eventMocks.NewBus(t))
 			},
 			projectRoot: "/project/root",
 			expectedSources: func(t *testing.T, sources []migrationRunner.Source) {
@@ -256,7 +267,7 @@ func TestModuleMigrations(t *testing.T) {
 		{
 			name: "custom user migration path",
 			setup: func() *auth.Module {
-				module := auth.New(eventMocks.NewEventBus(t))
+				module := auth.New(eventMocks.NewBus(t))
 				cfg := config.Default()
 				cfg.UserMigrationScriptPath = "/custom/path"
 				module.WithConfig(cfg)
@@ -296,7 +307,7 @@ func TestModuleMiddleware(t *testing.T) {
 		{
 			name: "default middleware",
 			setup: func() *auth.Module {
-				return auth.New(eventMocks.NewEventBus(t)).
+				return auth.New(eventMocks.NewBus(t)).
 					WithAuthMiddleware(&mockAuthMiddleware{})
 			},
 			expectedLength: 1,
@@ -321,7 +332,7 @@ func TestModuleShutdown(t *testing.T) {
 		{
 			name: "successful shutdown",
 			setup: func() *auth.Module {
-				return auth.New(eventMocks.NewEventBus(t)).
+				return auth.New(eventMocks.NewBus(t)).
 					WithAuthMiddleware(&mockAuthMiddleware{})
 			},
 			expectError: false,

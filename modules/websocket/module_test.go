@@ -33,13 +33,23 @@ func (b *mockBus) PublishAsync(ctx context.Context, evt event.Message) (<-chan e
 	return ch, nil
 }
 
-func (b *mockBus) Subscribe(eventType string, handler event.Handler) error {
+func (b *mockBus) Subscribe(eventType, handlerName string, handler event.Handler) error {
 	b.subscribed[eventType] = true
 	return nil
 }
 
 func (b *mockBus) Unsubscribe(eventType string) error {
 	delete(b.subscribed, eventType)
+	return nil
+}
+
+type invalidConfig struct{}
+
+func (i *invalidConfig) Key() string {
+	return "invalid config"
+}
+
+func (i *invalidConfig) Validate() error {
 	return nil
 }
 
@@ -81,7 +91,7 @@ func TestModuleConfigure(t *testing.T) {
 	})
 
 	t.Run("invalid config type", func(t *testing.T) {
-		err := m.Configure("not a config")
+		err := m.Configure(&invalidConfig{})
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid config type")
 	})

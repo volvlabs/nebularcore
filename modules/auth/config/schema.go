@@ -76,10 +76,6 @@ type ClerkConfig struct {
 	FrontendAPI string `yaml:"frontendAPI"`
 }
 
-func (c *Config) ConfigKey() string {
-	return "auth"
-}
-
 // Default returns the default configuration
 func Default() *Config {
 	return &Config{
@@ -111,6 +107,10 @@ func Default() *Config {
 			APIEndpoint: "https://api.clerk.dev/v1",
 		},
 	}
+}
+
+func (c *Config) Key() string {
+	return "auth"
 }
 
 // Validate validates the configuration

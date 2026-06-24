@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 
+	"github.com/volvlabs/nebularcore/core/config"
 	"github.com/volvlabs/nebularcore/core/migration_runner"
 	"github.com/volvlabs/nebularcore/core/module"
 	"github.com/volvlabs/nebularcore/modules/event"
@@ -58,17 +59,15 @@ func (m *Module) Dependencies() []string { return []string{"event"} }
 func (m *Module) Namespace() module.ModuleNamespace { return module.PublicNamespace }
 
 // NewConfig implements module.Module.
-func (m *Module) NewConfig() any { return wsconfig.DefaultConfig() }
+func (m *Module) NewConfig() config.Config { return wsconfig.DefaultConfig() }
 
 // Configure implements module.Module.
-func (m *Module) Configure(config any) error {
+func (m *Module) Configure(config config.Config) error {
 	cfg, ok := config.(*wsconfig.Config)
 	if !ok {
 		return fmt.Errorf("websocket: invalid config type %T", config)
 	}
-	if err := cfg.Validate(); err != nil {
-		return err
-	}
+
 	m.config = cfg
 	return nil
 }

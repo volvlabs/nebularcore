@@ -76,6 +76,10 @@ func DefaultConfig() *Config {
 	}
 }
 
+func (c *Config) Key() string {
+	return "websocket"
+}
+
 // Validate checks the configuration for errors.
 func (c *Config) Validate() error {
 	if !c.Enabled {

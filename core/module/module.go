@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gin-gonic/gin"
+	"github.com/volvlabs/nebularcore/core/config"
 	migrationRunner "github.com/volvlabs/nebularcore/core/migration_runner"
 	"gorm.io/gorm"
 )
@@ -27,8 +28,8 @@ type Module interface {
 
 	// Lifecycle methods
 	Initialize(ctx context.Context, db *gorm.DB, router *gin.Engine) error
-	NewConfig() any
-	Configure(config any) error
+	NewConfig() config.Config
+	Configure(config config.Config) error
 	Shutdown(ctx context.Context) error
 
 	// Namespace returns the module's namespace (public or tenant)

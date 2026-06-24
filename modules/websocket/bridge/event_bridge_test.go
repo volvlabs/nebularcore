@@ -12,14 +12,14 @@ import (
 	"github.com/volvlabs/nebularcore/modules/websocket/store"
 )
 
-func newTestBridge(bus *eventmocks.EventBus, allowedPatterns []string) *EventBridge {
+func newTestBridge(bus *eventmocks.Bus, allowedPatterns []string) *EventBridge {
 	mgr := connections.NewManager(100)
 	subs := store.NewSubscriptions()
 	return NewEventBridge(bus, mgr, subs, allowedPatterns)
 }
 
 func TestSubscribeTopic_ExactTopic(t *testing.T) {
-	bus := new(eventmocks.EventBus)
+	bus := new(eventmocks.Bus)
 	bus.On("Subscribe", "user.created", mock.AnythingOfType("event.Handler")).Return(nil)
 
 	eb := newTestBridge(bus, nil)
@@ -30,7 +30,7 @@ func TestSubscribeTopic_ExactTopic(t *testing.T) {
 }
 
 func TestSubscribeTopic_SkipsWildcard(t *testing.T) {
-	bus := new(eventmocks.EventBus)
+	bus := new(eventmocks.Bus)
 	eb := newTestBridge(bus, nil)
 
 	err := eb.SubscribeTopic("user.*")
@@ -43,7 +43,7 @@ func TestSubscribeTopic_SkipsWildcard(t *testing.T) {
 }
 
 func TestSubscribeTopic_Idempotent(t *testing.T) {
-	bus := new(eventmocks.EventBus)
+	bus := new(eventmocks.Bus)
 	bus.On("Subscribe", "order.placed", mock.AnythingOfType("event.Handler")).Return(nil).Once()
 
 	eb := newTestBridge(bus, nil)
@@ -55,7 +55,7 @@ func TestSubscribeTopic_Idempotent(t *testing.T) {
 }
 
 func TestSubscribeTopic_AllowedPatternsFilter(t *testing.T) {
-	bus := new(eventmocks.EventBus)
+	bus := new(eventmocks.Bus)
 	eb := newTestBridge(bus, []string{"user.*", "order.*"})
 
 	// Allowed topic — should subscribe.
@@ -70,7 +70,7 @@ func TestSubscribeTopic_AllowedPatternsFilter(t *testing.T) {
 }
 
 func TestSubscribeTopic_EmptyAllowedPatternsAllowsAll(t *testing.T) {
-	bus := new(eventmocks.EventBus)
+	bus := new(eventmocks.Bus)
 	bus.On("Subscribe", "anything.goes", mock.AnythingOfType("event.Handler")).Return(nil)
 
 	eb := newTestBridge(bus, nil)
@@ -79,7 +79,7 @@ func TestSubscribeTopic_EmptyAllowedPatternsAllowsAll(t *testing.T) {
 }
 
 func TestStart_StaticPatterns(t *testing.T) {
-	bus := new(eventmocks.EventBus)
+	bus := new(eventmocks.Bus)
 	bus.On("Subscribe", "user.*", mock.AnythingOfType("event.Handler")).Return(nil)
 	bus.On("Subscribe", "order.*", mock.AnythingOfType("event.Handler")).Return(nil)
 

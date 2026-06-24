@@ -16,16 +16,16 @@ import (
 func TestEventEmitter_EmitAuthEvent(t *testing.T) {
 	tests := []struct {
 		name    string
-		setup   func() (EventEmitter, *mocks.EventBus, *models.User)
+		setup   func() (EventEmitter, *mocks.Bus, *models.User)
 		data    AuthEventData
 		wantErr bool
 	}{
 		{
 			name: "successful auth event emission",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -43,10 +43,10 @@ func TestEventEmitter_EmitAuthEvent(t *testing.T) {
 		},
 		{
 			name: "event bus publish error",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -62,7 +62,7 @@ func TestEventEmitter_EmitAuthEvent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			emitter, eventBus, user := tt.setup()
+			emitter, Bus, user := tt.setup()
 			err := emitter.EmitAuthEvent(context.Background(), user, tt.data)
 
 			if tt.wantErr {
@@ -70,7 +70,7 @@ func TestEventEmitter_EmitAuthEvent(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			eventBus.AssertExpectations(t)
+			Bus.AssertExpectations(t)
 		})
 	}
 }
@@ -78,7 +78,7 @@ func TestEventEmitter_EmitAuthEvent(t *testing.T) {
 func TestEventEmitter_EmitLoginEvent(t *testing.T) {
 	tests := []struct {
 		name      string
-		setup     func() (EventEmitter, *mocks.EventBus, *models.User)
+		setup     func() (EventEmitter, *mocks.Bus, *models.User)
 		ip        string
 		userAgent string
 		success   bool
@@ -86,10 +86,10 @@ func TestEventEmitter_EmitLoginEvent(t *testing.T) {
 	}{
 		{
 			name: "successful login event",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -101,10 +101,10 @@ func TestEventEmitter_EmitLoginEvent(t *testing.T) {
 		},
 		{
 			name: "failed login event",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -116,10 +116,10 @@ func TestEventEmitter_EmitLoginEvent(t *testing.T) {
 		},
 		{
 			name: "event bus error",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -133,7 +133,7 @@ func TestEventEmitter_EmitLoginEvent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			emitter, eventBus, user := tt.setup()
+			emitter, Bus, user := tt.setup()
 			err := emitter.EmitLoginEvent(context.Background(), user, tt.ip, tt.userAgent, tt.success)
 
 			if tt.wantErr {
@@ -141,7 +141,7 @@ func TestEventEmitter_EmitLoginEvent(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			eventBus.AssertExpectations(t)
+			Bus.AssertExpectations(t)
 		})
 	}
 }
@@ -149,7 +149,7 @@ func TestEventEmitter_EmitLoginEvent(t *testing.T) {
 func TestEventEmitter_EmitPasswordEvent(t *testing.T) {
 	tests := []struct {
 		name      string
-		setup     func() (EventEmitter, *mocks.EventBus, *models.User)
+		setup     func() (EventEmitter, *mocks.Bus, *models.User)
 		ip        string
 		userAgent string
 		eventType string
@@ -157,10 +157,10 @@ func TestEventEmitter_EmitPasswordEvent(t *testing.T) {
 	}{
 		{
 			name: "successful password reset event",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -172,10 +172,10 @@ func TestEventEmitter_EmitPasswordEvent(t *testing.T) {
 		},
 		{
 			name: "successful password change event",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -187,10 +187,10 @@ func TestEventEmitter_EmitPasswordEvent(t *testing.T) {
 		},
 		{
 			name: "event bus error",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -204,7 +204,7 @@ func TestEventEmitter_EmitPasswordEvent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			emitter, eventBus, user := tt.setup()
+			emitter, Bus, user := tt.setup()
 			err := emitter.EmitPasswordEvent(context.Background(), user, tt.ip, tt.userAgent, tt.eventType)
 
 			if tt.wantErr {
@@ -212,7 +212,7 @@ func TestEventEmitter_EmitPasswordEvent(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			eventBus.AssertExpectations(t)
+			Bus.AssertExpectations(t)
 		})
 	}
 }
@@ -220,16 +220,16 @@ func TestEventEmitter_EmitPasswordEvent(t *testing.T) {
 func TestEventEmitter_EmitUserEvent(t *testing.T) {
 	tests := []struct {
 		name      string
-		setup     func() (EventEmitter, *mocks.EventBus, *models.User)
+		setup     func() (EventEmitter, *mocks.Bus, *models.User)
 		eventType string
 		wantErr   bool
 	}{
 		{
 			name: "successful user created event",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -239,10 +239,10 @@ func TestEventEmitter_EmitUserEvent(t *testing.T) {
 		},
 		{
 			name: "successful user updated event",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -252,10 +252,10 @@ func TestEventEmitter_EmitUserEvent(t *testing.T) {
 		},
 		{
 			name: "event bus error",
-			setup: func() (EventEmitter, *mocks.EventBus, *models.User) {
-				eventBus := mocks.NewEventBus(t)
-				eventBus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
-				return NewEventEmitter(eventBus), eventBus, &models.User{
+			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
+				Bus := mocks.NewBus(t)
+				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
+				return NewEventEmitter(Bus), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -267,7 +267,7 @@ func TestEventEmitter_EmitUserEvent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			emitter, eventBus, user := tt.setup()
+			emitter, Bus, user := tt.setup()
 			err := emitter.EmitUserEvent(context.Background(), user, tt.eventType)
 
 			if tt.wantErr {
@@ -275,7 +275,7 @@ func TestEventEmitter_EmitUserEvent(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			eventBus.AssertExpectations(t)
+			Bus.AssertExpectations(t)
 		})
 	}
 }

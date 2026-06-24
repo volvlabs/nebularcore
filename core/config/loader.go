@@ -97,11 +97,12 @@ func (l *ConfigLoader[T]) GetProject() T {
 	return l.project
 }
 
-// GetModuleConfig retrieves configuration for a specific module
-func (l *ConfigLoader[T]) GetModuleConfig(key string, config any) error {
-	raw, ok := l.raw["modules"].(map[string]any)[key]
+// LoadModuleConfig retrieves configuration for a specific module
+func (l *ConfigLoader[T]) LoadModuleConfig(config Config) error {
+	configKey := config.Key()
+	raw, ok := l.raw["modules"].(map[string]any)[configKey]
 	if !ok {
-		return fmt.Errorf("no configuration found for module: %s", key)
+		return fmt.Errorf("no configuration found for module: %s", configKey)
 	}
 
 	yamlBytes, err := yaml.Marshal(raw)
@@ -113,5 +114,8 @@ func (l *ConfigLoader[T]) GetModuleConfig(key string, config any) error {
 		return fmt.Errorf("parsing module config: %w", err)
 	}
 
+	if err := config.Validate(); err != nil {
+		return fmt.Errorf("error validating module %s config: %w", configKey, err)
+	}
 	return nil
 }

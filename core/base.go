@@ -122,7 +122,7 @@ func (a *baseApp[T]) configureModules() error {
 			continue
 		}
 
-		err := a.loader.GetModuleConfig(name, moduleConfig)
+		err := a.loader.LoadModuleConfig(moduleConfig)
 		if err != nil {
 			log.Err(err).Msgf("error getting module %s config", name)
 			return fmt.Errorf("error getting module %s config: %w", name, err)

@@ -40,7 +40,7 @@ func NewEventBridge(bus event.Bus, manager *connections.Manager, subs *store.Sub
 func (b *EventBridge) Start(ctx context.Context) error {
 	for _, pattern := range b.allowedPatterns {
 		p := pattern // capture
-		if err := b.bus.Subscribe(p, func(ctx context.Context, msg event.Message) error {
+		if err := b.bus.Subscribe(p, p, func(ctx context.Context, msg event.Message) error {
 			b.fanout(msg.EventType, msg.Payload)
 			return nil
 		}); err != nil {
@@ -76,7 +76,7 @@ func (b *EventBridge) SubscribeTopic(topic string) error {
 		return nil
 	}
 
-	if err := b.bus.Subscribe(topic, func(ctx context.Context, msg event.Message) error {
+	if err := b.bus.Subscribe(topic, "websocket-fanout", func(ctx context.Context, msg event.Message) error {
 		b.fanout(msg.EventType, msg.Payload)
 		return nil
 	}); err != nil {

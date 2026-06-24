@@ -7,12 +7,14 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/volvlabs/nebularcore/core/config"
 	"github.com/volvlabs/nebularcore/core/migration_runner"
 	"github.com/volvlabs/nebularcore/core/module"
 	"github.com/volvlabs/nebularcore/modules/storage/gcs"
 	"github.com/volvlabs/nebularcore/modules/storage/local"
 	"github.com/volvlabs/nebularcore/modules/storage/models"
 	"github.com/volvlabs/nebularcore/modules/storage/s3"
+	"github.com/volvlabs/nebularcore/tools/validation"
 	"gorm.io/gorm"
 )
 
@@ -23,6 +25,18 @@ type Config struct {
 
 	LocalPath string `yaml:"localPath,omitempty"`
 	BaseURL   string `yaml:"baseUrl,omitempty"`
+}
+
+func (c *Config) Key() string {
+	return "storage"
+}
+
+func (c *Config) Validate() error {
+	validator := validation.New()
+	if err := validator.Validate(c); err != nil {
+		return fmt.Errorf("storage config invalid: %w", err)
+	}
+	return nil
 }
 
 type Module struct {
@@ -46,7 +60,7 @@ func (m *Module) Namespace() module.ModuleNamespace {
 }
 
 // NewConfig implements module.Module.
-func (m *Module) NewConfig() any {
+func (m *Module) NewConfig() config.Config {
 	return &Config{}
 }
 
@@ -86,7 +100,7 @@ func (m *Module) Initialize(
 }
 
 // Configure updates the module configuration
-func (m *Module) Configure(config interface{}) error {
+func (m *Module) Configure(config config.Config) error {
 	if cfg, ok := config.(*Config); ok {
 		m.mu.Lock()
 		defer m.mu.Unlock()

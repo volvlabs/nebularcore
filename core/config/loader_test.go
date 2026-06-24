@@ -29,6 +29,14 @@ type TestModuleConfig struct {
 	Name    string `yaml:"name" validate:"required"`
 }
 
+func (t *TestModuleConfig) Key() string {
+	return "test"
+}
+
+func (t *TestModuleConfig) Validate() error {
+	return nil
+}
+
 func TestConfigLoader_LoadFromFile(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -71,7 +79,7 @@ modules:
 
 				// Test module config
 				var moduleConfig TestModuleConfig
-				err := loader.GetModuleConfig("test", &moduleConfig)
+				err := loader.LoadModuleConfig(&moduleConfig)
 				require.NoError(t, err)
 				assert.True(t, moduleConfig.Enabled)
 				assert.Equal(t, "test-module", moduleConfig.Name)
@@ -153,7 +161,7 @@ project:
 	}
 }
 
-func TestConfigLoader_GetModuleConfig(t *testing.T) {
+func TestConfigLoader_LoadModuleConfig(t *testing.T) {
 	tests := []struct {
 		name    string
 		content string
@@ -218,7 +226,7 @@ modules: {}
 
 			// Test module config
 			var moduleConfig TestModuleConfig
-			err = loader.GetModuleConfig(tt.module, &moduleConfig)
+			err = loader.LoadModuleConfig(&moduleConfig)
 
 			if tt.wantErr {
 				assert.Error(t, err)
