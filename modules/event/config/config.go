@@ -17,7 +17,7 @@ type Config struct {
 }
 
 type Kafka struct {
-	Brockers []string `json:"brockers" yaml:"brockers" validate:"omitempty,min=1,dive,required"`
+	Brokers []string `json:"brokers" yaml:"brokers" validate:"omitempty,min=1,dive,required"`
 }
 
 type GoChannel struct {

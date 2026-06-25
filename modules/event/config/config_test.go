@@ -45,7 +45,7 @@ func TestValidateConfig(t *testing.T) {
 		cfg := config.Config{
 			Backend: types.BackendKafka,
 			Kafka: config.Kafka{
-				Brockers: []string{},
+				Brokers: []string{},
 			},
 		}
 
@@ -61,7 +61,7 @@ func TestValidateConfig(t *testing.T) {
 		cfg := config.Config{
 			Backend: types.BackendKafka,
 			Kafka: config.Kafka{
-				Brockers: []string{
+				Brokers: []string{
 					"localhost:8098",
 				},
 			},

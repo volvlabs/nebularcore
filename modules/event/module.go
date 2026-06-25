@@ -104,7 +104,7 @@ func (m *Module) createPubSub() (message.Publisher, message.Subscriber, error) {
 	if m.cfg.Backend == types.BackendKafka {
 		kafkaPublisher, err := watermillkafka.NewPublisher(
 			watermillkafka.PublisherConfig{
-				Brokers:   m.cfg.Kafka.Brockers,
+				Brokers:   m.cfg.Kafka.Brokers,
 				Marshaler: watermillkafka.DefaultMarshaler{},
 			},
 			watermill.NewStdLogger(false, false),
@@ -115,7 +115,7 @@ func (m *Module) createPubSub() (message.Publisher, message.Subscriber, error) {
 
 		kafkaSubscriber, err := watermillkafka.NewSubscriber(
 			watermillkafka.SubscriberConfig{
-				Brokers:     m.cfg.Kafka.Brockers,
+				Brokers:     m.cfg.Kafka.Brokers,
 				Unmarshaler: watermillkafka.DefaultMarshaler{},
 			},
 			watermill.NewStdLogger(false, false),
