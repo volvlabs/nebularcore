@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	coreConfig "github.com/volvlabs/nebularcore/core/config"
 	migrationRunner "github.com/volvlabs/nebularcore/core/migration_runner"
 	"github.com/volvlabs/nebularcore/core/module"
 	"github.com/volvlabs/nebularcore/modules/health/config"
@@ -47,7 +48,7 @@ func (m *Module) Namespace() module.ModuleNamespace {
 }
 
 // Configure implements module.Module.
-func (m *Module) Configure(cfg any) error {
+func (m *Module) Configure(cfg coreConfig.Config) error {
 	if cfg, ok := cfg.(*config.Config); ok {
 		m.config = cfg
 		return m.config.Validate()
@@ -56,7 +57,7 @@ func (m *Module) Configure(cfg any) error {
 }
 
 // NewConfig returns a new configuration instance
-func (m *Module) NewConfig() any {
+func (m *Module) NewConfig() coreConfig.Config {
 	return &config.Config{}
 }
 

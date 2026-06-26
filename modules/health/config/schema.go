@@ -15,6 +15,10 @@ type Config struct {
 	InitialDelay time.Duration `yaml:"initialDelay" validate:"required,gte=0" default:"5s"`
 }
 
+func (c *Config) Key() string {
+	return "health"
+}
+
 func (c *Config) Validate() error {
 	validate := validator.New()
 	return validate.Struct(c)
