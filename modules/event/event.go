@@ -84,7 +84,6 @@ func (m *Module) Subscribe(eventType, handlerName string, handler Handler) error
 }
 
 func (m *Module) Unsubscribe(eventType string) error {
-	// m.router.RemoveHandler(eventType)
 	return nil
 }
 
