@@ -23,6 +23,10 @@ type ServerConfig struct {
 	WriteBufferSize         int           `yaml:"writeBufferSize"`
 	ReadDeadline            time.Duration `yaml:"readDeadline"`
 	WriteDeadline           time.Duration `yaml:"writeDeadline"`
+	// PingInterval controls how often the server sends a WebSocket ping
+	// frame to keep idle connections (and any intermediate proxies/load
+	// balancers) alive. Set to 0 to disable.
+	PingInterval            time.Duration `yaml:"pingInterval"`
 	MaxConnections          int64         `yaml:"maxConnections"`
 	MaxConnectionsPerUser   int           `yaml:"maxConnectionsPerUser"`
 	MaxConnectionsPerTenant int           `yaml:"maxConnectionsPerTenant"`
@@ -58,6 +62,7 @@ func DefaultConfig() *Config {
 			WriteBufferSize:         4096,
 			ReadDeadline:            60 * time.Second,
 			WriteDeadline:           60 * time.Second,
+			PingInterval:            30 * time.Second,
 			MaxConnections:          100000,
 			MaxConnectionsPerUser:   10,
 			MaxConnectionsPerTenant: 50000,

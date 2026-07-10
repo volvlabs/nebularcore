@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/coder/websocket"
 	"github.com/gin-gonic/gin"
@@ -106,6 +107,10 @@ func (h *WebSocketHandler) Handle(c *gin.Context) {
 
 	go conn.StartWriter()
 
+	if h.config.Server.PingInterval > 0 {
+		go h.pingLoop(conn, ws)
+	}
+
 	h.readLoop(conn, ws)
 
 	conn.Close()
@@ -116,16 +121,42 @@ func (h *WebSocketHandler) Handle(c *gin.Context) {
 	log.Info().Str("conn_id", connID).Msg("websocket disconnected")
 }
 
+// pingLoop periodically sends a WebSocket ping frame so idle connections
+// (and any intermediate proxies/load balancers) are not torn down purely
+// for lack of application traffic. Ping is safe to call concurrently with
+// an in-progress Read, since coder/websocket relies on an active reader to
+// observe the resulting pong frame.
+func (h *WebSocketHandler) pingLoop(conn connections.Connection, ws *websocket.Conn) {
+	ticker := time.NewTicker(h.config.Server.PingInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-conn.Context().Done():
+			return
+		case <-ticker.C:
+			pingCtx, cancel := context.WithTimeout(conn.Context(), h.config.Server.PingInterval)
+			err := ws.Ping(pingCtx)
+			cancel()
+			if err != nil {
+				return
+			}
+		}
+	}
+}
+
 func (h *WebSocketHandler) readLoop(conn connections.Connection, ws *websocket.Conn) {
 	for {
 		readCtx := conn.Context()
+		var cancel context.CancelFunc
 		if h.config.Server.ReadDeadline > 0 {
-			var cancel context.CancelFunc
 			readCtx, cancel = context.WithTimeout(conn.Context(), h.config.Server.ReadDeadline)
-			defer cancel()
 		}
 
 		_, data, err := ws.Read(readCtx)
+		if cancel != nil {
+			cancel()
+		}
 		if err != nil {
 			if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
 				return
