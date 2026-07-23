@@ -79,7 +79,7 @@ func NewMigrateCommand[T config.Settings](
 
 					log.Info().Msgf("migration for module %s ran successfully", om.Name)
 				}
-
+			default:
 				return fmt.Errorf("unknown command %s", cmd)
 			}
 			return nil

@@ -148,5 +148,8 @@ func (m *Module) Initialize(ctx context.Context, db *gorm.DB, router *gin.Engine
 
 // Shutdown implements core.Module interface
 func (m *Module) Shutdown(ctx context.Context) error {
+	if m.router == nil {
+		return nil
+	}
 	return m.router.Close()
 }
