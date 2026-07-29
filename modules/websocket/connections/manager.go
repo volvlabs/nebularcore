@@ -16,6 +16,15 @@ type shard struct {
 	conns map[string]*conn
 }
 
+// PresenceListener is notified when a user transitions between having zero
+// and having at least one live connection. It is invoked exactly on the 0->1
+// ("came online") and 1->0 ("went offline") edges, never on every individual
+// connect/disconnect — a user with several simultaneous connections (e.g.
+// multiple browser tabs plus mobile) only fires this once per edge.
+type PresenceListener interface {
+	OnPresenceChange(userID string, online bool)
+}
+
 // Manager tracks all active WebSocket connections using a sharded map for
 // high-concurrency access.
 type Manager struct {
@@ -27,6 +36,21 @@ type Manager struct {
 	userIndex sync.Map
 	// tenantIndex maps tenantID -> set of connIDs.
 	tenantIndex sync.Map
+
+	// userConnCounts maps userID -> *atomic.Int64, tracking live connection
+	// count per user so presence transitions can be detected race-free
+	// (ranging userIndex's sync.Map is not a reliable way to detect the
+	// exact 0<->1 edge under concurrent Register/Deregister).
+	userConnCounts sync.Map
+
+	presence PresenceListener
+}
+
+// SetPresenceListener registers a listener notified on user presence
+// transitions (0->1 and 1->0 live-connection edges). Not safe to call
+// concurrently with Register/Deregister — set once during setup.
+func (m *Manager) SetPresenceListener(l PresenceListener) {
+	m.presence = l
 }
 
 // NewManager creates a connection manager with the given max connections limit.
@@ -65,6 +89,10 @@ func (m *Manager) Register(c *conn) bool {
 	if c.userID != "" {
 		actual, _ := m.userIndex.LoadOrStore(c.userID, &sync.Map{})
 		actual.(*sync.Map).Store(c.id, struct{}{})
+
+		if newCount := m.incrUserConnCount(c.userID); newCount == 1 && m.presence != nil {
+			m.presence.OnPresenceChange(c.userID, true)
+		}
 	}
 
 	// Update tenant index.
@@ -98,6 +126,10 @@ func (m *Manager) Deregister(id string) {
 	if c.userID != "" {
 		if v, ok := m.userIndex.Load(c.userID); ok {
 			v.(*sync.Map).Delete(id)
+		}
+
+		if newCount := m.decrUserConnCount(c.userID); newCount == 0 && m.presence != nil {
+			m.presence.OnPresenceChange(c.userID, false)
 		}
 	}
 
@@ -171,6 +203,20 @@ func (m *Manager) GetAll() []Connection {
 		s.mu.RUnlock()
 	}
 	return result
+}
+
+// incrUserConnCount increments the live connection counter for userID and
+// returns the new count.
+func (m *Manager) incrUserConnCount(userID string) int64 {
+	actual, _ := m.userConnCounts.LoadOrStore(userID, &atomic.Int64{})
+	return actual.(*atomic.Int64).Add(1)
+}
+
+// decrUserConnCount decrements the live connection counter for userID and
+// returns the new count.
+func (m *Manager) decrUserConnCount(userID string) int64 {
+	actual, _ := m.userConnCounts.LoadOrStore(userID, &atomic.Int64{})
+	return actual.(*atomic.Int64).Add(-1)
 }
 
 // UserConnectionCount returns the number of connections for a given user.

@@ -47,8 +47,12 @@ type SecurityConfig struct {
 
 // EventsConfig holds event bridging settings.
 type EventsConfig struct {
-	AllowedEventTypes   []string `yaml:"allowedEventTypes"`
-	InternalEventPrefix string   `yaml:"internalEventPrefix"`
+	AllowedEventTypes   []string      `yaml:"allowedEventTypes"`
+	InternalEventPrefix string        `yaml:"internalEventPrefix"`
+	// PresenceDebounce is the grace window before a user's "went offline"
+	// presence transition is broadcast, so a quick reconnect (page reload,
+	// brief network blip) doesn't flicker. Set to 0 to disable debouncing.
+	PresenceDebounce time.Duration `yaml:"presenceDebounce"`
 }
 
 // DefaultConfig returns a Config with sensible defaults.
@@ -77,6 +81,7 @@ func DefaultConfig() *Config {
 		TenantMode: "header",
 		Events: EventsConfig{
 			InternalEventPrefix: "ws:",
+			PresenceDebounce:    8 * time.Second,
 		},
 	}
 }

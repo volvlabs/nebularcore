@@ -102,6 +102,48 @@ func TestManager_UserIndexCleanup(t *testing.T) {
 	assert.Equal(t, 0, m.UserConnectionCount("u1"))
 }
 
+type recordingPresenceListener struct {
+	mu     sync.Mutex
+	events []struct {
+		userID string
+		online bool
+	}
+}
+
+func (r *recordingPresenceListener) OnPresenceChange(userID string, online bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.events = append(r.events, struct {
+		userID string
+		online bool
+	}{userID, online})
+}
+
+func TestManager_PresenceListener_FiresOnlyOnEdges(t *testing.T) {
+	m := NewManager(100)
+	listener := &recordingPresenceListener{}
+	m.SetPresenceListener(listener)
+
+	// First connection for u1: should fire online.
+	m.Register(makeConn("c1", "u1", "t1"))
+	// Second connection for u1: no additional edge, listener should not fire again.
+	m.Register(makeConn("c2", "u1", "t1"))
+
+	require.Len(t, listener.events, 1)
+	assert.Equal(t, "u1", listener.events[0].userID)
+	assert.True(t, listener.events[0].online)
+
+	// Deregister one of two: still connected, no offline edge.
+	m.Deregister("c1")
+	require.Len(t, listener.events, 1)
+
+	// Deregister the last one: should fire offline.
+	m.Deregister("c2")
+	require.Len(t, listener.events, 2)
+	assert.Equal(t, "u1", listener.events[1].userID)
+	assert.False(t, listener.events[1].online)
+}
+
 func TestManager_TenantIndexCleanup(t *testing.T) {
 	m := NewManager(100)
 	m.Register(makeConn("c1", "u1", "t1"))

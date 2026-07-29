@@ -89,6 +89,7 @@ func (m *Module) Initialize(ctx context.Context, db *gorm.DB, ginRouter *gin.Eng
 	}
 
 	m.manager = connections.NewManager(m.config.Server.MaxConnections)
+	m.manager.SetPresenceListener(bridge.NewPresenceBroadcaster(m.eventBus, m.config.Events.PresenceDebounce))
 	m.pool = connections.NewPool(
 		m.manager,
 		m.config.Server.MaxConnectionsPerUser,
