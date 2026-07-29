@@ -77,7 +77,13 @@ func (b *EventBridge) SubscribeTopic(topic string) error {
 		return nil
 	}
 
-	if err := b.bus.Subscribe(topic, "websocket-fanout", func(ctx context.Context, msg event.Message) error {
+	// Each dynamic subscription needs a unique handler name — the underlying
+	// router (Watermill) panics with DuplicateHandlerNameError if the same
+	// handler name is registered twice, so a shared constant name here would
+	// only allow one dynamically-subscribed topic to ever succeed per process
+	// lifetime.
+	handlerName := "websocket-fanout-" + topic
+	if err := b.bus.Subscribe(topic, handlerName, func(ctx context.Context, msg event.Message) error {
 		b.fanout(msg.EventType, msg.Payload)
 		return nil
 	}); err != nil {
