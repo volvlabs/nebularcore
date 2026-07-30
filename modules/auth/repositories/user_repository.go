@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
 	"github.com/volvlabs/nebularcore/modules/auth/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // UserRepository handles user-related database operations
@@ -33,13 +35,43 @@ func NewUserRepository(
 	}
 }
 
-// Create creates a new user
+// Create creates a new user. Model(user).Create(map) alone leaves the
+// returned user with a zero-value ID: GORM only writes DB-generated columns
+// (the UUID primary key, defaulted timestamps) back into the value actually
+// passed to Create — here that's the map, not the model, since they're
+// separate arguments. RETURNING the generated id into the map (verified:
+// it does land there) and then re-fetching the full row is what actually
+// gets the caller a correctly populated user, rather than one whose
+// GetID() is the zero UUID. This affects every caller, including the real
+// signup path (backends.NewLocalBackend), not just a bootstrap edge case.
 func (r *UserRepository) Create(ctx context.Context, data map[string]any) (interfaces.User, error) {
 	user := r.factory.NewUser()
-	if err := r.db.WithContext(ctx).Model(user).Create(data).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(user).Clauses(clause.Returning{}).Create(data).Error; err != nil {
 		return nil, err
 	}
-	return user, nil
+
+	id, err := coerceUUID(data["id"])
+	if err != nil {
+		return nil, fmt.Errorf("reading generated user id: %w", err)
+	}
+
+	return r.FindByID(ctx, id)
+}
+
+// coerceUUID handles the possible concrete types a driver hands back for a
+// uuid column scanned into a map[string]any — observed as a string with
+// lib/pq/pgx, but handled defensively for []byte and uuid.UUID too.
+func coerceUUID(v any) (uuid.UUID, error) {
+	switch val := v.(type) {
+	case uuid.UUID:
+		return val, nil
+	case string:
+		return uuid.Parse(val)
+	case []byte:
+		return uuid.ParseBytes(val)
+	default:
+		return uuid.Nil, fmt.Errorf("unsupported id type %T", v)
+	}
 }
 
 // FindByID finds a user by ID
