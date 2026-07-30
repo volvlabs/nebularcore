@@ -18,8 +18,18 @@ const cmdDesc = `Supported commands are:
 
 func getAllSchemas(db *gorm.DB) ([]string, error) {
 	tenantSchemas := []string{}
-	err := db.Model(&Tenant{}).Select("distinct schema").Scan(&tenantSchemas).Error
+	err := db.Model(&Tenant{}).Select("distinct schema_name").Scan(&tenantSchemas).Error
 	return tenantSchemas, err
+}
+
+// connectionString builds a DSN that connects to the configured database and
+// scopes the session to the given schema via search_path. Schemas in this
+// framework are not separate databases — they're schemas *within* dbCfg's
+// single database (see D3a in the mori platform plan) — so the schema name
+// must never be substituted into the DSN's dbname position.
+func connectionString(dbCfg config.DatabaseConfig, schema string) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s&search_path=%s",
+		dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, dbCfg.SSLMode, schema)
 }
 
 func NewTenantMigrateCommand[T config.Settings](app core.App[T], dbCfg config.DatabaseConfig) *cobra.Command {
@@ -42,8 +52,7 @@ func NewTenantMigrateCommand[T config.Settings](app core.App[T], dbCfg config.Da
 				}
 
 				schema := args[1]
-				dbString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-					dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, schema, dbCfg.SSLMode)
+				dbString := connectionString(dbCfg, schema)
 				for name, module := range app.GetModulesByNamespace(module.TenantNamespace) {
 					if !module.ProvidesMigrations() {
 						continue
@@ -61,8 +70,7 @@ func NewTenantMigrateCommand[T config.Settings](app core.App[T], dbCfg config.Da
 				}
 
 				for _, schema := range schemas {
-					dbString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-						dbCfg.Username, dbCfg.Password, dbCfg.Host, dbCfg.Port, schema, dbCfg.SSLMode)
+					dbString := connectionString(dbCfg, schema)
 					for name, module := range app.GetModulesByNamespace(module.TenantNamespace) {
 						if !module.ProvidesMigrations() {
 							continue
