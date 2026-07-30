@@ -15,15 +15,19 @@ const (
 	TenantCodeKey contextKey = "tenant_code"
 	SchemaNameKey contextKey = "schema_name"
 	DefaultSchema string     = "public"
-	TenantHeader  string     = "X-Tenant-ID"
+
+	// DefaultHeader is the HTTP header the middleware reads by default.
+	// Callers with a two-level hierarchy (e.g. organization -> farm, where
+	// the farm is the schema-bearing unit) should configure a different
+	// header via WithHeader and keep this name free for their own
+	// org-level authorization layer, so the two don't collide.
+	DefaultHeader string = "X-Tenant-ID"
 )
 
-// Model represents a database model that can be tenant-scoped
-type Model interface {
-	IsTenantBound() bool
-}
-
-// Tenant represents a tenant in the system
+// Tenant represents the schema-bearing unit in the system. In a two-level
+// tenancy model (e.g. organization -> farm) this maps to the *leaf* level
+// that actually owns a schema; the level above it is application-specific
+// and lives outside this module.
 type Tenant struct {
 	ID         string `gorm:"type:uuid;primary_key"`
 	Code       string `gorm:"type:varchar(50);unique;not null"`
@@ -36,91 +40,117 @@ func (Tenant) TableName() string {
 	return "tenants"
 }
 
-// Module implements the tenant management functionality
+// AuthorizeFunc validates that the caller (typically resolved from a JWT
+// earlier in the middleware chain) is actually a member of the requested
+// tenant. It runs after the tenant is looked up and before it's placed in
+// context. Returning false aborts the request with 403. When nil, the
+// middleware only checks that the tenant exists and is active — callers
+// that need membership enforcement (see the identity/auth module) must
+// supply this.
+type AuthorizeFunc func(c *gin.Context, tenant Tenant) bool
+
+// Module implements tenant schema registration, migrations, and request
+// resolution.
 type Module struct {
 	db            *gorm.DB
 	migrationsDir string
+	header        string
+	authorize     AuthorizeFunc
 }
 
-// ProvidesMigrations implements module.Module
+// Option configures a Module.
+type Option func(*Module)
+
+// WithHeader overrides the HTTP header the middleware reads to resolve the
+// active tenant. Defaults to DefaultHeader.
+func WithHeader(header string) Option {
+	return func(m *Module) { m.header = header }
+}
+
+// WithAuthorize sets the membership check run after tenant lookup. See
+// AuthorizeFunc.
+func WithAuthorize(fn AuthorizeFunc) Option {
+	return func(m *Module) { m.authorize = fn }
+}
+
+// New creates a new tenant module.
+func New(db *gorm.DB, migrationsDir string, opts ...Option) *Module {
+	m := &Module{
+		db:            db,
+		migrationsDir: migrationsDir,
+		header:        DefaultHeader,
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// ProvidesMigrations implements module.MigrationProvider.
 func (m *Module) ProvidesMigrations() bool {
 	return true
 }
 
-// MigrationDir implements module.MigrationProvider
+// MigrationDir implements module.MigrationProvider.
 func (m *Module) MigrationDir() string {
 	return m.migrationsDir
 }
 
-// New creates a new tenant module
-func New(db *gorm.DB, migrationsDir string) *Module {
-	return &Module{
-		db:            db,
-		migrationsDir: migrationsDir,
-	}
-}
-
-// Initialize implements module.Module
+// Initialize registers the tenant-scoping GORM plugin. Call this once
+// during app startup, after the db connection is established.
 func (m *Module) Initialize(ctx context.Context) error {
-	// Register GORM callbacks for tenant scoping
-	if err := m.db.Callback().Query().Before("gorm:query").Register("tenant:before_query", m.beforeQuery); err != nil {
-		return fmt.Errorf("registering query callback: %w", err)
+	if err := m.db.Use(NewPlugin()); err != nil {
+		return fmt.Errorf("tenant module: registering plugin: %w", err)
 	}
-
-	if err := m.db.Callback().Create().Before("gorm:create").Register("tenant:before_create", m.beforeCreate); err != nil {
-		return fmt.Errorf("registering create callback: %w", err)
-	}
-
 	return nil
 }
 
-// Middleware returns a gin middleware that extracts tenant information from requests
+// Middleware returns a gin middleware that resolves the tenant named by the
+// configured header, checks it exists and is active, runs the optional
+// AuthorizeFunc, and places its schema into the request context for the
+// tenant plugin to pick up. Requests without the header pass through
+// unscoped — routes that require a tenant should guard for that themselves
+// (a tenant-bound query with no schema in context fails closed, it does not
+// silently serve public data).
 func (m *Module) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tenantID := c.GetHeader(TenantHeader)
+		tenantID := c.GetHeader(m.header)
 		if tenantID == "" {
 			c.Next()
 			return
 		}
 
-		var tenant Tenant
-		if err := m.db.Where("id = ?", tenantID).First(&tenant).Error; err != nil {
-			c.AbortWithStatusJSON(400, gin.H{"error": "invalid tenant"})
+		var t Tenant
+		if err := m.db.Where("id = ? AND active = ?", tenantID, true).First(&t).Error; err != nil {
+			c.AbortWithStatusJSON(400, gin.H{"error": "invalid or inactive tenant"})
 			return
 		}
 
-		ctx := context.WithValue(c.Request.Context(), TenantIDKey, tenant.ID)
-		ctx = context.WithValue(ctx, TenantCodeKey, tenant.Code)
-		ctx = context.WithValue(ctx, SchemaNameKey, tenant.SchemaName)
+		if m.authorize != nil && !m.authorize(c, t) {
+			c.AbortWithStatusJSON(403, gin.H{"error": "not a member of this tenant"})
+			return
+		}
+
+		ctx := WithTenant(c.Request.Context(), t.ID, t.Code, t.SchemaName)
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
 	}
 }
 
-// beforeQuery is a GORM callback that adds tenant schema to queries
-func (m *Module) beforeQuery(db *gorm.DB) {
-	if model, ok := db.Statement.Model.(Model); ok && model.IsTenantBound() {
-		if schema, ok := db.Statement.Context.Value(SchemaNameKey).(string); ok && schema != "" {
-			db.Statement.Table = fmt.Sprintf("%s.%s", schema, db.Statement.Table)
-		} else {
-			db.Statement.Table = fmt.Sprintf("%s.%s", DefaultSchema, db.Statement.Table)
-		}
+// SchemaFromContext extracts just the resolved schema name, if any. This is
+// what the tenant plugin uses; it does not require id/code to also be set.
+func SchemaFromContext(ctx context.Context) (schema string, ok bool) {
+	if ctx == nil {
+		return "", false
 	}
+	schema, ok = ctx.Value(SchemaNameKey).(string)
+	return schema, ok
 }
 
-// beforeCreate is a GORM callback that ensures tenant schema for new records
-func (m *Module) beforeCreate(db *gorm.DB) {
-	if model, ok := db.Statement.Model.(Model); ok && model.IsTenantBound() {
-		if schema, ok := db.Statement.Context.Value(SchemaNameKey).(string); ok && schema != "" {
-			db.Statement.Table = fmt.Sprintf("%s.%s", schema, db.Statement.Table)
-		} else {
-			db.Statement.Table = fmt.Sprintf("%s.%s", DefaultSchema, db.Statement.Table)
-		}
-	}
-}
-
-// GetTenantFromContext extracts tenant information from context
+// GetTenantFromContext extracts the full tenant identity from context. All
+// three values must be present for ok to be true; use SchemaFromContext if
+// you only need the schema.
 func GetTenantFromContext(ctx context.Context) (id, code, schema string, ok bool) {
 	id, ok1 := ctx.Value(TenantIDKey).(string)
 	code, ok2 := ctx.Value(TenantCodeKey).(string)
@@ -128,7 +158,7 @@ func GetTenantFromContext(ctx context.Context) (id, code, schema string, ok bool
 	return id, code, schema, ok1 && ok2 && ok3
 }
 
-// WithTenant adds tenant information to context
+// WithTenant adds tenant information to context.
 func WithTenant(ctx context.Context, id, code, schema string) context.Context {
 	ctx = context.WithValue(ctx, TenantIDKey, id)
 	ctx = context.WithValue(ctx, TenantCodeKey, code)
