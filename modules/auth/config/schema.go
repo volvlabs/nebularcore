@@ -23,12 +23,30 @@ type MiddlewareConfig struct {
 	PermissionPolicyPath string `yaml:"permissionPolicyPath" validate:"required_with=AuthorizationEnabled"`
 }
 
-// JWTConfig represents JWT configuration
+// JWTConfig represents JWT configuration.
+//
+// Algorithm controls how *access* tokens are signed: "HS256" (default, a
+// shared secret only this service knows) or "RS256" (an RSA keypair, whose
+// public half can be published via a JWKS endpoint so other services —
+// e.g. Veda, per D6 in the mori platform plan — can verify tokens
+// independently without ever holding a secret that could mint them).
+// Refresh tokens always stay HS256/AccessTokenSecret-adjacent (RefreshTokenSecret):
+// they're exchanged directly with this service and never need third-party
+// verification, so there's no reason to widen their blast radius.
 type JWTConfig struct {
+	Algorithm          string        `yaml:"algorithm"`
 	AccessTokenSecret  string        `yaml:"accessTokenSecret"`
 	RefreshTokenSecret string        `yaml:"refreshTokenSecret"`
+	PrivateKeyPEM      string        `yaml:"privateKeyPEM"`
+	PublicKeyPEM       string        `yaml:"publicKeyPEM"`
+	KeyID              string        `yaml:"keyId"`
 	AccessTokenExpiry  time.Duration `yaml:"accessTokenExpiry"`
 	RefreshTokenExpiry time.Duration `yaml:"refreshTokenExpiry"`
+}
+
+// IsRS256 reports whether access tokens should be RSA-signed.
+func (c JWTConfig) IsRS256() bool {
+	return c.Algorithm == "RS256"
 }
 
 // PasswordPolicyConfig represents password policy configuration
@@ -115,7 +133,11 @@ func (c *Config) Key() string {
 
 // Validate validates the configuration
 func (c *Config) Validate() error {
-	if c.JWT.AccessTokenSecret == "" {
+	if c.JWT.IsRS256() {
+		if c.JWT.PrivateKeyPEM == "" || c.JWT.PublicKeyPEM == "" {
+			return ErrMissingJWTKeyPair
+		}
+	} else if c.JWT.AccessTokenSecret == "" {
 		return ErrMissingJWTSecret
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -18,6 +19,18 @@ type Role struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
+// BeforeCreate generates the primary key when the caller didn't set one.
+// Needed because GORM only omits zero-value primary keys from struct-based
+// INSERTs for recognized numeric/autoincrement types — a zero-value string
+// PK is sent as an explicit empty string, which defeats the column's
+// DEFAULT gen_random_uuid() and fails outright against a uuid column type.
+func (r *Role) BeforeCreate(tx *gorm.DB) error {
+	if r.ID == "" {
+		r.ID = uuid.NewString()
+	}
+	return nil
+}
+
 // RoleAssignment represents a user-role assignment
 type RoleAssignment struct {
 	ID        string `gorm:"primaryKey"`
@@ -25,6 +38,15 @@ type RoleAssignment struct {
 	RoleID    string `gorm:"index:idx_role_assignments_user_role"`
 	CreatedAt time.Time
 	ExpiresAt *time.Time
+}
+
+// BeforeCreate generates the primary key when the caller didn't set one. See
+// Role.BeforeCreate for why this is necessary.
+func (a *RoleAssignment) BeforeCreate(tx *gorm.DB) error {
+	if a.ID == "" {
+		a.ID = uuid.NewString()
+	}
+	return nil
 }
 
 // RoleRepository handles role-related database operations

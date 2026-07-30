@@ -140,3 +140,11 @@ type GoogleSignin interface {
 	VerifyGoogleIDToken(ctx context.Context, tokenString string) (*pkg.GoogleUser, error)
 	GetAuthURL(state string) string
 }
+
+// JWKSProvider is implemented by TokenIssuers that can publish their
+// verification key as a JSON Web Key Set (RS256 only — HS256 has no public
+// half to publish). Kept separate from TokenIssuer so HS256 issuers and
+// test doubles aren't forced to grow a meaningless JWKS method.
+type JWKSProvider interface {
+	JWKS() (map[string]any, error)
+}

@@ -102,6 +102,17 @@ func (m *Module) Initialize(
 	m.authHandler.RegisterRoutes(m.routerGroup, m.socialSignupHandler)
 	m.passwordHandler.RegisterRoutes(m.routerGroup)
 
+	if jwks, ok := m.tokenIssuer.(interfaces.JWKSProvider); ok && m.config.JWT.IsRS256() {
+		router.GET("/.well-known/jwks.json", func(c *gin.Context) {
+			keys, err := jwks.JWKS()
+			if err != nil {
+				c.JSON(500, gin.H{"error": "jwks unavailable"})
+				return
+			}
+			c.JSON(200, keys)
+		})
+	}
+
 	return nil
 }
 
@@ -156,7 +167,11 @@ func (m *Module) initializeDefaults(db *gorm.DB) error {
 		m.socialRepository = repositories.NewSocialAccountRepository(db)
 	}
 	if m.tokenIssuer == nil {
-		m.tokenIssuer = state.NewJWTTokenIssuer(m.config.JWT)
+		issuer, err := state.NewJWTTokenIssuer(m.config.JWT)
+		if err != nil {
+			return fmt.Errorf("creating JWT token issuer: %w", err)
+		}
+		m.tokenIssuer = issuer
 	}
 	if m.authMiddleware == nil {
 		var err error

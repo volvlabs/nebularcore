@@ -5,6 +5,7 @@ import "fmt"
 // Configuration errors
 var (
 	ErrMissingJWTSecret          = fmt.Errorf("JWT secret is required")
+	ErrMissingJWTKeyPair         = fmt.Errorf("JWT private/public key pair is required when algorithm is RS256")
 	ErrMissingRefreshTokenSecret = fmt.Errorf("JWT refresh token secret is required")
 	ErrInvalidJWTExpiry          = fmt.Errorf("invalid JWT expiry time")
 	ErrInvalidRefreshExpiry      = fmt.Errorf("invalid refresh token expiry time")

@@ -6,10 +6,35 @@ import (
 	"time"
 
 	"github.com/casbin/casbin/v2"
+	casbinmodel "github.com/casbin/casbin/v2/model"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"github.com/volvlabs/nebularcore/modules/auth/repositories"
 	"gorm.io/gorm"
 )
+
+// rbacModelConf is the standard casbin RBAC-with-roles model: a subject
+// (user) may act on an object if some role granted to it (via g, the role
+// mapping set up by AssignRole) has a matching policy (via p, set up by
+// GrantPermission). Embedded rather than loaded from a file on disk — this
+// manager previously pointed casbin at a relative path ("auth_model.conf")
+// that didn't exist anywhere in the module, meaning NewAuthorizationManager
+// would fail outright the moment anything actually constructed one.
+const rbacModelConf = `
+[request_definition]
+r = sub, obj, act
+
+[policy_definition]
+p = sub, obj, act
+
+[role_definition]
+g = _, _
+
+[policy_effect]
+e = some(where (p.eft == allow))
+
+[matchers]
+m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
+`
 
 // AuthorizationManager handles role and permission management
 type AuthorizationManager struct {
@@ -26,16 +51,18 @@ func NewAuthorizationManager(db *gorm.DB) (*AuthorizationManager, error) {
 		return nil, fmt.Errorf("failed to create Casbin adapter: %w", err)
 	}
 
-	// Initialize enforcer with RBAC model
-	enforcer, err := casbin.NewEnforcer("auth_model.conf", adapter)
+	// Initialize enforcer with the embedded RBAC model.
+	m, err := casbinmodel.NewModelFromString(rbacModelConf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse RBAC model: %w", err)
+	}
+	enforcer, err := casbin.NewEnforcer(m, adapter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Casbin enforcer: %w", err)
 	}
 
-	// Load RBAC model
-	err = enforcer.LoadModel()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load RBAC model: %w", err)
+	if err := enforcer.LoadPolicy(); err != nil {
+		return nil, fmt.Errorf("failed to load policy: %w", err)
 	}
 
 	// Initialize role repository

@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/volvlabs/nebularcore/modules/auth/config"
 	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
 	"github.com/volvlabs/nebularcore/modules/auth/state"
@@ -70,7 +71,8 @@ func TestJWTTokenIssuer(t *testing.T) {
 			AccessTokenExpiry:  time.Hour,
 			RefreshTokenExpiry: time.Hour * 24,
 		}
-		issuer := state.NewJWTTokenIssuer(cfg)
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
 
 		// Test
 		user := NewMockUser()
@@ -91,7 +93,8 @@ func TestJWTTokenIssuer(t *testing.T) {
 			AccessTokenExpiry:  time.Hour,
 			RefreshTokenExpiry: time.Hour * 24,
 		}
-		issuer := state.NewJWTTokenIssuer(cfg)
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
 
 		// Create a token first
 		user := NewMockUser()
@@ -114,10 +117,11 @@ func TestJWTTokenIssuer(t *testing.T) {
 			AccessTokenExpiry:  time.Hour,
 			RefreshTokenExpiry: time.Hour * 24,
 		}
-		issuer := state.NewJWTTokenIssuer(cfg)
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
 
 		// Test
-		_, err := issuer.ValidateToken("invalid.token.string")
+		_, err = issuer.ValidateToken("invalid.token.string")
 
 		// Assert
 		assert.Error(t, err)
@@ -131,7 +135,8 @@ func TestJWTTokenIssuer(t *testing.T) {
 			AccessTokenExpiry:  time.Hour,
 			RefreshTokenExpiry: time.Hour * 24,
 		}
-		issuer := state.NewJWTTokenIssuer(cfg)
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
 
 		// Create initial tokens
 		user := NewMockUser()
@@ -164,10 +169,11 @@ func TestJWTTokenIssuer(t *testing.T) {
 			AccessTokenExpiry:  time.Hour,
 			RefreshTokenExpiry: time.Hour * 24,
 		}
-		issuer := state.NewJWTTokenIssuer(cfg)
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
 
 		// Test
-		_, err := issuer.RefreshToken("invalid.refresh.token")
+		_, err = issuer.RefreshToken("invalid.refresh.token")
 
 		// Assert
 		assert.Error(t, err)
