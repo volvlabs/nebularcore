@@ -79,10 +79,16 @@ func (a *baseApp[T]) Bootstrap(ctx context.Context) error {
 	if err := a.initDB(); err != nil {
 		return fmt.Errorf("initializing database: %w", err)
 	}
-	for _, name := range a.registry.InitOrder() {
-		module, _ := a.registry.Get(name)
-		if err := module.Initialize(a.ctx, a.db, a.Router()); err != nil {
-			return fmt.Errorf("initializing module %s: %w", name, err)
+	// Only PublicNamespace modules go through the app lifecycle.
+	// TenantNamespace modules (e.g. farm-schema migration shims) can share
+	// a Name() with a PublicNamespace module of the same domain — they
+	// live in separate registry maps, but InitOrder() used to concatenate
+	// both namespaces' order lists, so a shared name appeared twice and
+	// registry.Get(name) resolved both occurrences to the same
+	// PublicNamespace module, double-calling Initialize() on it.
+	for _, om := range a.registry.GetModulesInOrder(module.PublicNamespace) {
+		if err := om.Module.Initialize(a.ctx, a.db, a.Router()); err != nil {
+			return fmt.Errorf("initializing module %s: %w", om.Name, err)
 		}
 	}
 
@@ -92,11 +98,10 @@ func (a *baseApp[T]) Bootstrap(ctx context.Context) error {
 
 // Shutdown gracefully shuts down the application
 func (a *baseApp[T]) Shutdown(ctx context.Context) error {
-	order := a.registry.InitOrder()
+	order := a.registry.GetModulesInOrder(module.PublicNamespace)
 	for i := len(order) - 1; i >= 0; i-- {
-		module, _ := a.registry.Get(order[i])
-		if err := module.Shutdown(ctx); err != nil {
-			return fmt.Errorf("shutting down module %s: %w", order[i], err)
+		if err := order[i].Module.Shutdown(ctx); err != nil {
+			return fmt.Errorf("shutting down module %s: %w", order[i].Name, err)
 		}
 	}
 
@@ -114,23 +119,22 @@ func (a *baseApp[T]) Shutdown(ctx context.Context) error {
 }
 
 func (a *baseApp[T]) configureModules() error {
-	for _, name := range a.registry.InitOrder() {
-		log.Debug().Msgf("configuring module %s", name)
-		module, _ := a.registry.Get(name)
-		moduleConfig := module.NewConfig()
+	for _, om := range a.registry.GetModulesInOrder(module.PublicNamespace) {
+		log.Debug().Msgf("configuring module %s", om.Name)
+		moduleConfig := om.Module.NewConfig()
 		if moduleConfig == nil {
 			continue
 		}
 
 		err := a.loader.LoadModuleConfig(moduleConfig)
 		if err != nil {
-			log.Err(err).Msgf("error getting module %s config", name)
-			return fmt.Errorf("error getting module %s config: %w", name, err)
+			log.Err(err).Msgf("error getting module %s config", om.Name)
+			return fmt.Errorf("error getting module %s config: %w", om.Name, err)
 		}
 
-		if err := module.Configure(moduleConfig); err != nil {
-			log.Err(err).Msgf("error configuring module %s", name)
-			return fmt.Errorf("error configuring module %s: %w", name, err)
+		if err := om.Module.Configure(moduleConfig); err != nil {
+			log.Err(err).Msgf("error configuring module %s", om.Name)
+			return fmt.Errorf("error configuring module %s: %w", om.Name, err)
 		}
 	}
 	return nil
