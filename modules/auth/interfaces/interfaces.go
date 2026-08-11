@@ -148,3 +148,48 @@ type GoogleSignin interface {
 type JWKSProvider interface {
 	JWKS() (map[string]any, error)
 }
+
+// RoleLister is an optional capability a TokenIssuer's issued claims can
+// be sourced from. nebularcore's own auth module has no built-in concept
+// of roles — that's layered on by apps like mori-backend via a
+// casbin-backed AuthorizationManager (modules/auth/authorization) — so
+// this stays a separate, optional interface rather than something
+// TokenIssuer or User require directly. When wired in (see
+// RoleListerSetter), IssueToken embeds a "roles" claim so third-party
+// consumers that verify tokens via JWKS (e.g. Veda, per D6) can read a
+// caller's roles straight off the token instead of needing their own
+// callback into the issuing app's database.
+type RoleLister interface {
+	GetUserRoles(ctx context.Context, userID string) ([]string, error)
+}
+
+// RoleListerSetter is implemented by TokenIssuers that support wiring in
+// a RoleLister after construction — needed because the issuer is built
+// during auth.Module's own Initialize(), before an app-specific
+// AuthorizationManager (which itself needs a *gorm.DB not available until
+// Initialize time either) exists. Callers type-assert TokenIssuer against
+// this interface rather than requiring every issuer to support it.
+type RoleListerSetter interface {
+	SetRoleLister(RoleLister)
+}
+
+// OrgLister is an optional capability a TokenIssuer's issued claims can be
+// sourced from, mirroring RoleLister above. nebularcore's own auth module
+// has no built-in concept of organizations — that's layered on by apps
+// like mori-backend — so this stays a separate, optional interface. When
+// wired in (see OrgListerSetter), IssueToken embeds an "org_id" claim so
+// consumers (e.g. mori-backend's WebSocket topic authorization) can scope
+// access to a caller's organization straight off the token, without a
+// callback into the issuing app's database.
+type OrgLister interface {
+	GetUserOrgID(ctx context.Context, userID string) (string, error)
+}
+
+// OrgListerSetter is implemented by TokenIssuers that support wiring in an
+// OrgLister after construction, for the same reason as RoleListerSetter —
+// the issuer is built before an app-specific org-membership service
+// exists. Callers type-assert TokenIssuer against this interface rather
+// than requiring every issuer to support it.
+type OrgListerSetter interface {
+	SetOrgLister(OrgLister)
+}

@@ -1,6 +1,7 @@
 package state
 
 import (
+	"context"
 	"crypto/rsa"
 	"encoding/base64"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/rs/zerolog/log"
 	"github.com/volvlabs/nebularcore/modules/auth/config"
 	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
 	"github.com/volvlabs/nebularcore/modules/auth/models/responses"
@@ -18,7 +20,28 @@ type JWTTokenIssuer struct {
 	cfg        config.JWTConfig
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
+	roles      interfaces.RoleLister
+	orgs       interfaces.OrgLister
 }
+
+// SetRoleLister wires in an optional roles source (see
+// interfaces.RoleListerSetter's doc comment for why this is a
+// post-construction setter rather than a constructor param). Safe to call
+// with nil to disable — IssueToken simply omits the "roles" claim then,
+// same as if this were never called.
+func (t *JWTTokenIssuer) SetRoleLister(rl interfaces.RoleLister) {
+	t.roles = rl
+}
+
+// SetOrgLister wires in an optional org source, mirroring SetRoleLister
+// (see interfaces.OrgListerSetter's doc comment). Safe to call with nil to
+// disable — IssueToken simply omits the "org_id" claim then.
+func (t *JWTTokenIssuer) SetOrgLister(ol interfaces.OrgLister) {
+	t.orgs = ol
+}
+
+var _ interfaces.RoleListerSetter = (*JWTTokenIssuer)(nil)
+var _ interfaces.OrgListerSetter = (*JWTTokenIssuer)(nil)
 
 // NewJWTTokenIssuer constructs a token issuer. When cfg.Algorithm is
 // "RS256", the configured PEM key pair is parsed up front so a
@@ -49,6 +72,32 @@ func (t *JWTTokenIssuer) IssueToken(user interfaces.User) (*responses.TokenRespo
 		"email":       user.GetEmail(),
 		"phoneNumber": user.GetPhoneNumber(),
 		"iat":         time.Now().Unix(),
+	}
+
+	// Best-effort: a roles-lookup failure must not block login — it just
+	// means the token comes back without a "roles" claim, same as if no
+	// RoleLister were configured at all. IssueToken has no request-scoped
+	// context of its own (see TokenIssuer's interface), so this uses a
+	// background one for the lookup.
+	if t.roles != nil {
+		roles, err := t.roles.GetUserRoles(context.Background(), user.GetID().String())
+		if err != nil {
+			log.Err(err).Str("user", user.GetID().String()).Msg("auth: failed to look up roles for JWT claim")
+		} else {
+			claims["roles"] = roles
+		}
+	}
+
+	// Best-effort, same posture as roles above: an org lookup failure must
+	// not block login, it just means the token comes back without an
+	// "org_id" claim.
+	if t.orgs != nil {
+		orgID, err := t.orgs.GetUserOrgID(context.Background(), user.GetID().String())
+		if err != nil {
+			log.Err(err).Str("user", user.GetID().String()).Msg("auth: failed to look up org for JWT claim")
+		} else if orgID != "" {
+			claims["org_id"] = orgID
+		}
 	}
 
 	return t.issueToken(claims, user)

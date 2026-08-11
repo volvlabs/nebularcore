@@ -1,6 +1,7 @@
 package state_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -178,4 +179,102 @@ func TestJWTTokenIssuer(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 	})
+
+	t.Run("IssueToken - No RoleLister omits roles claim", func(t *testing.T) {
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+
+		response, err := issuer.IssueToken(NewMockUser())
+		require.NoError(t, err)
+
+		claims, err := issuer.ValidateToken(response.AccessToken)
+		require.NoError(t, err)
+		assert.NotContains(t, claims, "roles")
+	})
+
+	t.Run("IssueToken - RoleLister embeds roles claim", func(t *testing.T) {
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+		issuer.SetRoleLister(fakeRoleLister{roles: []string{"super_admin", "org_admin"}})
+
+		user := NewMockUser()
+		response, err := issuer.IssueToken(user)
+		require.NoError(t, err)
+
+		claims, err := issuer.ValidateToken(response.AccessToken)
+		require.NoError(t, err)
+		roles, ok := claims["roles"].([]any)
+		require.True(t, ok, "roles claim must be present and a slice")
+		require.Len(t, roles, 2)
+		assert.Equal(t, "super_admin", roles[0])
+		assert.Equal(t, "org_admin", roles[1])
+	})
+
+	t.Run("IssueToken - RoleLister error is non-fatal, roles claim omitted", func(t *testing.T) {
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+		issuer.SetRoleLister(fakeRoleLister{err: assert.AnError})
+
+		response, err := issuer.IssueToken(NewMockUser())
+		require.NoError(t, err, "a role-lookup failure must not block login")
+
+		claims, err := issuer.ValidateToken(response.AccessToken)
+		require.NoError(t, err)
+		assert.NotContains(t, claims, "roles")
+	})
+
+	t.Run("RefreshToken - carries roles claim through from the original token", func(t *testing.T) {
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+		issuer.SetRoleLister(fakeRoleLister{roles: []string{"super_admin"}})
+
+		initial, err := issuer.IssueToken(NewMockUser())
+		require.NoError(t, err)
+
+		refreshed, err := issuer.RefreshToken(initial.RefreshToken)
+		require.NoError(t, err)
+
+		claims, err := issuer.ValidateToken(refreshed.AccessToken)
+		require.NoError(t, err)
+		roles, ok := claims["roles"].([]any)
+		require.True(t, ok)
+		require.Len(t, roles, 1)
+		assert.Equal(t, "super_admin", roles[0])
+	})
+}
+
+type fakeRoleLister struct {
+	roles []string
+	err   error
+}
+
+func (f fakeRoleLister) GetUserRoles(ctx context.Context, userID string) ([]string, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.roles, nil
 }
