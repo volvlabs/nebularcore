@@ -13,6 +13,7 @@ type Connection interface {
 	ID() string
 	UserID() string
 	TenantID() string
+	OrgID() string
 	Send(msg *protocol.ServerMessage) bool
 	Close()
 	Context() context.Context
@@ -23,6 +24,7 @@ type conn struct {
 	id       string
 	userID   string
 	tenantID string
+	orgID    string
 	writes   chan *protocol.ServerMessage
 	ctx      context.Context
 	cancel   context.CancelFunc
@@ -35,12 +37,13 @@ type conn struct {
 
 // NewConnection creates a new connection. The caller must set WriteFn and then
 // call StartWriter before using Send.
-func NewConnection(id, userID, tenantID string, parentCtx context.Context) *conn {
+func NewConnection(id, userID, tenantID, orgID string, parentCtx context.Context) *conn {
 	ctx, cancel := context.WithCancel(parentCtx)
 	return &conn{
 		id:       id,
 		userID:   userID,
 		tenantID: tenantID,
+		orgID:    orgID,
 		writes:   make(chan *protocol.ServerMessage, 256),
 		ctx:      ctx,
 		cancel:   cancel,
@@ -50,6 +53,7 @@ func NewConnection(id, userID, tenantID string, parentCtx context.Context) *conn
 func (c *conn) ID() string               { return c.id }
 func (c *conn) UserID() string           { return c.userID }
 func (c *conn) TenantID() string         { return c.tenantID }
+func (c *conn) OrgID() string            { return c.orgID }
 func (c *conn) Context() context.Context { return c.ctx }
 
 // Send enqueues a message for writing. Returns false if the channel is full

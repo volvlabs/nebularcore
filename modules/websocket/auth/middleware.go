@@ -14,8 +14,25 @@ const (
 
 // Middleware returns a Gin handler that validates JWT tokens for WebSocket
 // upgrade requests. It checks the Authorization header first, then falls back
-// to the "token" query parameter.
+// to the "token" query parameter. Verification is HS256-only, via
+// ValidateToken(token, jwtSecret) — hosts whose own tokens are signed
+// RS256 (or need any other verification scheme) should use
+// MiddlewareWithResolver instead.
 func Middleware(jwtSecret string, authRequired bool) gin.HandlerFunc {
+	return MiddlewareWithResolver(func(token string) (*Claims, error) {
+		return ValidateToken(token, jwtSecret)
+	}, authRequired)
+}
+
+// ClaimsResolverFunc validates a raw bearer/query token and returns its
+// claims — a pluggable alternative to Middleware's fixed HS256-shared-
+// secret verification, for hosts (e.g. mori-backend, RS256) whose own
+// TokenIssuer already knows how to validate its own tokens.
+type ClaimsResolverFunc func(token string) (*Claims, error)
+
+// MiddlewareWithResolver is Middleware, generalized to accept any
+// ClaimsResolverFunc instead of assuming HS256 + a shared secret.
+func MiddlewareWithResolver(resolve ClaimsResolverFunc, authRequired bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := extractBearerToken(c.GetHeader("Authorization"))
 		if token == "" {
@@ -34,7 +51,7 @@ func Middleware(jwtSecret string, authRequired bool) gin.HandlerFunc {
 			return
 		}
 
-		claims, err := ValidateToken(token, jwtSecret)
+		claims, err := resolve(token)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"status":  false,

@@ -50,9 +50,11 @@ func (h *WebSocketHandler) Handle(c *gin.Context) {
 
 	userID := ""
 	tenantID := ""
+	orgID := ""
 	if claims != nil {
 		userID = claims.UserID
 		tenantID = claims.TenantID
+		orgID = claims.OrgID
 	}
 
 	if len(h.config.Security.AllowOrigins) > 0 {
@@ -86,7 +88,7 @@ func (h *WebSocketHandler) Handle(c *gin.Context) {
 	}
 
 	connID := uuid.NewString()
-	conn := connections.NewConnection(connID, userID, tenantID, c.Request.Context())
+	conn := connections.NewConnection(connID, userID, tenantID, orgID, c.Request.Context())
 
 	conn.WriteFn = func(msg *protocol.ServerMessage) error {
 		data, encErr := protocol.Encode(msg)

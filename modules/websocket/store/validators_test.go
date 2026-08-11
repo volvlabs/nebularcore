@@ -16,12 +16,14 @@ type mockConn struct {
 	id       string
 	userID   string
 	tenantID string
+	orgID    string
 	sent     []*protocol.ServerMessage
 }
 
 func (m *mockConn) ID() string                            { return m.id }
 func (m *mockConn) UserID() string                        { return m.userID }
 func (m *mockConn) TenantID() string                      { return m.tenantID }
+func (m *mockConn) OrgID() string                         { return m.orgID }
 func (m *mockConn) Send(msg *protocol.ServerMessage) bool { m.sent = append(m.sent, msg); return true }
 func (m *mockConn) Close()                                {}
 func (m *mockConn) Context() context.Context              { return context.Background() }

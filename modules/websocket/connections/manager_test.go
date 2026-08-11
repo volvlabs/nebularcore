@@ -12,7 +12,7 @@ import (
 )
 
 func makeConn(id, userID, tenantID string) *conn {
-	return NewConnection(id, userID, tenantID, context.Background())
+	return NewConnection(id, userID, tenantID, "", context.Background())
 }
 
 func TestManager_RegisterAndGet(t *testing.T) {

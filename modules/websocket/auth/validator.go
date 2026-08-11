@@ -12,10 +12,11 @@ import (
 type Claims struct {
 	UserID   string
 	TenantID string
+	OrgID    string
 	Raw      jwt.MapClaims
 }
 
-// ValidateToken parses and validates a JWT, extracting userID and tenantID.
+// ValidateToken parses and validates a JWT, extracting userID, tenantID, and orgID.
 func ValidateToken(token, secret string) (*Claims, error) {
 	mapClaims, err := security.ParseJWT(token, secret)
 	if err != nil {
@@ -30,9 +31,16 @@ func ValidateToken(token, secret string) (*Claims, error) {
 
 	tenantID, _ := mapClaims["tenant_id"].(string)
 
+	// org_id is a distinct claim from tenant_id: tenant_id is used by some
+	// callers for schema/DB-level multi-tenancy, while org_id identifies the
+	// user's organization for application-level authorization (e.g. scoping
+	// WebSocket topic subscriptions to one org).
+	orgID, _ := mapClaims["org_id"].(string)
+
 	return &Claims{
 		UserID:   userID,
 		TenantID: tenantID,
+		OrgID:    orgID,
 		Raw:      mapClaims,
 	}, nil
 }
