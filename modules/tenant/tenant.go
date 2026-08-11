@@ -164,3 +164,16 @@ func WithTenant(ctx context.Context, id, code, schema string) context.Context {
 	ctx = context.WithValue(ctx, TenantCodeKey, code)
 	return context.WithValue(ctx, SchemaNameKey, schema)
 }
+
+// ResolveSchemaContext looks up tenantID's schema name and returns a
+// context carrying it (via WithTenant) — for callers with no HTTP request
+// to hang the tenant-resolving Middleware off of (e.g. a Kafka consumer),
+// which otherwise have no way to get a tenant-scoped context for
+// TenantBound model reads/writes.
+func ResolveSchemaContext(ctx context.Context, db *gorm.DB, tenantID string) (context.Context, error) {
+	var t Tenant
+	if err := db.WithContext(ctx).Where("id = ?", tenantID).First(&t).Error; err != nil {
+		return nil, fmt.Errorf("tenant: resolving schema for tenant %s: %w", tenantID, err)
+	}
+	return WithTenant(ctx, t.ID, t.Code, t.SchemaName), nil
+}
