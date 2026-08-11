@@ -12,6 +12,9 @@ var (
 	ErrInvalidPasswordLength     = fmt.Errorf("minimum password length must be at least 8 characters")
 	ErrInvalidAPIKeyLength       = fmt.Errorf("API key length must be at least 16 characters")
 	ErrInvalidClerkConfig        = fmt.Errorf("clerk API endpoint is required when API key is provided")
+
+	ErrInvalidAuthorizationSource     = fmt.Errorf(`authorization source must be "database" or "file"`)
+	ErrMissingAuthorizationPolicyPath = fmt.Errorf(`authorization policyPath is required when source is "file"`)
 )
 
 // ErrInvalidSocialConfig represents an error with social provider configuration

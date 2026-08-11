@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"github.com/volvlabs/nebularcore/modules/auth/authorization"
 	backendMocks "github.com/volvlabs/nebularcore/modules/auth/backends/mocks"
 	"github.com/volvlabs/nebularcore/modules/auth/config"
 	"github.com/volvlabs/nebularcore/modules/auth/interfaces/mocks"
@@ -22,14 +24,21 @@ func setupTest(t *testing.T) (*gin.Engine, *middleware.AuthMiddleware, *backendM
 
 	authManager := backendMocks.NewAuthenticationManager(t)
 
-	cfg := &config.MiddlewareConfig{
-		AuthorizationEnabled: true,
-		PermissionModelPath:  "test-data/test-model.conf",
-		PermissionPolicyPath: "test-data/test-policy.csv",
+	cfg := &config.AuthorizationConfig{
+		MiddlewareEnabled: true,
+		Source:            "file",
+		ModelPath:         "test-data/test-model.conf",
+		PolicyPath:        "test-data/test-policy.csv",
 	}
 
-	authMiddleware, err := middleware.NewAuthMiddleware(authManager, cfg)
-	assert.NoError(t, err)
+	// db is nil: Source == "file" means the casbin adapter never touches
+	// it, and this test only exercises Enforcer()-backed methods
+	// (RequireRole/RequirePermission), never RoleRepository's DB-backed
+	// ones — see AuthorizationManager's own doc comments.
+	authMgr, err := authorization.NewAuthorizationManager(nil, *cfg)
+	require.NoError(t, err)
+
+	authMiddleware := middleware.NewAuthMiddleware(authManager, authMgr, cfg)
 
 	return r, authMiddleware, authManager
 }

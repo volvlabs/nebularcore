@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/volvlabs/nebularcore/modules/auth/authorization"
 	"github.com/volvlabs/nebularcore/modules/auth/backends"
 	"github.com/volvlabs/nebularcore/modules/auth/config"
 	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
@@ -14,31 +14,24 @@ import (
 // AuthMiddleware provides authentication middleware for Gin
 type AuthMiddleware struct {
 	authManager backends.AuthenticationManager
-	enforcer    *casbin.Enforcer
-	config      *config.MiddlewareConfig
+	authMgr     *authorization.AuthorizationManager
+	config      *config.AuthorizationConfig
 }
 
-// NewAuthMiddleware creates a new authentication middleware
+// NewAuthMiddleware creates a new authentication middleware. authMgr is the
+// shared AuthorizationManager (see authorization.NewAuthorizationManager) —
+// this middleware no longer constructs its own casbin enforcer, it enforces
+// through the same one AuthorizationManager owns.
 func NewAuthMiddleware(
 	authManager backends.AuthenticationManager,
-	config *config.MiddlewareConfig,
-) (*AuthMiddleware, error) {
-	if !config.AuthorizationEnabled {
-		return &AuthMiddleware{
-			authManager: authManager,
-			config:      config,
-		}, nil
-	}
-
-	enforcer, err := casbin.NewEnforcer(config.PermissionModelPath, config.PermissionPolicyPath)
-	if err != nil {
-		return nil, err
-	}
+	authMgr *authorization.AuthorizationManager,
+	cfg *config.AuthorizationConfig,
+) *AuthMiddleware {
 	return &AuthMiddleware{
 		authManager: authManager,
-		enforcer:    enforcer,
-		config:      config,
-	}, nil
+		authMgr:     authMgr,
+		config:      cfg,
+	}
 }
 
 // JWT returns middleware for JWT authentication
@@ -161,7 +154,7 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 
 // RequireRole returns middleware that requires a specific role
 func (m *AuthMiddleware) RequireRole(role string) gin.HandlerFunc {
-	if !m.config.AuthorizationEnabled {
+	if !m.config.MiddlewareEnabled {
 		return func(c *gin.Context) {
 			c.Next()
 		}
@@ -176,7 +169,7 @@ func (m *AuthMiddleware) RequireRole(role string) gin.HandlerFunc {
 			return
 		}
 
-		allowed, err := m.enforcer.Enforce(user.(interfaces.User).GetRole(), c.Request.URL.Path, "*")
+		allowed, err := m.authMgr.Enforcer().Enforce(user.(interfaces.User).GetRole(), c.Request.URL.Path, "*")
 		if err != nil || !allowed {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"error": "insufficient permissions",
@@ -190,7 +183,7 @@ func (m *AuthMiddleware) RequireRole(role string) gin.HandlerFunc {
 
 // RequirePermission returns middleware that requires a specific permission
 func (m *AuthMiddleware) RequirePermission(resource, action string) gin.HandlerFunc {
-	if !m.config.AuthorizationEnabled {
+	if !m.config.MiddlewareEnabled {
 		return func(c *gin.Context) {
 			c.Next()
 		}
@@ -205,7 +198,7 @@ func (m *AuthMiddleware) RequirePermission(resource, action string) gin.HandlerF
 			return
 		}
 
-		allowed, err := m.enforcer.Enforce(user.(interfaces.User).GetID().String(), resource, action)
+		allowed, err := m.authMgr.Enforcer().Enforce(user.(interfaces.User).GetID().String(), resource, action)
 		if err != nil || !allowed {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"error": "insufficient permissions",

@@ -152,6 +152,13 @@ func TestModuleInitialization(t *testing.T) {
 				cfg := config.Default()
 				cfg.JWT.AccessTokenSecret = "test-secret"
 				cfg.JWT.RefreshTokenSecret = "test-refresh-secret"
+				// Source: "file" so initializeDefaults' AuthorizationManager
+				// construction never touches the fake &gorm.DB{} below.
+				cfg.Authorization = config.AuthorizationConfig{
+					Source:     "file",
+					ModelPath:  "./middleware/test-data/test-model.conf",
+					PolicyPath: "./middleware/test-data/test-policy.csv",
+				}
 				module.WithConfig(cfg)
 
 				// Set up mock dependencies
@@ -184,6 +191,15 @@ func TestModuleInitialization(t *testing.T) {
 				cfg := config.Default()
 				cfg.JWT.AccessTokenSecret = "test-secret"
 				cfg.JWT.RefreshTokenSecret = "test-refresh-secret"
+				// Source: "file" so initializeDefaults' AuthorizationManager
+				// construction never touches the fake &gorm.DB{} below (this
+				// test injects every other component as a mock and has no
+				// real database connection).
+				cfg.Authorization = config.AuthorizationConfig{
+					Source:     "file",
+					ModelPath:  "./middleware/test-data/test-model.conf",
+					PolicyPath: "./middleware/test-data/test-policy.csv",
+				}
 				module.WithConfig(cfg)
 
 				mockAuthManager := &mockAuthManager{}
@@ -218,10 +234,11 @@ func TestModuleInitialization(t *testing.T) {
 				cfg := config.Default()
 				cfg.JWT.AccessTokenSecret = "test-secret"
 				cfg.JWT.RefreshTokenSecret = "test-refresh-secret"
-				cfg.Middleware = config.MiddlewareConfig{
-					AuthorizationEnabled: true,
-					PermissionModelPath:  "./middleware/test-data/test-model.conf",
-					PermissionPolicyPath: "./middleware/test-data/test-policy.csv",
+				cfg.Authorization = config.AuthorizationConfig{
+					MiddlewareEnabled: true,
+					Source:            "file",
+					ModelPath:         "./middleware/test-data/test-model.conf",
+					PolicyPath:        "./middleware/test-data/test-policy.csv",
 				}
 				cfg.Backends = []string{"unknown"}
 				module.WithConfig(cfg)

@@ -12,15 +12,61 @@ type Config struct {
 	APIKey                  APIKeyConfig                 `yaml:"apiKey"`
 	Social                  SocialConfig                 `yaml:"social"`
 	Clerk                   ClerkConfig                  `yaml:"clerk"`
-	Middleware              MiddlewareConfig             `yaml:"middleware"`
+	Authorization           AuthorizationConfig          `yaml:"authorization"`
 	Providers               map[string]map[string]string `yaml:"providers"`
 	UserMigrationScriptPath string                       `yaml:"userMigrationScriptPath"`
+
+	// EventsTopic is the Kafka topic auth lifecycle events (login,
+	// password reset/changed, user created/updated/deleted — see
+	// emitter.AuthEventData.EventType for the specific values) are
+	// published to. Left empty, EmitAuthEvent is a no-op: the same
+	// "not configured yet" posture other optional Kafka producers in
+	// this codebase use, rather than publishing to a topic named after
+	// the event type itself (which no broker provisions and fails with
+	// "topic or partition does not exist").
+	EventsTopic string `yaml:"eventsTopic"`
 }
 
-type MiddlewareConfig struct {
-	AuthorizationEnabled bool   `yaml:"authorizationEnabled"`
-	PermissionModelPath  string `yaml:"permissionModelPath" validate:"required_with=AuthorizationEnabled"`
-	PermissionPolicyPath string `yaml:"permissionPolicyPath" validate:"required_with=AuthorizationEnabled"`
+// AuthorizationConfig configures the module's single shared casbin
+// enforcer, used both by AuthorizationManager (role/permission CRUD and
+// Enforce calls made by consuming-app code) and by AuthMiddleware
+// (HTTP-level RequireRole/RequirePermission gating) — see
+// authorization.NewAuthorizationManager, which owns constructing the
+// enforcer from this config, and middleware.NewAuthMiddleware, which now
+// receives that same manager instead of building a second, independent
+// enforcer (as it did previously).
+type AuthorizationConfig struct {
+	// Source selects where casbin policy (p) and grouping (g) rows live:
+	// "database" (gorm-adapter, reading/writing through the host app's own
+	// DB — the historical default behavior, kept as the zero-value default
+	// for full backward compatibility) or "file" (casbin's built-in
+	// file-adapter, reading/writing PolicyPath).
+	Source string `yaml:"source" validate:"omitempty,oneof=database file"`
+
+	// ModelPath, if set, loads the casbin RBAC model from this file instead
+	// of the package's embedded default (rbacModelConf). Most hosts should
+	// leave this empty.
+	ModelPath string `yaml:"modelPath"`
+
+	// PolicyPath is the casbin policy CSV path, required only when
+	// Source == "file".
+	PolicyPath string `yaml:"policyPath" validate:"required_if=Source file"`
+
+	// MiddlewareEnabled preserves the old no-op-if-disabled behavior of
+	// AuthMiddleware.RequireRole/RequirePermission — when false (the
+	// default), those two middlewares are no-ops regardless of what's in
+	// the enforcer, exactly like the old MiddlewareConfig.AuthorizationEnabled
+	// flag. The enforcer itself is always constructed now (AuthorizationManager
+	// needs it unconditionally for role/permission management), so this only
+	// gates the two HTTP middlewares, not enforcer construction.
+	MiddlewareEnabled bool `yaml:"middlewareEnabled"`
+
+	// ExposeManagementAPI opts a host app into registering the generic
+	// /auth/roles, /auth/roles/:name/permissions, etc. HTTP routes (see
+	// handlers.NewAuthorizationHandler). Default false — this is a
+	// privileged CRUD surface over roles/permissions, not every host wants
+	// it registered by default.
+	ExposeManagementAPI bool `yaml:"exposeManagementAPI"`
 }
 
 // JWTConfig represents JWT configuration.
@@ -124,6 +170,9 @@ func Default() *Config {
 		Clerk: ClerkConfig{
 			APIEndpoint: "https://api.clerk.dev/v1",
 		},
+		Authorization: AuthorizationConfig{
+			Source: "database",
+		},
 	}
 }
 
@@ -171,6 +220,13 @@ func (c *Config) Validate() error {
 
 	if c.Clerk.APIKey != "" && c.Clerk.APIEndpoint == "" {
 		return ErrInvalidClerkConfig
+	}
+
+	if c.Authorization.Source != "" && c.Authorization.Source != "database" && c.Authorization.Source != "file" {
+		return ErrInvalidAuthorizationSource
+	}
+	if c.Authorization.Source == "file" && c.Authorization.PolicyPath == "" {
+		return ErrMissingAuthorizationPolicyPath
 	}
 
 	return nil

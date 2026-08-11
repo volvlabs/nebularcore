@@ -2,18 +2,52 @@ package repositories
 
 import (
 	"context"
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
+// RoleMetadata is arbitrary per-role metadata stored as jsonb — e.g. the
+// "delegable" convention consuming apps use to mark a role as assignable
+// by a tenant-level admin, not just a platform superadmin (see
+// AuthorizationManager.GetRole's doc comment). A named type (rather than
+// a bare map[string]interface{}) is required here so it can implement
+// sql.Scanner/driver.Valuer — the plain map type has no way to
+// (de)serialize a jsonb column on its own, which is what previously made
+// reading a role's Metadata back out of the database fail.
+type RoleMetadata map[string]interface{}
+
+// Value implements driver.Valuer.
+func (m RoleMetadata) Value() (driver.Value, error) {
+	if m == nil {
+		return nil, nil
+	}
+	return json.Marshal(m)
+}
+
+// Scan implements sql.Scanner.
+func (m *RoleMetadata) Scan(value interface{}) error {
+	if value == nil {
+		*m = nil
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("unsupported Scan type for RoleMetadata: %T", value)
+	}
+	return json.Unmarshal(bytes, m)
+}
+
 // Role represents a role in the system
 type Role struct {
 	ID          string `gorm:"primaryKey"`
 	Name        string `gorm:"uniqueIndex:idx_roles_name_tenant"`
 	Description string
-	Metadata    map[string]interface{} `gorm:"type:jsonb"`
+	Metadata    RoleMetadata `gorm:"type:jsonb"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
@@ -105,6 +139,46 @@ func (r *RoleRepository) GetRoleUsers(ctx context.Context, roleID string) ([]str
 			roleID, time.Now()).
 		Pluck("user_id", &userIDs).Error
 	return userIDs, err
+}
+
+// GetRoleByName returns a role by name.
+func (r *RoleRepository) GetRoleByName(ctx context.Context, name string) (*Role, error) {
+	var role Role
+	if err := r.db.WithContext(ctx).Where("name = ?", name).First(&role).Error; err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
+
+// ListRoles returns every role.
+func (r *RoleRepository) ListRoles(ctx context.Context) ([]*Role, error) {
+	var roles []*Role
+	err := r.db.WithContext(ctx).Find(&roles).Error
+	return roles, err
+}
+
+// UpdateRole updates description/metadata for an existing role by name.
+// Name is intentionally not updatable here — casbin's policy/grouping rows
+// reference roles by name string, not ID, so renaming would mean rewriting
+// every p/g row that references the old name; delete+recreate is the
+// supported way to change a role's identity.
+func (r *RoleRepository) UpdateRole(ctx context.Context, name string, updates map[string]interface{}) error {
+	return r.db.WithContext(ctx).Model(&Role{}).Where("name = ?", name).Updates(updates).Error
+}
+
+// DeleteRole deletes a role's assignments then the role row itself. Casbin-
+// side cascade (removing the role's p/g policy rows) is the caller's
+// (AuthorizationManager's) responsibility — this only handles the
+// roles/role_assignments tables.
+func (r *RoleRepository) DeleteRole(ctx context.Context, name string) error {
+	role, err := r.GetRoleByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	if err := r.db.WithContext(ctx).Delete(&RoleAssignment{}, "role_id = ?", role.ID).Error; err != nil {
+		return err
+	}
+	return r.db.WithContext(ctx).Delete(role).Error
 }
 
 // HasRole checks if a user has a specific role

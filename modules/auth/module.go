@@ -10,6 +10,7 @@ import (
 	coreConfig "github.com/volvlabs/nebularcore/core/config"
 	migrationRunner "github.com/volvlabs/nebularcore/core/migration_runner"
 	"github.com/volvlabs/nebularcore/core/module"
+	"github.com/volvlabs/nebularcore/modules/auth/authorization"
 	"github.com/volvlabs/nebularcore/modules/auth/backends"
 	"github.com/volvlabs/nebularcore/modules/auth/config"
 	authEmitter "github.com/volvlabs/nebularcore/modules/auth/emitter"
@@ -30,18 +31,19 @@ var migrations embed.FS
 
 // Module implements the NebularCore module interface for authentication
 type Module struct {
-	name             string
-	version          string
-	config           *config.Config
-	authManager      backends.AuthenticationManager
-	authHandler      interfaces.AuthHandler
-	passwordHandler  interfaces.PasswordHandler
-	authMiddleware   interfaces.AuthMiddleware
-	tokenIssuer      interfaces.TokenIssuer
-	userRepository   interfaces.UserRepository
-	socialRepository interfaces.SocialAccountRepository
-	googleSignin     interfaces.GoogleSignin
-	eventBus         event.Bus
+	name                 string
+	version              string
+	config               *config.Config
+	authManager          backends.AuthenticationManager
+	authHandler          interfaces.AuthHandler
+	passwordHandler      interfaces.PasswordHandler
+	authMiddleware       interfaces.AuthMiddleware
+	authorizationManager *authorization.AuthorizationManager
+	tokenIssuer          interfaces.TokenIssuer
+	userRepository       interfaces.UserRepository
+	socialRepository     interfaces.SocialAccountRepository
+	googleSignin         interfaces.GoogleSignin
+	eventBus             event.Bus
 
 	routerGroup         *gin.RouterGroup
 	socialSignupHandler gin.HandlerFunc
@@ -102,6 +104,11 @@ func (m *Module) Initialize(
 	m.authHandler.RegisterRoutes(m.routerGroup, m.socialSignupHandler)
 	m.passwordHandler.RegisterRoutes(m.routerGroup)
 
+	if m.config.Authorization.ExposeManagementAPI {
+		authzHandler := handlers.NewAuthorizationHandler(m.authorizationManager, m.authMiddleware)
+		authzHandler.RegisterRoutes(m.routerGroup)
+	}
+
 	if jwks, ok := m.tokenIssuer.(interfaces.JWKSProvider); ok && m.config.JWT.IsRS256() {
 		router.GET("/.well-known/jwks.json", func(c *gin.Context) {
 			keys, err := jwks.JWKS()
@@ -156,7 +163,7 @@ func (m *Module) registerConfiguredBackends() error {
 }
 
 func (m *Module) initializeDefaults(db *gorm.DB) error {
-	eventEmitter := authEmitter.NewEventEmitter(m.eventBus)
+	eventEmitter := authEmitter.NewEventEmitter(m.eventBus, m.config.EventsTopic)
 	if m.authManager == nil {
 		m.authManager = backends.NewAuthenticationManager(eventEmitter)
 	}
@@ -173,12 +180,15 @@ func (m *Module) initializeDefaults(db *gorm.DB) error {
 		}
 		m.tokenIssuer = issuer
 	}
-	if m.authMiddleware == nil {
+	if m.authorizationManager == nil {
 		var err error
-		m.authMiddleware, err = middleware.NewAuthMiddleware(m.authManager, &m.config.Middleware)
+		m.authorizationManager, err = authorization.NewAuthorizationManager(db, m.config.Authorization)
 		if err != nil {
-			return err
+			return fmt.Errorf("creating authorization manager: %w", err)
 		}
+	}
+	if m.authMiddleware == nil {
+		m.authMiddleware = middleware.NewAuthMiddleware(m.authManager, m.authorizationManager, &m.config.Authorization)
 	}
 	if m.passwordHandler == nil {
 		passwordManager := password.NewManager(eventEmitter, m.userRepository)
@@ -232,6 +242,14 @@ func (m *Module) GetTokenIssuer() interfaces.TokenIssuer {
 // GetAuthMiddleware returns the authentication middleware
 func (m *Module) GetAuthMiddleware() interfaces.AuthMiddleware {
 	return m.authMiddleware
+}
+
+// GetAuthorizationManager returns the shared authorization manager — host
+// apps should reuse this instance (rather than constructing their own via
+// authorization.NewAuthorizationManager) so role/permission state and the
+// casbin enforcer stay single-instance across the whole process.
+func (m *Module) GetAuthorizationManager() *authorization.AuthorizationManager {
+	return m.authorizationManager
 }
 
 func (m *Module) ProvidesMigrations() bool {
@@ -292,6 +310,13 @@ func (m *Module) WithAuthManager(manager backends.AuthenticationManager) *Module
 // WithConfig sets the module configuration
 func (m *Module) WithConfig(cfg *config.Config) *Module {
 	m.config = cfg
+	return m
+}
+
+// WithAuthorizationManager sets the authorization manager (e.g. to inject a
+// fake in tests)
+func (m *Module) WithAuthorizationManager(mgr *authorization.AuthorizationManager) *Module {
+	m.authorizationManager = mgr
 	return m
 }
 

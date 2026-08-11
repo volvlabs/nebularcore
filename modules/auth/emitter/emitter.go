@@ -67,21 +67,31 @@ type EventEmitter interface {
 
 type eventEmitter struct {
 	eventBus event.Bus
+	topic    string
 }
 
-func NewEventEmitter(eventBus event.Bus) EventEmitter {
+// NewEventEmitter binds the emitter to the given Kafka topic (the auth
+// module's config.EventsTopic). An empty topic makes EmitAuthEvent a
+// silent no-op instead of publishing to a topic named after the event
+// type itself (e.g. "auth.login.success"), which no broker provisions
+// and fails with "topic or partition does not exist".
+func NewEventEmitter(eventBus event.Bus, topic string) EventEmitter {
 	return &eventEmitter{
 		eventBus: eventBus,
+		topic:    topic,
 	}
 }
 
 func (m *eventEmitter) EmitAuthEvent(ctx context.Context, user interfaces.User, data AuthEventData) error {
+	if m.topic == "" {
+		return nil
+	}
 	if user != nil {
 		data.UserID = user.GetID().String()
 		data.Email = user.GetEmail()
 		data.PhoneNumber = user.GetPhoneNumber()
 	}
-	evt, err := event.NewMessage(data.EventType, "auth.module", data)
+	evt, err := event.NewMessage(m.topic, "auth.module", data)
 	if err != nil {
 		return fmt.Errorf("failed to create auth event: %w", err)
 	}

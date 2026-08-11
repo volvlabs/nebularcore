@@ -7,7 +7,10 @@ import (
 
 	"github.com/casbin/casbin/v2"
 	casbinmodel "github.com/casbin/casbin/v2/model"
+	"github.com/casbin/casbin/v2/persist"
+	fileadapter "github.com/casbin/casbin/v2/persist/file-adapter"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
 	"github.com/volvlabs/nebularcore/modules/auth/repositories"
 	"gorm.io/gorm"
 )
@@ -38,25 +41,31 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act
 
 // AuthorizationManager handles role and permission management
 type AuthorizationManager struct {
-	enforcer *casbin.Enforcer
-	roleRepo *repositories.RoleRepository
-	db       *gorm.DB
+	enforcer     *casbin.Enforcer
+	roleRepo     *repositories.RoleRepository
+	resourceRepo *repositories.ResourceRepository
+	db           *gorm.DB
 }
 
-// NewAuthorizationManager creates a new authorization manager
-func NewAuthorizationManager(db *gorm.DB) (*AuthorizationManager, error) {
-	// Initialize Casbin adapter
-	adapter, err := gormadapter.NewAdapterByDB(db)
+// NewAuthorizationManager creates a new authorization manager. cfg selects
+// where casbin policy/grouping rows live (database via gorm-adapter, or a
+// file via casbin's own file-adapter) and, optionally, a custom RBAC model
+// file — see config.AuthorizationConfig's doc comment. This is the single
+// enforcer shared by AuthorizationManager itself and AuthMiddleware (see
+// middleware.NewAuthMiddleware), replacing what used to be two
+// independently-constructed enforcers.
+func NewAuthorizationManager(db *gorm.DB, cfg config.AuthorizationConfig) (*AuthorizationManager, error) {
+	adapter, err := newAdapter(db, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Casbin adapter: %w", err)
 	}
 
-	// Initialize enforcer with the embedded RBAC model.
-	m, err := casbinmodel.NewModelFromString(rbacModelConf)
+	casbinModel, err := newModel(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse RBAC model: %w", err)
+		return nil, fmt.Errorf("failed to load RBAC model: %w", err)
 	}
-	enforcer, err := casbin.NewEnforcer(m, adapter)
+
+	enforcer, err := casbin.NewEnforcer(casbinModel, adapter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Casbin enforcer: %w", err)
 	}
@@ -65,14 +74,43 @@ func NewAuthorizationManager(db *gorm.DB) (*AuthorizationManager, error) {
 		return nil, fmt.Errorf("failed to load policy: %w", err)
 	}
 
-	// Initialize role repository
+	// Initialize repositories
 	roleRepo := repositories.NewRoleRepository(db)
+	resourceRepo := repositories.NewResourceRepository(db)
 
 	return &AuthorizationManager{
-		enforcer: enforcer,
-		roleRepo: roleRepo,
-		db:       db,
+		enforcer:     enforcer,
+		roleRepo:     roleRepo,
+		resourceRepo: resourceRepo,
+		db:           db,
 	}, nil
+}
+
+// newAdapter picks the casbin policy store: cfg.Source == "file" reads/
+// writes PolicyPath via casbin's built-in file-adapter, anything else
+// (including the zero value, for backward compatibility) uses gorm-adapter
+// against db — today's only behavior before this config existed.
+func newAdapter(db *gorm.DB, cfg config.AuthorizationConfig) (persist.Adapter, error) {
+	if cfg.Source == "file" {
+		return fileadapter.NewAdapter(cfg.PolicyPath), nil
+	}
+	return gormadapter.NewAdapterByDB(db)
+}
+
+// newModel loads a custom RBAC model file if configured, else falls back
+// to the package's embedded default.
+func newModel(cfg config.AuthorizationConfig) (casbinmodel.Model, error) {
+	if cfg.ModelPath != "" {
+		return casbinmodel.NewModelFromFile(cfg.ModelPath)
+	}
+	return casbinmodel.NewModelFromString(rbacModelConf)
+}
+
+// Enforcer returns the shared casbin enforcer, for callers (AuthMiddleware,
+// the management HTTP handlers) that need direct Enforce/policy calls
+// outside the higher-level role/permission methods below.
+func (m *AuthorizationManager) Enforcer() *casbin.Enforcer {
+	return m.enforcer
 }
 
 // CreateRole creates a new role
@@ -193,4 +231,93 @@ func (m *AuthorizationManager) GetRolePermissions(ctx context.Context, roleName 
 // HasRole checks if a user has a specific role
 func (m *AuthorizationManager) HasRole(ctx context.Context, userID, roleName string) (bool, error) {
 	return m.roleRepo.HasRole(ctx, userID, roleName)
+}
+
+// GetRole returns a role's stored record, including Metadata — consuming
+// apps read this back to check app-defined conventions like a "delegable"
+// flag (nebularcore itself doesn't interpret metadata contents).
+func (m *AuthorizationManager) GetRole(ctx context.Context, name string) (*repositories.Role, error) {
+	return m.roleRepo.GetRoleByName(ctx, name)
+}
+
+// ListRoles returns every role.
+func (m *AuthorizationManager) ListRoles(ctx context.Context) ([]*repositories.Role, error) {
+	return m.roleRepo.ListRoles(ctx)
+}
+
+// UpdateRole updates a role's description/metadata. Name is immutable —
+// see RoleRepository.UpdateRole's doc comment for why.
+func (m *AuthorizationManager) UpdateRole(ctx context.Context, name, description string, metadata map[string]interface{}) error {
+	return m.roleRepo.UpdateRole(ctx, name, map[string]interface{}{
+		"description": description,
+		"metadata":    metadata,
+	})
+}
+
+// DeleteRole removes a role and cascades: every user's assignment of this
+// role in casbin's grouping policy (g), every permission granted to this
+// role in casbin's policy store (p), then the roles/role_assignments rows.
+// Order matters — the casbin cascade needs the role name, which is still
+// resolvable before the DB row is gone.
+func (m *AuthorizationManager) DeleteRole(ctx context.Context, name string) error {
+	if _, err := m.enforcer.RemoveFilteredGroupingPolicy(1, name); err != nil {
+		return fmt.Errorf("failed to remove role assignments from casbin: %w", err)
+	}
+	if _, err := m.enforcer.RemoveFilteredPolicy(0, name); err != nil {
+		return fmt.Errorf("failed to remove role permissions from casbin: %w", err)
+	}
+	if err := m.roleRepo.DeleteRole(ctx, name); err != nil {
+		return fmt.Errorf("failed to delete role: %w", err)
+	}
+	return nil
+}
+
+// ListPermissionsForRole is a clarifying alias for GetRolePermissions,
+// matching the naming used elsewhere in this file's new List* methods.
+func (m *AuthorizationManager) ListPermissionsForRole(ctx context.Context, roleName string) ([][]string, error) {
+	return m.GetRolePermissions(ctx, roleName)
+}
+
+// ListAllPolicies returns every policy line in the p store — every
+// role->resource->action grant across all roles.
+func (m *AuthorizationManager) ListAllPolicies(ctx context.Context) ([][]string, error) {
+	return m.enforcer.GetPolicy()
+}
+
+// CreateResource creates a new resource in the catalog.
+func (m *AuthorizationManager) CreateResource(ctx context.Context, name, description string, actions []string) error {
+	_, err := m.resourceRepo.CreateResource(ctx, map[string]interface{}{
+		"name":        name,
+		"description": description,
+		"actions":     repositories.ResourceActions(actions),
+	})
+	return err
+}
+
+// GetResource returns a resource's stored record.
+func (m *AuthorizationManager) GetResource(ctx context.Context, name string) (*repositories.Resource, error) {
+	return m.resourceRepo.GetResourceByName(ctx, name)
+}
+
+// ListResources returns every resource in the catalog.
+func (m *AuthorizationManager) ListResources(ctx context.Context) ([]*repositories.Resource, error) {
+	return m.resourceRepo.ListResources(ctx)
+}
+
+// UpdateResource updates a resource's description/actions. Name is
+// immutable — see ResourceRepository.UpdateResource's doc comment.
+func (m *AuthorizationManager) UpdateResource(ctx context.Context, name, description string, actions []string) error {
+	return m.resourceRepo.UpdateResource(ctx, name, map[string]interface{}{
+		"description": description,
+		"actions":     repositories.ResourceActions(actions),
+	})
+}
+
+// DeleteResource removes a resource from the catalog. Does not cascade any
+// casbin p rows referencing this resource name — permissions granted
+// against a resource that's since been deleted from the catalog remain
+// enforceable until explicitly revoked; the catalog is metadata for the
+// dashboard, not the source of truth for what casbin will enforce.
+func (m *AuthorizationManager) DeleteResource(ctx context.Context, name string) error {
+	return m.resourceRepo.DeleteResource(ctx, name)
 }

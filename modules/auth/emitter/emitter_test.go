@@ -25,7 +25,7 @@ func TestEventEmitter_EmitAuthEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -46,7 +46,7 @@ func TestEventEmitter_EmitAuthEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -89,7 +89,7 @@ func TestEventEmitter_EmitLoginEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -104,7 +104,7 @@ func TestEventEmitter_EmitLoginEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -119,7 +119,7 @@ func TestEventEmitter_EmitLoginEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -160,7 +160,7 @@ func TestEventEmitter_EmitPasswordEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -175,7 +175,7 @@ func TestEventEmitter_EmitPasswordEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -190,7 +190,7 @@ func TestEventEmitter_EmitPasswordEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -229,7 +229,7 @@ func TestEventEmitter_EmitUserEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -242,7 +242,7 @@ func TestEventEmitter_EmitUserEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(nil)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
@@ -255,7 +255,7 @@ func TestEventEmitter_EmitUserEvent(t *testing.T) {
 			setup: func() (EventEmitter, *mocks.Bus, *models.User) {
 				Bus := mocks.NewBus(t)
 				Bus.On("Publish", mock.MatchedBy(func(ctx context.Context) bool { return true }), mock.MatchedBy(func(e event.Message) bool { return true })).Return(assert.AnError)
-				return NewEventEmitter(Bus), Bus, &models.User{
+				return NewEventEmitter(Bus, "test-topic"), Bus, &models.User{
 					ID:    uuid.New(),
 					Email: "test@example.com",
 				}
