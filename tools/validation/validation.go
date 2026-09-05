@@ -13,7 +13,31 @@ type Validator struct {
 	translator ut.Translator
 }
 
+// defaultPhoneRegion is the region used by the "phonenumber" struct-tag
+// validator when constructed via New() — preserved for backward
+// compatibility with every existing single-region caller. Multi-country
+// apps should use NewWithPhoneRegion instead, resolving the region
+// per-instance (e.g. from a request's resolved account/detected country)
+// rather than relying on this hardcoded default.
+const defaultPhoneRegion = "NG"
+
 func New() *Validator {
+	return NewWithPhoneRegion(defaultPhoneRegion)
+}
+
+// NewWithPhoneRegion builds a Validator whose "phonenumber" struct-tag
+// validator parses numbers against phoneRegion (a libphonenumber region
+// code, e.g. "GH") instead of the hardcoded "NG" default. The underlying
+// ValidatePhoneNumber function has always been region-aware — this was the
+// only call site that hardcoded a region.
+//
+// A single *validator.Validate instance only supports one registered
+// "phonenumber" region at a time, so a multi-country app validating phone
+// numbers for users in different countries within the same process should
+// construct one Validator per resolved region as needed (e.g. per-request,
+// keyed by the caller's resolved country), rather than relying on a single
+// process-wide default.
+func NewWithPhoneRegion(phoneRegion string) *Validator {
 	validate := validator.New()
 	enLocale := en.New()
 	uni := ut.New(enLocale, enLocale)
@@ -37,7 +61,7 @@ func New() *Validator {
 	}
 
 	if err := validate.RegisterValidation("phonenumber", func(fl validator.FieldLevel) bool {
-		return ValidatePhoneNumber(fl.Field().String(), "NG")
+		return ValidatePhoneNumber(fl.Field().String(), phoneRegion)
 	}); err != nil {
 		panic(err)
 	}

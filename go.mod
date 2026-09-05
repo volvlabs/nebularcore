@@ -9,6 +9,7 @@ require (
 	github.com/AfterShip/email-verifier v1.3.3
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.35.2
 	github.com/ThreeDotsLabs/watermill v1.4.7
+	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.1.2
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/config v1.27.16
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.16
@@ -27,6 +28,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.5.5
+	github.com/oschwald/geoip2-golang v1.13.0
 	github.com/pquerna/otp v1.4.0
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/cast v1.6.0
@@ -56,7 +58,6 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.50.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.50.0 // indirect
 	github.com/IBM/sarama v1.43.3 // indirect
-	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.1.2 // indirect
 	github.com/aws/aws-sdk-go v1.53.10 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.2 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.3 // indirect
@@ -135,6 +136,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
+	github.com/oschwald/maxminddb-golang v1.13.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
