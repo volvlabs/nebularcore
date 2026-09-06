@@ -1,0 +1,195 @@
+package interfaces
+
+import (
+	"context"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/volvlabs/nebularcore/modules/auth/models"
+	"github.com/volvlabs/nebularcore/modules/auth/models/responses"
+	"github.com/volvlabs/nebularcore/modules/auth/pkg"
+	authTypes "github.com/volvlabs/nebularcore/modules/auth/types"
+	"github.com/volvlabs/nebularcore/tools/types"
+)
+
+// User represents the interface that all user models must implement
+type User interface {
+	GetID() uuid.UUID
+	GetUsername() string
+	GetEmail() string
+	GetPhoneNumber() string
+	GetPasswordHash() string
+	GetRole() string
+	IsActive() bool
+	GetLastLoginAt() *time.Time
+	GetMetadata() map[string]any
+	GetEmailVerified() bool
+	GetEmailVerifiedAt() *types.DateTime
+	GetPasswordResetToken() *string
+	GetPasswordResetAt() *time.Time
+	SetPasswordResetToken(token *string)
+	SetPasswordResetAt(at *time.Time)
+	SetPassword(password string)
+}
+
+// UserRepository defines the interface for user-related database operations
+type UserRepository interface {
+	Create(ctx context.Context, data map[string]any) (User, error)
+	FindByID(ctx context.Context, id uuid.UUID) (User, error)
+	FindByEmail(ctx context.Context, email string) (User, error)
+	FindByUsername(ctx context.Context, username string) (User, error)
+	FindByPhoneNumber(ctx context.Context, phone string) (User, error)
+	FindByIdentifier(ctx context.Context, identifier string) (User, error)
+	FindByResetToken(ctx context.Context, token string) (User, error)
+	UpdateLastLogin(ctx context.Context, user User) error
+	ChangePassword(ctx context.Context, user User, newPasswordHash string) error
+	Update(ctx context.Context, user User, updates map[string]any) error
+}
+
+// UserRepositoryFactory defines the interface for user repository factories
+type UserRepositoryFactory interface {
+	NewUser() User
+	GetTableName() string
+	GetSchema() any
+}
+
+// APICredentials represents the interface for API credentials
+type APICredentials interface {
+	GetID() string
+	GetUserID() string
+	GetAPIKey() string
+	GetAPISecret() string
+	GetStatus() string
+	GetExpiresAt() time.Time
+	GetLastUsedAt() *time.Time
+}
+
+// APIKeyRepository defines the interface for API key-related operations
+type APIKeyRepository interface {
+	Create(ctx context.Context, data map[string]any) (APICredentials, error)
+	FindByKey(ctx context.Context, apiKey string) (APICredentials, error)
+	FindByUser(ctx context.Context, userID string) ([]APICredentials, error)
+	UpdateLastUsed(ctx context.Context, creds APICredentials) error
+	Revoke(ctx context.Context, id string) error
+}
+
+// SocialAccount represents the interface for social login accounts
+type SocialAccount interface {
+	GetID() string
+	GetUser() User
+	GetUserID() string
+	GetProvider() string
+	GetProviderUserID() string
+	GetMetadata() map[string]any
+}
+
+// SocialAccountRepository defines the interface for social account operations
+type SocialAccountRepository interface {
+	Create(ctx context.Context, data *models.SocialAccount) (*models.SocialAccount, error)
+	DeleteByUserID(ctx context.Context, userID string) error
+	FindByProvider(ctx context.Context, provider authTypes.AuthProvider, providerUserID string) (*models.SocialAccount, error)
+	FindByUserID(ctx context.Context, userID string) (*models.SocialAccount, error)
+}
+
+// TokenIssuer defines the interface for JWT token operations
+type TokenIssuer interface {
+	IssueToken(user User) (*responses.TokenResponse, error)
+	ValidateToken(token string) (map[string]any, error)
+	RevokeToken(token string) error
+	RefreshToken(refreshToken string) (*responses.TokenResponse, error)
+}
+
+// PasswordHasher defines the interface for password hashing operations
+type PasswordHasher interface {
+	Hash(password string) (string, error)
+	Verify(password, hash string) error
+}
+
+// AuthHandler defines the interface for authentication handlers
+type AuthHandler interface {
+	RegisterRoutes(router *gin.RouterGroup, socialSignupHandler gin.HandlerFunc)
+	RegisterSocialSignupRoutes(router *gin.RouterGroup, handler gin.HandlerFunc)
+	InitiateSocialLogin(c *gin.Context)
+	SocialSignup(next gin.HandlerFunc) gin.HandlerFunc
+	Login(c *gin.Context)
+	Logout(c *gin.Context)
+	RefreshToken(c *gin.Context)
+}
+
+// PasswordHandler defines the interface for password handlers
+type PasswordHandler interface {
+	RegisterRoutes(router *gin.RouterGroup)
+	RequestPasswordReset(c *gin.Context)
+	VerifyPasswordReset(c *gin.Context)
+	ChangePassword(c *gin.Context)
+}
+
+// AuthMiddleware defines the interface for authentication middleware
+type AuthMiddleware interface {
+	JWT() gin.HandlerFunc
+	Optional() gin.HandlerFunc
+	APIKey() gin.HandlerFunc
+	RequireAuth() gin.HandlerFunc
+	RequireRole(role string) gin.HandlerFunc
+	RequirePermission(resource, action string) gin.HandlerFunc
+}
+
+type GoogleSignin interface {
+	Exchange(ctx context.Context, code string) (*pkg.GoogleUser, error)
+	VerifyGoogleIDToken(ctx context.Context, tokenString string) (*pkg.GoogleUser, error)
+	GetAuthURL(state string) string
+}
+
+// JWKSProvider is implemented by TokenIssuers that can publish their
+// verification key as a JSON Web Key Set (RS256 only — HS256 has no public
+// half to publish). Kept separate from TokenIssuer so HS256 issuers and
+// test doubles aren't forced to grow a meaningless JWKS method.
+type JWKSProvider interface {
+	JWKS() (map[string]any, error)
+}
+
+// RoleLister is an optional capability a TokenIssuer's issued claims can
+// be sourced from. nebularcore's own auth module has no built-in concept
+// of roles — that's layered on by apps like mori-backend via a
+// casbin-backed AuthorizationManager (modules/auth/authorization) — so
+// this stays a separate, optional interface rather than something
+// TokenIssuer or User require directly. When wired in (see
+// RoleListerSetter), IssueToken embeds a "roles" claim so third-party
+// consumers that verify tokens via JWKS (e.g. Veda, per D6) can read a
+// caller's roles straight off the token instead of needing their own
+// callback into the issuing app's database.
+type RoleLister interface {
+	GetUserRoles(ctx context.Context, userID string) ([]string, error)
+}
+
+// RoleListerSetter is implemented by TokenIssuers that support wiring in
+// a RoleLister after construction — needed because the issuer is built
+// during auth.Module's own Initialize(), before an app-specific
+// AuthorizationManager (which itself needs a *gorm.DB not available until
+// Initialize time either) exists. Callers type-assert TokenIssuer against
+// this interface rather than requiring every issuer to support it.
+type RoleListerSetter interface {
+	SetRoleLister(RoleLister)
+}
+
+// OrgLister is an optional capability a TokenIssuer's issued claims can be
+// sourced from, mirroring RoleLister above. nebularcore's own auth module
+// has no built-in concept of organizations — that's layered on by apps
+// like mori-backend — so this stays a separate, optional interface. When
+// wired in (see OrgListerSetter), IssueToken embeds an "org_id" claim so
+// consumers (e.g. mori-backend's WebSocket topic authorization) can scope
+// access to a caller's organization straight off the token, without a
+// callback into the issuing app's database.
+type OrgLister interface {
+	GetUserOrgID(ctx context.Context, userID string) (string, error)
+}
+
+// OrgListerSetter is implemented by TokenIssuers that support wiring in an
+// OrgLister after construction, for the same reason as RoleListerSetter —
+// the issuer is built before an app-specific org-membership service
+// exists. Callers type-assert TokenIssuer against this interface rather
+// than requiring every issuer to support it.
+type OrgListerSetter interface {
+	SetOrgLister(OrgLister)
+}

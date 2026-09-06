@@ -50,6 +50,18 @@ func (d *DateTime) Scan(value any) error {
 			}
 			d.t = t
 		}
+	case int:
+		t := time.UnixMilli(int64(v))
+		d.t = t
+	case int64:
+		t := time.UnixMilli(v)
+		d.t = t
+	case float32:
+		t := time.UnixMilli(int64(v))
+		d.t = t
+	case float64:
+		t := time.UnixMilli(int64(v))
+		d.t = t
 	default:
 		str := cast.ToString(v)
 		if str == "" {
@@ -70,9 +82,16 @@ func (d DateTime) MarshalJSON() ([]byte, error) {
 }
 
 func (d *DateTime) UnmarshalJSON(b []byte) error {
-	var raw string
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
+	var s string
+	var err error
+	if err = json.Unmarshal(b, &s); err == nil {
+		return d.Scan(s)
 	}
-	return d.Scan(raw)
+
+	var n int64
+	if err = json.Unmarshal(b, &n); err == nil {
+		return d.Scan(n)
+	}
+
+	return err
 }

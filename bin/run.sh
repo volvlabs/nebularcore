@@ -4,4 +4,4 @@
 go build -o ./bin .
 
 # Watch for file changes and restart the server
-reflex -r '\.go$' -s -- sh -c 'rm gitlab.com/jideobs/nebularcore; go build .; kill -f gitlab.com/jideobs/nebularcore; ./gitlab.com/jideobs/nebularcore serve'
+reflex -r '\.go$' -s -- sh -c 'rm github.com/volvlabs/nebularcore; go build .; kill -f github.com/volvlabs/nebularcore; ./github.com/volvlabs/nebularcore serve'
