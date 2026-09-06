@@ -60,6 +60,14 @@ type AuthenticatedUserIDFunc func(c *gin.Context) (userID string, ok bool)
 // New builds the country-resolution middleware. accountResolver and
 // getUserID may be nil (AccountCountry resolution is then simply skipped
 // for every request — DetectedCountry still works).
+//
+// AccountCountry is always set for an authenticated request once a
+// resolver/getUserID pair is registered: it resolves to the user's real
+// country when that country is known and active, and otherwise falls back
+// to countryResolver.Default() (the module's configured "Global" sentinel
+// by default — see config.Default). Callers therefore never need to
+// handle a third "nothing resolved" case; the fallback is explicit rather
+// than the key being silently absent.
 func New(
 	countryResolver CountryResolver,
 	geoResolver geoip.Resolver,
@@ -76,19 +84,47 @@ func New(
 
 		if accountResolver != nil && getUserID != nil {
 			if userID, ok := getUserID(c); ok {
-				if code, ok := accountResolver(ctx, userID); ok {
-					if country, err := countryResolver.Resolve(ctx, code); err == nil {
-						c.Set(AccountCountryKey, country)
-					} else {
-						log.Warn().Err(err).Str("userID", userID).Str("code", code).
-							Msg("localization: account country code did not resolve to a known country")
-					}
+				if country := resolveAccount(ctx, countryResolver, accountResolver, userID); country != nil {
+					c.Set(AccountCountryKey, country)
 				}
 			}
 		}
 
 		c.Next()
 	}
+}
+
+// resolveAccount resolves userID's real, active home country, falling back
+// to countryResolver.Default() whenever it has no resolvable country, the
+// code doesn't match a known country, or the matched country isn't active
+// (e.g. seeded but not yet launched) — never returning nil once a default
+// exists, so AccountCountry is always present for an authenticated request.
+func resolveAccount(
+	ctx context.Context,
+	countryResolver CountryResolver,
+	accountResolver AccountCountryResolverFunc,
+	userID string,
+) *models.Country {
+	if code, ok := accountResolver(ctx, userID); ok {
+		country, err := countryResolver.Resolve(ctx, code)
+		switch {
+		case err != nil:
+			log.Warn().Err(err).Str("userID", userID).Str("code", code).
+				Msg("localization: account country code did not resolve to a known country, falling back to default")
+		case !country.IsActive:
+			log.Info().Str("userID", userID).Str("code", code).
+				Msg("localization: account country is not active, falling back to default")
+		default:
+			return country
+		}
+	}
+
+	def, err := countryResolver.Default(ctx)
+	if err != nil {
+		log.Warn().Err(err).Str("userID", userID).Msg("localization: failed to resolve default country")
+		return nil
+	}
+	return def
 }
 
 func resolveDetected(

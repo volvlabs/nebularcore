@@ -36,8 +36,15 @@ type GeoIPConfig struct {
 type Config struct {
 	// DefaultCountryCode is used whenever a country cannot otherwise be
 	// resolved (no account-country resolver registered / no match, IP
-	// lookup inconclusive or disabled). Must be a code present in the
-	// countries table.
+	// lookup inconclusive or disabled, or the resolved country isn't
+	// active). Must be a code present in the countries table. Defaults to
+	// "ZZ" ("Global", USD, seeded by migration 000002) rather than any
+	// specific country — a generic framework module has no basis for
+	// assuming a host app's home country, and "Global" is honest about
+	// being a fallback rather than silently impersonating one country's
+	// data. Host apps with a strong home-market bias (e.g. before their
+	// own GeoIP is configured) can override this back to their own
+	// country code.
 	DefaultCountryCode string `yaml:"defaultCountryCode" validate:"required,len=2"`
 
 	GeoIP GeoIPConfig `yaml:"geoIP"`
@@ -45,7 +52,7 @@ type Config struct {
 
 func Default() *Config {
 	return &Config{
-		DefaultCountryCode: "NG",
+		DefaultCountryCode: "ZZ",
 		GeoIP: GeoIPConfig{
 			Provider:   GeoIPProviderNone,
 			HeaderName: "CF-IPCountry",
