@@ -32,6 +32,14 @@ func (f *fakeCountryRepo) ListActive(_ context.Context) ([]models.Country, error
 	return out, nil
 }
 
+func (f *fakeCountryRepo) ListAll(_ context.Context) ([]models.Country, error) {
+	var out []models.Country
+	for _, c := range f.countries {
+		out = append(out, *c)
+	}
+	return out, nil
+}
+
 func (f *fakeCountryRepo) SetActive(_ context.Context, code string, active bool) error {
 	c, ok := f.countries[code]
 	if !ok {
