@@ -15,6 +15,10 @@ var ErrCountryNotFound = errors.New("country not found")
 type CountryRepository interface {
 	FindByCode(ctx context.Context, code string) (*models.Country, error)
 	ListActive(ctx context.Context) ([]models.Country, error)
+	// ListAll returns every seeded country regardless of IsActive, ordered by
+	// Name — for an admin surface that needs to activate/deactivate
+	// countries, not just read the currently-active set.
+	ListAll(ctx context.Context) ([]models.Country, error)
 	SetActive(ctx context.Context, code string, active bool) error
 }
 
@@ -40,6 +44,14 @@ func (r *countryRepository) FindByCode(ctx context.Context, code string) (*model
 func (r *countryRepository) ListActive(ctx context.Context) ([]models.Country, error) {
 	var countries []models.Country
 	if err := r.db.WithContext(ctx).Where("is_active = ?", true).Find(&countries).Error; err != nil {
+		return nil, err
+	}
+	return countries, nil
+}
+
+func (r *countryRepository) ListAll(ctx context.Context) ([]models.Country, error) {
+	var countries []models.Country
+	if err := r.db.WithContext(ctx).Order("name").Find(&countries).Error; err != nil {
 		return nil, err
 	}
 	return countries, nil
