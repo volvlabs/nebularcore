@@ -95,6 +95,7 @@ func runTenantMigrations(module module.Module, projectRoot, name, connectionStri
 	if err != nil {
 		return err
 	}
+	defer runner.Close()
 
 	if err := runner.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return err
