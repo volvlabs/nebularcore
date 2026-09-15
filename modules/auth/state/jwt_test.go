@@ -1,0 +1,280 @@
+package state_test
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"github.com/volvlabs/nebularcore/modules/auth/config"
+	"github.com/volvlabs/nebularcore/modules/auth/interfaces"
+	"github.com/volvlabs/nebularcore/modules/auth/state"
+	"github.com/volvlabs/nebularcore/tools/types"
+)
+
+type mockUser struct {
+	mock.Mock
+	interfaces.User
+
+	userId uuid.UUID
+}
+
+func NewMockUser() *mockUser {
+	return &mockUser{
+		userId: uuid.New(),
+	}
+}
+
+func (m *mockUser) GetID() uuid.UUID {
+	return m.userId
+}
+
+func (m *mockUser) GetUsername() string {
+	return "test-user"
+}
+
+func (m *mockUser) GetEmail() string {
+	return "test@example.com"
+}
+
+func (m *mockUser) GetPhoneNumber() string {
+	return "+2348091607293"
+}
+
+func (m *mockUser) GetRole() string {
+	return "test-role"
+}
+
+func (m *mockUser) GetMetadata() map[string]any {
+	return map[string]any{
+		"test": "metadata",
+	}
+}
+
+func (m *mockUser) GetEmailVerified() bool {
+	return true
+}
+
+func (m *mockUser) GetEmailVerifiedAt() *types.DateTime {
+	dateTime := types.NowDateTime()
+	return &dateTime
+}
+
+func TestJWTTokenIssuer(t *testing.T) {
+	t.Run("IssueToken - Success", func(t *testing.T) {
+		// Setup
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+
+		// Test
+		user := NewMockUser()
+		response, err := issuer.IssueToken(user)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.NotEmpty(t, response.AccessToken)
+		assert.NotEmpty(t, response.RefreshToken)
+		assert.Greater(t, response.ExpiresIn, int64(0))
+	})
+
+	t.Run("ValidateToken - Success", func(t *testing.T) {
+		// Setup
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+
+		// Create a token first
+		user := NewMockUser()
+		response, err := issuer.IssueToken(user)
+		assert.NoError(t, err)
+
+		// Test
+		claims, err := issuer.ValidateToken(response.AccessToken)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.NotNil(t, claims)
+	})
+
+	t.Run("ValidateToken - Invalid Token", func(t *testing.T) {
+		// Setup
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+
+		// Test
+		_, err = issuer.ValidateToken("invalid.token.string")
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("RefreshToken - Success", func(t *testing.T) {
+		// Setup
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+
+		// Create initial tokens
+		user := NewMockUser()
+		initialResponse, err := issuer.IssueToken(user)
+		assert.NoError(t, err)
+
+		// Test
+		refreshedResponse, err := issuer.RefreshToken(initialResponse.RefreshToken)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.NotEmpty(t, refreshedResponse.AccessToken)
+		assert.NotEmpty(t, refreshedResponse.RefreshToken)
+		assert.Greater(t, refreshedResponse.ExpiresIn, int64(0))
+
+		// Validate new token claims
+		newClaims, err := issuer.ValidateToken(refreshedResponse.AccessToken)
+		assert.NoError(t, err)
+		assert.Equal(t, user.GetID().String(), newClaims["sub"])
+		assert.Equal(t, "test-user", newClaims["username"])
+		assert.Equal(t, "test@example.com", newClaims["email"])
+		assert.NotNil(t, newClaims["iat"])
+	})
+
+	t.Run("RefreshToken - Invalid Token", func(t *testing.T) {
+		// Setup
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+
+		// Test
+		_, err = issuer.RefreshToken("invalid.refresh.token")
+
+		// Assert
+		assert.Error(t, err)
+	})
+
+	t.Run("IssueToken - No RoleLister omits roles claim", func(t *testing.T) {
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+
+		response, err := issuer.IssueToken(NewMockUser())
+		require.NoError(t, err)
+
+		claims, err := issuer.ValidateToken(response.AccessToken)
+		require.NoError(t, err)
+		assert.NotContains(t, claims, "roles")
+	})
+
+	t.Run("IssueToken - RoleLister embeds roles claim", func(t *testing.T) {
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+		issuer.SetRoleLister(fakeRoleLister{roles: []string{"super_admin", "org_admin"}})
+
+		user := NewMockUser()
+		response, err := issuer.IssueToken(user)
+		require.NoError(t, err)
+
+		claims, err := issuer.ValidateToken(response.AccessToken)
+		require.NoError(t, err)
+		roles, ok := claims["roles"].([]any)
+		require.True(t, ok, "roles claim must be present and a slice")
+		require.Len(t, roles, 2)
+		assert.Equal(t, "super_admin", roles[0])
+		assert.Equal(t, "org_admin", roles[1])
+	})
+
+	t.Run("IssueToken - RoleLister error is non-fatal, roles claim omitted", func(t *testing.T) {
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+		issuer.SetRoleLister(fakeRoleLister{err: assert.AnError})
+
+		response, err := issuer.IssueToken(NewMockUser())
+		require.NoError(t, err, "a role-lookup failure must not block login")
+
+		claims, err := issuer.ValidateToken(response.AccessToken)
+		require.NoError(t, err)
+		assert.NotContains(t, claims, "roles")
+	})
+
+	t.Run("RefreshToken - carries roles claim through from the original token", func(t *testing.T) {
+		cfg := config.JWTConfig{
+			AccessTokenSecret:  "test-access-secret",
+			RefreshTokenSecret: "test-refresh-secret",
+			AccessTokenExpiry:  time.Hour,
+			RefreshTokenExpiry: time.Hour * 24,
+		}
+		issuer, err := state.NewJWTTokenIssuer(cfg)
+		require.NoError(t, err)
+		issuer.SetRoleLister(fakeRoleLister{roles: []string{"super_admin"}})
+
+		initial, err := issuer.IssueToken(NewMockUser())
+		require.NoError(t, err)
+
+		refreshed, err := issuer.RefreshToken(initial.RefreshToken)
+		require.NoError(t, err)
+
+		claims, err := issuer.ValidateToken(refreshed.AccessToken)
+		require.NoError(t, err)
+		roles, ok := claims["roles"].([]any)
+		require.True(t, ok)
+		require.Len(t, roles, 1)
+		assert.Equal(t, "super_admin", roles[0])
+	})
+}
+
+type fakeRoleLister struct {
+	roles []string
+	err   error
+}
+
+func (f fakeRoleLister) GetUserRoles(ctx context.Context, userID string) ([]string, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.roles, nil
+}

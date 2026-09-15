@@ -160,7 +160,7 @@ func (c *HTTPClientImpl) do(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return resp, err
 	}
-	defer req.Body.Close()
+	defer func() { _ = req.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

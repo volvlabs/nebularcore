@@ -1,18 +1,60 @@
-env: "development"
-isDev: true
-enforceAcl: false
-autoMigrate: true
-migrationsDir: "/Users/jideobs/Projects/go/src/gitlab.com/jideobs/tunu/migrations"
-database:
-  type: 0
-  host: "localhost"
-  username: "flippay"
-  password: "password"
-  name: "flippay"
-  port: "5432"
-  sslmode: "disable"
-server:
-  port: "8888"
-  host: "localhost"
-  shutdownTimeout: 5
-  allowedOrigins: "*"
+core:
+  environment: development
+  database:
+    driver: postgres
+    host: localhost
+    username: postgres
+    password: password
+    name: nebularcore
+    port: "5432"
+    sslmode: disable
+  server:
+    port: "8888"
+    host: localhost
+    shutdownTimeout: 5s
+    allowedOrigins: "*"
+modules:
+  auth:
+    userMigrationScriptPath: "./migrations"
+    backends:
+      - local
+    jwt:
+      accessTokenSecret: this-is-a-sample-secret
+      refreshTokenSecret: this-is-a-sample-secret
+      accessTokenExpiry: 24h
+      refreshTokenExpiry: 720h
+    passwordPolicy:
+      minLength: 8
+      requireUpper: true
+      requireLower: true
+      requireNumber: true
+      requireSpecial: true
+    apiKey:
+      length: 32
+      expiryTime: 8760h
+      rateLimit:
+        enabled: true
+        requests: 1000
+        period: 1h
+    social:
+      enabled: false
+    clerk:
+      apiKey: ""
+      apiEndpoint: ""
+      frontendAPI: ""
+  storage:
+    provider: "local"  # can be "local", "s3", or "gcs"
+    localPath: "./uploads"
+    baseUrl: "http://localhost:8888/uploads"
+    s3:
+      bucket: "my-bucket"
+      region: "us-east-1"
+      accessKeyId: "" # Optional: AWS access key ID
+      secretAccessKey: "" # Optional: AWS secret access key
+      sessionToken: "" # Optional: AWS session token
+      endpoint: "" # Optional: custom endpoint for S3-compatible services
+      forcePathStyle: false # Optional: for S3-compatible services
+    gcs:
+      bucket: "my-bucket"
+      credentialsFile: "" # Optional: path to service account JSON file
+      credentialsJson: "" # Optional: raw JSON credentials string
