@@ -121,7 +121,14 @@ func TestWebSocketDisconnectCleanup(t *testing.T) {
 	ws, _, err := websocket.Dial(ctx, "ws"+srv.URL[4:]+"/ws", nil)
 	require.NoError(t, err)
 
-	assert.Equal(t, int64(1), manager.Total())
+	// Dial returning only means the client side of the handshake
+	// completed — the server's handler registers the connection with
+	// manager afterward, so this must poll rather than assert
+	// immediately (same race TestWebSocketUpgradeNoAuth above guards
+	// against).
+	require.Eventually(t, func() bool {
+		return manager.Total() == 1
+	}, time.Second, 10*time.Millisecond)
 
 	ws.Close(websocket.StatusNormalClosure, "done")
 
