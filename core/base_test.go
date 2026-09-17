@@ -2,15 +2,21 @@ package core_test
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/volvlabs/nebularcore/core"
+	coreConfig "github.com/volvlabs/nebularcore/core/config"
+	migrationRunner "github.com/volvlabs/nebularcore/core/migration_runner"
 	"github.com/volvlabs/nebularcore/core/module"
 	moduleMocks "github.com/volvlabs/nebularcore/core/module/mocks"
+	"gorm.io/gorm"
 )
 
 // TestSettings implements config.Settings interface for testing
@@ -202,4 +208,119 @@ func TestConfiguration(t *testing.T) {
 	assert.NotEmpty(t, coreConfig.ProjectRoot)
 	_, err = os.Stat(coreConfig.ProjectRoot)
 	assert.NoError(t, err)
+}
+
+// globalMiddlewareFakeModule implements module.GlobalMiddlewareModule: its
+// GlobalMiddleware stamps every request's gin context with a marker before
+// any module's Initialize runs, simulating auth's soft-identify middleware.
+type globalMiddlewareFakeModule struct {
+	name  string
+	order *[]string
+}
+
+func (m *globalMiddlewareFakeModule) Name() string                      { return m.name }
+func (m *globalMiddlewareFakeModule) Version() string                   { return "1.0.0" }
+func (m *globalMiddlewareFakeModule) Dependencies() []string            { return nil }
+func (m *globalMiddlewareFakeModule) NewConfig() coreConfig.Config      { return nil }
+func (m *globalMiddlewareFakeModule) Configure(coreConfig.Config) error { return nil }
+func (m *globalMiddlewareFakeModule) Shutdown(context.Context) error    { return nil }
+func (m *globalMiddlewareFakeModule) Namespace() module.ModuleNamespace {
+	return module.PublicNamespace
+}
+func (m *globalMiddlewareFakeModule) ProvidesMigrations() bool { return false }
+func (m *globalMiddlewareFakeModule) MigrationsDir() string    { return "" }
+func (m *globalMiddlewareFakeModule) GetMigrationSources(string) []migrationRunner.Source {
+	return nil
+}
+func (m *globalMiddlewareFakeModule) Initialize(_ context.Context, _ *gorm.DB, _ *gin.Engine) error {
+	*m.order = append(*m.order, "initialize:"+m.name)
+	return nil
+}
+func (m *globalMiddlewareFakeModule) GlobalMiddleware(context.Context, *gorm.DB) ([]gin.HandlerFunc, error) {
+	*m.order = append(*m.order, "globalMiddleware:"+m.name)
+	return []gin.HandlerFunc{
+		func(c *gin.Context) {
+			c.Set("marker", "set-by-"+m.name)
+			c.Next()
+		},
+	}, nil
+}
+
+// routeFakeModule does NOT implement GlobalMiddlewareModule. Its Initialize
+// registers a route group — mirroring how a real module (e.g. billing)
+// both creates its own groups and relies on whatever global middleware
+// already ran to have populated the context.
+type routeFakeModule struct {
+	name  string
+	order *[]string
+}
+
+func (m *routeFakeModule) Name() string                      { return m.name }
+func (m *routeFakeModule) Version() string                   { return "1.0.0" }
+func (m *routeFakeModule) Dependencies() []string            { return nil }
+func (m *routeFakeModule) NewConfig() coreConfig.Config      { return nil }
+func (m *routeFakeModule) Configure(coreConfig.Config) error { return nil }
+func (m *routeFakeModule) Shutdown(context.Context) error    { return nil }
+func (m *routeFakeModule) Namespace() module.ModuleNamespace {
+	return module.PublicNamespace
+}
+func (m *routeFakeModule) ProvidesMigrations() bool { return false }
+func (m *routeFakeModule) MigrationsDir() string    { return "" }
+func (m *routeFakeModule) GetMigrationSources(string) []migrationRunner.Source {
+	return nil
+}
+func (m *routeFakeModule) Initialize(_ context.Context, _ *gorm.DB, router *gin.Engine) error {
+	*m.order = append(*m.order, "initialize:"+m.name)
+	group := router.Group("/probe")
+	group.GET("/marker", func(c *gin.Context) {
+		marker, _ := c.Get("marker")
+		c.JSON(http.StatusOK, gin.H{"marker": marker})
+	})
+	return nil
+}
+
+// TestBootstrapAppliesGlobalMiddlewareBeforeAnyModuleInitialize is a
+// regression test for the AccountCountry bug this interface was added to
+// fix: a module's own router.Use(...) inside Initialize only reaches route
+// groups created by modules initialized afterward, which made
+// localization's AccountCountry resolution depend on registration order
+// relative to auth instead of being guaranteed. GlobalMiddlewareModule
+// gives modules a dedicated phase, run for every implementing module
+// before ANY module's Initialize (and thus before any module creates a
+// route group) — this asserts both the ordering and that a later,
+// non-GlobalMiddlewareModule's route group actually inherits it.
+func TestBootstrapAppliesGlobalMiddlewareBeforeAnyModuleInitialize(t *testing.T) {
+	configPath := createTempConfig(t)
+	defer func() { _ = os.Remove(configPath) }()
+
+	app, err := core.New(core.Options[TestSettings]{ConfigPath: configPath, EnvPrefix: "TEST"})
+	assert.NoError(t, err)
+
+	var order []string
+	mw := &globalMiddlewareFakeModule{name: "mw-module", order: &order}
+	route := &routeFakeModule{name: "route-module", order: &order}
+
+	// route-module registered first: if global-middleware ordering were
+	// still tied to registration/Initialize order the way the old
+	// router.Use-inside-Initialize approach was, its group would be
+	// created before mw-module's middleware ever ran.
+	assert.NoError(t, app.RegisterModule(route))
+	assert.NoError(t, app.RegisterModule(mw))
+
+	assert.NoError(t, app.Bootstrap(context.Background()))
+
+	// Both GlobalMiddleware calls must happen before either Initialize
+	// call, regardless of registration order.
+	assert.Equal(t, []string{
+		"globalMiddleware:mw-module",
+		"initialize:route-module",
+		"initialize:mw-module",
+	}, order)
+
+	req := httptest.NewRequest(http.MethodGet, "/probe/marker", nil)
+	w := httptest.NewRecorder()
+	app.Router().ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.JSONEq(t, `{"marker":"set-by-mw-module"}`, w.Body.String())
 }

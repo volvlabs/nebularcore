@@ -229,6 +229,21 @@ func (m *Module) Middleware() []gin.HandlerFunc {
 	}
 }
 
+// GlobalMiddleware implements module.GlobalMiddlewareModule: soft-identify
+// every request (Optional() populates "user" on the gin context when a
+// valid token/API key is present, but never aborts when one isn't) before
+// any module's Initialize runs. Registered globally — rather than left for
+// each protected route group's own JWT()/RequireAuth() to set "user" — so
+// that other modules' own global middleware (e.g. localization's
+// AccountCountry resolution, which reads "user" off the context) can rely
+// on it already being there, regardless of module registration order.
+func (m *Module) GlobalMiddleware(_ context.Context, db *gorm.DB) ([]gin.HandlerFunc, error) {
+	if err := m.initializeDefaults(db); err != nil {
+		return nil, err
+	}
+	return m.Middleware(), nil
+}
+
 // GetAuthManager returns the authentication manager
 func (m *Module) GetAuthManager() backends.AuthenticationManager {
 	return m.authManager
