@@ -86,7 +86,29 @@ func (a *baseApp[T]) Bootstrap(ctx context.Context) error {
 	// both namespaces' order lists, so a shared name appeared twice and
 	// registry.Get(name) resolved both occurrences to the same
 	// PublicNamespace module, double-calling Initialize() on it.
-	for _, om := range a.registry.GetModulesInOrder(module.PublicNamespace) {
+	orderedModules := a.registry.GetModulesInOrder(module.PublicNamespace)
+
+	// Phase 1: register every GlobalMiddlewareModule's router-wide
+	// middleware, in order, before any module's Initialize runs — see
+	// module.GlobalMiddlewareModule's doc comment for why this can't just
+	// live inside Initialize (gin groups copy the router's handler chain
+	// at creation time, so router.Use only reaches groups created after
+	// it, and Initialize is also where modules create their own groups).
+	for _, om := range orderedModules {
+		gm, ok := om.Module.(module.GlobalMiddlewareModule)
+		if !ok {
+			continue
+		}
+		handlers, err := gm.GlobalMiddleware(a.ctx, a.db)
+		if err != nil {
+			return fmt.Errorf("registering global middleware for module %s: %w", om.Name, err)
+		}
+		a.Router().Use(handlers...)
+	}
+
+	// Phase 2: Initialize every module (build its own resolvers/services,
+	// register its own routes).
+	for _, om := range orderedModules {
 		if err := om.Module.Initialize(a.ctx, a.db, a.Router()); err != nil {
 			return fmt.Errorf("initializing module %s: %w", om.Name, err)
 		}

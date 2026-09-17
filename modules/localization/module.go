@@ -95,7 +95,32 @@ func (m *Module) Configure(cfg coreConfig.Config) error {
 	return nil
 }
 
-func (m *Module) Initialize(_ context.Context, db *gorm.DB, router *gin.Engine) error {
+func (m *Module) Initialize(_ context.Context, db *gorm.DB, _ *gin.Engine) error {
+	return m.ensureResolvers(db)
+}
+
+// GlobalMiddleware implements module.GlobalMiddlewareModule. AccountCountry
+// resolution reads the authenticated user off the gin context (via
+// getUserID), so this must run after auth's own GlobalMiddleware
+// (auth.Module.GlobalMiddleware) has had a chance to populate it —
+// guaranteed by Bootstrap running GlobalMiddleware in
+// dependency/registration order, not by which module happens to be
+// registered first. See module.GlobalMiddlewareModule's doc comment for
+// why this can no longer just be a router.Use call inside Initialize.
+func (m *Module) GlobalMiddleware(_ context.Context, db *gorm.DB) ([]gin.HandlerFunc, error) {
+	if err := m.ensureResolvers(db); err != nil {
+		return nil, err
+	}
+	return []gin.HandlerFunc{
+		middleware.New(m.resolver, m.geoResolver, m.getClientIP, m.getUserID, m.accountResolver),
+	}, nil
+}
+
+// ensureResolvers lazily builds the repo/resolver/geoResolver this module
+// needs, the same way Initialize used to inline them — idempotent (nil
+// checks) so it's safe to call from both Initialize and GlobalMiddleware
+// regardless of which one Bootstrap runs first.
+func (m *Module) ensureResolvers(db *gorm.DB) error {
 	if m.repo == nil {
 		m.repo = repositories.NewCountryRepository(db)
 	}
@@ -111,8 +136,6 @@ func (m *Module) Initialize(_ context.Context, db *gorm.DB, router *gin.Engine) 
 		m.geoResolver = resolver
 		m.maxmindCloser = closer
 	}
-
-	router.Use(middleware.New(m.resolver, m.geoResolver, m.getClientIP, m.getUserID, m.accountResolver))
 
 	return nil
 }
