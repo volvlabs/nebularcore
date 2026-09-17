@@ -56,10 +56,33 @@ func New() *Module {
 func (m *Module) Name() string    { return m.name }
 func (m *Module) Version() string { return m.version }
 
-// Dependencies returns the module's dependencies. Localization has none —
-// it's foundational reference data other modules (auth, billing, etc.)
-// depend on, not the reverse.
-func (m *Module) Dependencies() []string { return []string{} }
+// Dependencies returns the module's dependencies. Localization stays
+// foundational and decoupled by default — no dependencies — unless a host
+// app has wired both WithAccountCountryResolver and
+// WithAuthenticatedUserIDFunc, i.e. actually uses AccountCountry
+// resolution. Only then does it depend on "auth" (nebularcore's own auth
+// module, by name): AccountCountry resolution reads the authenticated
+// user off the gin context in GlobalMiddleware, which needs auth's own
+// GlobalMiddleware (soft-identify) to have run first — see
+// GlobalMiddleware's doc comment for the ordering guarantee this relies
+// on, and the incident it was added to prevent. Declaring the dependency
+// here turns a wrong registration order into a loud
+// "depends on missing module auth" startup error instead of
+// AccountCountry silently never resolving.
+//
+// Both setters must be called before the module is registered — like
+// Dependencies() itself, dependency resolution runs at registration time,
+// so a resolver/getUserID wired afterward has no effect on ordering. Host
+// apps whose WithAuthenticatedUserIDFunc is backed by something other
+// than nebularcore's own "auth" module (by that exact name) should not
+// rely on this: Bootstrap will fail to start rather than silently skip
+// the dependency.
+func (m *Module) Dependencies() []string {
+	if m.accountResolver != nil && m.getUserID != nil {
+		return []string{"auth"}
+	}
+	return []string{}
+}
 
 func (m *Module) MigrationsDir() string    { return "migrations" }
 func (m *Module) ProvidesMigrations() bool { return true }
