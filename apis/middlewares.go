@@ -98,7 +98,9 @@ func TenantMiddleware(app core.App) gin.HandlerFunc {
 
 		schemaName := app.SchemaName(tenantId)
 
-		ctx := context.Background()
+		// Derive from the request context so cancellation, deadlines and values
+		// set by earlier middleware (e.g. a trace_id logger) are preserved.
+		ctx := c.Request.Context()
 		ctx = context.WithValue(ctx, tools.ContextTenantIdKey, tenantId)
 		ctx = context.WithValue(ctx, tools.ContextTenantSchemaNameKey, schemaName)
 

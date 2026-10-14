@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/volvlabs/nebularcore/models"
 	"github.com/volvlabs/nebularcore/test"
 	"github.com/volvlabs/nebularcore/tools/types"
@@ -75,7 +76,7 @@ func TestOauth2CreateValidate(t *testing.T) {
 
 			otherSettings := models.NewSettings()
 			otherSettings.GoogleAuth.Enabled = true
-			testapp.Settings().Merge(otherSettings)
+			require.NoError(t, testapp.Settings().Merge(otherSettings))
 
 			// Act:
 			err := auth.ValidateOAuth2Request(scenario.oauth2Request)

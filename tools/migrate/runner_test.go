@@ -57,7 +57,7 @@ func TestUpAndDown(t *testing.T) {
 	rootDir := filesystem.GetRootDir("../../")
 	dbPath := filepath.Join(os.TempDir(), "/data.db")
 
-	os.Remove(dbPath)
+	_ = os.Remove(dbPath)
 
 	runner, _ := migrate.NewRunner(
 		fmt.Sprintf("file://%s", filepath.Join(rootDir, "test/data/migrations")),
@@ -66,7 +66,7 @@ func TestUpAndDown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sql.Open() error = %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Act-Assert:
 	if tableExists(db, "users") || tableExists(db, "admins") {
@@ -108,7 +108,7 @@ func TestGoTo(t *testing.T) {
 	rootDir := filesystem.GetRootDir("../../")
 	dbPath := filepath.Join(os.TempDir(), "goto_data.db")
 
-	os.Remove(dbPath)
+	_ = os.Remove(dbPath)
 
 	runner, err := migrate.NewRunner(
 		fmt.Sprintf("file://%s", filepath.Join(rootDir, "test/data/migrations")),
@@ -122,7 +122,7 @@ func TestGoTo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sql.Open() error = %v", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Go to version 2: admins (v1) and users (v2) should exist; auths (v3) should not.
 	if err := runner.Run("goto", "2"); err != nil {

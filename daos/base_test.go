@@ -7,6 +7,7 @@ import (
 	"github.com/volvlabs/nebularcore/models/config"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/volvlabs/nebularcore/daos"
 	"github.com/volvlabs/nebularcore/test"
 	"github.com/volvlabs/nebularcore/tools/filesystem"
@@ -137,7 +138,7 @@ func TestDao_Delete(t *testing.T) {
 			Email: "john.doe@gmail.com",
 		},
 	}
-	app.Dao().Save(admin)
+	require.NoError(t, app.Dao().Save(admin))
 
 	where := &entities.Admin{}
 	where.SetId(admin.Id)
@@ -148,10 +149,10 @@ func TestDao_Delete(t *testing.T) {
 	// Assert:
 	assert.Equal(t, nil, err)
 	adminGotten := entities.Admin{}
-	app.Dao().FindBy(&adminGotten, &entities.Admin{
+	require.NoError(t, app.Dao().FindBy(&adminGotten, &entities.Admin{
 		UserBase: entities.UserBase{
 			Email: admin.Email,
-		}})
+		}}))
 
 	assert.Equal(t, true, adminGotten.IsDeleted)
 	assert.NotNil(t, adminGotten.DeletedAt)
@@ -169,7 +170,7 @@ func TestDao_Updates(t *testing.T) {
 			Email:     "john.doe@gmail.com",
 		},
 	}
-	app.Dao().Save(admin)
+	require.NoError(t, app.Dao().Save(admin))
 	assert.Equal(t, "John", admin.FirstName)
 	assert.Equal(t, "", admin.LastName)
 
@@ -189,11 +190,11 @@ func TestDao_Updates(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	adminGotten := entities.Admin{}
-	app.Dao().FindBy(&adminGotten, &entities.Admin{
+	require.NoError(t, app.Dao().FindBy(&adminGotten, &entities.Admin{
 		UserBase: entities.UserBase{
 			Email: admin.Email,
 		},
-	})
+	}))
 
 	assert.Equal(t, "Jane", adminGotten.FirstName)
 	assert.Equal(t, "Dawn", adminGotten.LastName)

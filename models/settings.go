@@ -106,7 +106,7 @@ func (s *Settings) LoadSettings(settingsFile string, appSettings any) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	settings := &Settings{}
 	decoder := yaml.NewDecoder(f)

@@ -11,6 +11,7 @@ import (
 	"github.com/volvlabs/nebularcore/core"
 	"github.com/volvlabs/nebularcore/models/config"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -53,7 +54,7 @@ func (n *NebularCore) Start() error {
 }
 
 func (n *NebularCore) Execute() error {
-	if err := n.appWrapper.Bootstrap(); err != nil {
+	if err := n.Bootstrap(); err != nil {
 		return err
 	}
 
@@ -69,7 +70,9 @@ func (n *NebularCore) Execute() error {
 	}()
 
 	go func() {
-		n.RootCmd.Execute()
+		if err := n.RootCmd.Execute(); err != nil {
+			log.Err(err).Msg("error occurred executing root command")
+		}
 
 		done <- true
 	}()

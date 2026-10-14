@@ -35,7 +35,7 @@ func (api *filesApi) Get(c *gin.Context) {
 		NewInternalServerError(c)
 		return
 	}
-	defer fs.Close()
+	defer func() { _ = fs.Close() }()
 
 	content, contentType, err := fs.Download(key)
 	if err != nil {
