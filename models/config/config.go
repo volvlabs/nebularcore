@@ -58,7 +58,7 @@ func readConfigFromFile(configFilePath string) (*AppConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	appConfig := &AppConfig{}
 	decoder := yaml.NewDecoder(f)

@@ -100,7 +100,7 @@ func (b *baseProvider) sendGetUserInfoRequest(token *oauth2.Token) ([]byte, erro
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	result, err := io.ReadAll(resp.Body)
 	if err != nil {

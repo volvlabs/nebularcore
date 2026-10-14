@@ -277,7 +277,8 @@ func (b *BaseApp) SchemaName(tenantId string) string {
 		[]byte(b.tenantConfig.SchemaDerivation),
 	)
 	derivedKey := make([]byte, 32)
-	io.ReadFull(hkdf, derivedKey)
+	// HKDF-SHA256 can derive up to 255*32 bytes, so reading 32 cannot fail.
+	_, _ = io.ReadFull(hkdf, derivedKey)
 
 	// Take only the first 20 bytes of the derived key to make the hex string shorter
 	// This will result in a 40-character hex string + 7 characters for "schema_" = 47 characters total

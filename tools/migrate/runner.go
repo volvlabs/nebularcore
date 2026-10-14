@@ -78,7 +78,9 @@ func (r *Runner) Run(args ...string) error {
 	case "down":
 		toRevertCount := 0
 		if len(args) > 1 {
-			fmt.Sscanf(args[1], "%d", &toRevertCount)
+			if _, err := fmt.Sscanf(args[1], "%d", &toRevertCount); err != nil {
+				return fmt.Errorf("invalid revert count %q: must be a positive integer", args[1])
+			}
 		}
 		return r.down(toRevertCount)
 	case "goto":
@@ -145,5 +147,5 @@ func (r *Runner) goTo(version uint) error {
 }
 
 func (r *Runner) Close() {
-	r.migrate.Close()
+	_, _ = r.migrate.Close()
 }

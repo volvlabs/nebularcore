@@ -31,7 +31,7 @@ func (c *Client) Send(events ...eventclient.Event) error {
 	if err != nil {
 		return err
 	}
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	topic := client.Topic(c.cfg.PubSub.Topic)
 	defer topic.Stop()

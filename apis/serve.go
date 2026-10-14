@@ -75,7 +75,9 @@ func Serve(app core.App, config config.ServeConfig) error {
 		defer cancel()
 
 		wg.Add(1)
-		server.Shutdown(ctx)
+		if err := server.Shutdown(ctx); err != nil {
+			log.Err(err).Msg("error occurred shutting down server")
+		}
 		wg.Done()
 
 		return nil
