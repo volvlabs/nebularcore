@@ -18,6 +18,17 @@ type Config struct {
 
 type Kafka struct {
 	Brokers []string `json:"brokers" yaml:"brokers" validate:"omitempty,min=1,dive,required"`
+
+	// ConsumerGroup, when set, makes every handler consume as a member of a
+	// Kafka consumer group named "<ConsumerGroup>.<handlerName>". That gives
+	// each handler its own group: replicas of the same service share a
+	// handler's messages instead of each receiving all of them, two handlers on
+	// one topic still each see every message, and offsets are committed so a
+	// restart resumes where the handler stopped.
+	//
+	// Empty keeps the original behaviour: no group, every replica reads every
+	// message and nothing is committed.
+	ConsumerGroup string `json:"consumerGroup" yaml:"consumerGroup"`
 }
 
 type GoChannel struct {

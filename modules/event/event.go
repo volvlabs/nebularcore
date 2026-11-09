@@ -39,10 +39,22 @@ func (m *Module) PublishAsync(ctx context.Context, event Message) (<-chan error,
 }
 
 func (m *Module) Subscribe(eventType, handlerName string, handler Handler) error {
+	subscriber := m.subscriber
+	if m.newHandlerSubscriber != nil {
+		dedicated, err := m.newHandlerSubscriber(handlerName)
+		if err != nil {
+			return fmt.Errorf("creating subscriber for handler %s: %w", handlerName, err)
+		}
+		m.mu.Lock()
+		m.handlerSubscribers = append(m.handlerSubscribers, dedicated)
+		m.mu.Unlock()
+		subscriber = dedicated
+	}
+
 	m.router.AddNoPublisherHandler(
 		handlerName,
 		eventType,
-		m.subscriber,
+		subscriber,
 		func(msg *message.Message) error {
 			event := Message{
 				Message:   msg,

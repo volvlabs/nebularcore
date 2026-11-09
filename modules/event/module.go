@@ -2,7 +2,9 @@ package event
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/ThreeDotsLabs/watermill"
 	watermillkafka "github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
@@ -27,6 +29,14 @@ type Module struct {
 	cfg *evtconfig.Config
 
 	runCtx context.Context
+
+	// newHandlerSubscriber builds a dedicated subscriber for one handler. It is
+	// set only when a Kafka consumer group is configured; otherwise handlers
+	// share subscriber.
+	newHandlerSubscriber func(handlerName string) (message.Subscriber, error)
+
+	mu                 sync.Mutex
+	handlerSubscribers []message.Subscriber
 }
 
 // New creates a new event module
@@ -139,6 +149,19 @@ func (m *Module) Initialize(ctx context.Context, db *gorm.DB, router *gin.Engine
 	m.publisher = publisher
 	m.subscriber = subscriber
 
+	if m.cfg.Backend == types.BackendKafka && m.cfg.Kafka.ConsumerGroup != "" {
+		m.newHandlerSubscriber = func(handlerName string) (message.Subscriber, error) {
+			return watermillkafka.NewSubscriber(
+				watermillkafka.SubscriberConfig{
+					Brokers:       m.cfg.Kafka.Brokers,
+					Unmarshaler:   watermillkafka.DefaultMarshaler{},
+					ConsumerGroup: consumerGroupName(m.cfg.Kafka.ConsumerGroup, handlerName),
+				},
+				m.logger,
+			)
+		}
+	}
+
 	m.router, err = message.NewRouter(message.RouterConfig{}, m.logger)
 	if err != nil {
 		return err
@@ -146,10 +169,38 @@ func (m *Module) Initialize(ctx context.Context, db *gorm.DB, router *gin.Engine
 	return nil
 }
 
+// consumerGroupName is the Kafka group a handler consumes as.
+func consumerGroupName(prefix, handlerName string) string {
+	return prefix + "." + handlerName
+}
+
 // Shutdown implements core.Module interface
 func (m *Module) Shutdown(ctx context.Context) error {
-	if m.router == nil {
-		return nil
+	var errs []error
+	if m.router != nil {
+		if err := m.router.Close(); err != nil {
+			errs = append(errs, err)
+		}
 	}
-	return m.router.Close()
+	if err := m.closeHandlerSubscribers(); err != nil {
+		errs = append(errs, err)
+	}
+	return errors.Join(errs...)
+}
+
+// closeHandlerSubscribers closes the per-handler subscribers. It runs after the
+// router has stopped, so no handler is still reading from them.
+func (m *Module) closeHandlerSubscribers() error {
+	m.mu.Lock()
+	subs := m.handlerSubscribers
+	m.handlerSubscribers = nil
+	m.mu.Unlock()
+
+	var errs []error
+	for _, sub := range subs {
+		if err := sub.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
 }
