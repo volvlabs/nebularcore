@@ -326,3 +326,46 @@ func TestModule_Unsubscribe(t *testing.T) {
 	err := module.Unsubscribe(eventType)
 	assert.NoError(t, err)
 }
+
+func TestConsumerGroupName(t *testing.T) {
+	assert.Equal(t, "mori.watchlist", consumerGroupName("mori", "watchlist"))
+}
+
+func TestSubscribeUsesDedicatedSubscriberWhenConfigured(t *testing.T) {
+	m := setupTestModule(t)
+
+	var asked []string
+	m.newHandlerSubscriber = func(handlerName string) (message.Subscriber, error) {
+		asked = append(asked, handlerName)
+		return gochannel.NewGoChannel(gochannel.Config{}, watermill.NewStdLogger(false, false)), nil
+	}
+
+	noop := func(context.Context, Message) error { return nil }
+	require.NoError(t, m.Subscribe("topic", "first", noop))
+	require.NoError(t, m.Subscribe("topic", "second", noop))
+
+	assert.Equal(t, []string{"first", "second"}, asked)
+	assert.Len(t, m.handlerSubscribers, 2)
+	assert.NoError(t, m.closeHandlerSubscribers())
+	assert.Empty(t, m.handlerSubscribers)
+}
+
+func TestSubscribeSharesSubscriberWithoutConsumerGroup(t *testing.T) {
+	m := setupTestModule(t)
+
+	noop := func(context.Context, Message) error { return nil }
+	require.NoError(t, m.Subscribe("topic", "only", noop))
+
+	assert.Empty(t, m.handlerSubscribers)
+}
+
+func TestSubscribeReturnsSubscriberFactoryError(t *testing.T) {
+	m := setupTestModule(t)
+	m.newHandlerSubscriber = func(string) (message.Subscriber, error) {
+		return nil, assert.AnError
+	}
+
+	err := m.Subscribe("topic", "broken", func(context.Context, Message) error { return nil })
+
+	assert.ErrorIs(t, err, assert.AnError)
+}
